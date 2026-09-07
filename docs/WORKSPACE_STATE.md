@@ -1,87 +1,70 @@
 # Workspace state and application restoration
 
-Bee persists the workspace desktop and application resume envelope in the
-workspace SQLite store. The current store is documented in
-[storage](STORAGE.md) and is opened by the workspace owner during boot.
+This describes the implemented version-1 store, not the future resource catalog.
+The workspace owner alone opens `bee:workspace_db`. Its default local file is
+`.wippy/workspace.db`; `BEE_WORKSPACE_DB` selects another file. The launcher runs
+from the Bee checkout directory. Selecting a project folder does not yet create
+a stable workspace UUID or an authorized filesystem binding.
 
-## Ownership and storage
+## Persisted values
 
-Each workspace has its own local `.wippy/workspace.db` database, separate from
-Wippy registry/overlay history in `.wippy/registry.db`. `BEE_WORKSPACE_DB`
-selects an explicit workspace path for an isolated run. The directory binding
-locates that workspace; moving the directory should not change its identity.
-The workspace owner is the sole writer of desktop state. Applications request
-scoped checkpoint writes; they do not receive SQL access to desktop tables.
-Use WAL with transactional migrations and a schema-version table. Do not open one
-SQLite file concurrently from different machines as a mesh synchronization design.
+The store has a checked migration ledger and one versioned JSON envelope, with a
+generation used for compare-and-swap writes. See [storage](STORAGE.md) for SQL
+ownership and integrity checks. The envelope is bounded to 2 MiB.
 
-Keep these records separate:
-
-| Record | Persistent values |
+| Envelope field | Contents |
 |---|---|
-| Workspace | UUID, directory binding, schema version |
-| Preferences | Validated appearance record and its version |
-| App instance | Stable instance UUID, admitted definition identity, definition version, restoration policy |
-| Window | Instance UUID, tab order, geometry, mode, normal bounds, restore mode, focus |
-| Checkpoint | Instance UUID, application schema version, sequence, structured payload, commit time |
+| `version` | `1` |
+| `desktop` | Validated scene, tabs and appearance preferences |
+| `applications` | At most 16 opt-in resume records |
+| Each resume record | `id` (view), `instance_id`, `definition_id`, `resume_schema`, `restart_policy`, `resume_state`, optional `window` |
 
-PIDs, viewport grants, input capture, mouse drags and native terminal handles are
-runtime values. They are recreated, never stored as authority to replay later.
-Registry definitions and overlays remain the code/configuration plane. The
-workspace database stores user/runtime state. A later shared catalog can supply
-versioned application definitions without becoming a shared live workspace database.
+App state is a JSON string bounded to 64 KiB. There are no persisted per-app
+checkpoint sequence numbers, pinned definition versions or workspace UUIDs in
+this envelope. Runtime launch values include revision information, but recovery
+resolves the admitted definition available at boot and checks its declared
+resume schema. An installer must not mistake this for version pinning.
 
-## Application protocol
+The workspace stores committed scene changes, not each drag preview. It retains
+resume records for failed or incompatible restores. Runtime PIDs, launch tokens,
+TTY mounts and native resources are recreated, never stored as authority.
+PID strings may repeat across runtime boots.
 
-An application advertises restoration support in registry trait metadata. The
-versioned contract distinguishes three policies: no automatic restoration,
-recreate a view from saved launch state, or recreate it with an app checkpoint.
-It does not promise to serialize an arbitrary running program's stack.
+## Application contract
 
-1. Bee opens an admitted application with its stable instance identity and an
-   optional restore envelope: contract version, application checkpoint schema,
-   checkpoint sequence and payload.
-2. The app validates or migrates its own checkpoint, recreates resources, then
-   reports ready or a typed restoration error. It can declare that a checkpoint
-   version is unsupported without discarding it.
-3. During operation the app submits replacement checkpoints, with a sequence and
-   expected previous sequence. Bee validates sender ownership and commits the
-   checkpoint transaction before acknowledging it as durable.
-4. A restarted application is a new process with fresh terminal capabilities but
-   the same logical instance identity. The restored window retains its position
-   and tab order while the app becomes ready.
+`meta.application.resume_schema` and `restart_policy` declare support. The policies
+are `never` (default), `automatic` and `manual`. Automatic instances reopen at
+boot in saved order; manual instances resume when opened. Restored launches carry
+`resume_schema` and `resume_state`, stable logical IDs and fresh capabilities.
 
-Keep checkpoint payloads structured and bounded. An app owns their schema;
-workspace migrations must not rewrite opaque app data. An application update can
-supply a checkpoint migration as part of its declared restoration implementation.
-Retain the last committed checkpoint if migration or startup fails, and report the
-failed instance without preventing the rest of the desktop from opening.
+`client.checkpoint(launch, json_string)` returns a queued request ID. Only a
+successful `bee.application.checkpoint_result` means database commit. The broker
+checks sender, identities and token; the workspace validates and writes the
+envelope. One pending request per app is retained; supersession and timeouts have
+explicit outcomes. A timeout is not proof the transaction never committed.
+See [application contracts](APPLICATION_CONTRACTS.md) for exact messages.
 
-For native terminals, the terminal app can restore its view, working directory
-and launch configuration. Restoring a shell process at an arbitrary instruction
-requires a separate process/session retention mechanism; this protocol alone
-cannot do that. Services and durable jobs also need a separate lifetime owner.
+Settings demonstrates opt-in recovery. Terminal declares no cold-resume contract:
+a dead native shell cannot be recreated at its prior instruction by saving JSON.
+Live F12 presenter replacement preserves its existing PTY. Closing a live instance
+removes its resume record after EXIT; exiting the workspace preserves records.
+Shutdown does not wait for every app to take a new checkpoint.
 
-## Commit and restart behavior
+## Migration and future boundaries
 
-Persist committed layout and preferences as they change, coalescing drag commits
-rather than storing each pointer movement. Apps checkpoint at useful boundaries.
-Exit must not depend on waiting seconds for every app: the normal recovery point
-is the last acknowledged durable checkpoint, and checkpoint status is observable.
+Applied migration names and checksums are immutable. Newer, changed or incomplete
+ledgers fail explicitly; Bee does not delete or downgrade the database. Stale
+store handles cannot overwrite a newer generation. These guarantees are tested
+in `tests/storage.py`; source/pack restoration is tested in `tests/recovery.py`.
 
-A transaction protects each update. It does not imply a synchronized snapshot of
-all application processes. A future explicit workspace checkpoint can collect
-per-app acknowledgements and report which instances could not participate.
+Workspace database schema, registry revision, app revision and app resume schema
+are different version domains. Apps own interpretation of their opaque state;
+workspace migrations must not rewrite it. The current broker rejects a changed
+resume schema rather than attempting a cross-schema migration.
 
-On boot, migrate workspace tables transactionally, load the desktop snapshot,
-resolve still-installed definitions through admission, recreate producer views,
-and start eligible instances. Unsupported/newer database schemas fail explicitly;
-there is no automatic database deletion or downgrade. Unavailable application
-versions leave a recoverable instance record instead of silently launching a
-substitute or installing code.
-
-A migration test must cover a database from each supported version, rollback of
-a failed migration, newer-version rejection, crash interruption and reopen.
-Restoration tests must cover fresh PIDs/grants, stable instance IDs, mixed supported
-and unsupported checkpoints, failed app startup, theme/layout restoration, and
-closing/reopening one instance without affecting another.
+Wippy registry history in `.wippy/registry.db` is separate from workspace state.
+Runtime overlays do not make this envelope a code store. Durable threads need
+their own append/read/subscription owner and tables; do not put their event log
+inside the desktop JSON. Future publication records, resource bindings and shared
+catalogs likewise need explicit owners. Sharing a local SQLite file would not
+grant cross-owner SQL access or provide synchronization between machines.

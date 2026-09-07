@@ -4,7 +4,9 @@ This guide describes available development operations. In-app self-edit, Hub
 installation and MCP tools are planned in [PACKAGE_BOUNDARIES.md](PACKAGE_BOUNDARIES.md);
 there are no published Bee tools for those operations yet.
 
-Read `README.md` and `docs/FOUNDATION_STATUS.md` first. Keep desktop responsibilities
+Read `README.md`, `docs/FOUNDATION_STATUS.md` and `docs/DEVELOPMENT.md` first.
+`docs/README.md` distinguishes current contracts from historical/design pages.
+Keep desktop responsibilities
 in `src/core`, reusable appearance in `src/ui`, and standalone apps in `src/apps`.
 Use registry imports, explicit typed values and authenticated process protocols.
 App metadata describes an app; it does not grant capabilities. New apps require
@@ -23,11 +25,18 @@ binaries, registry stores, credentials or legacy source to the pack. Do not edit
 registry database tables directly to work around a source-loading problem.
 
 F12 replaces only the presenter. If workspace, broker or session logic changed,
-exit with Ctrl+Q and run `./run.sh` again. Full restart persistence is not available
-and native process stacks do not constitute portable checkpoints.
+exit with Ctrl+Q and run `./run.sh` again. Preferences and opt-in application
+checkpoints persist in the workspace database. Settings opts in; Terminal does
+not restore a dead PTY. See `APPLICATION_CONTRACTS.md` for the actual version-1
+protocol; native process stacks are not portable checkpoints.
 
 For future package work, preserve definition IDs independently of versions and
 paths. Carry expected revisions, capability changes and rollback information in
 activation requests. Document whether an update supports live rejoin, app
 checkpoint/restore or a full restart. Do not describe planned operations as
 already callable.
+
+The next communication foundation is a durable thread contract shared by apps,
+agents and plugins; see [foundation next steps](FOUNDATION_NEXT.md). Agent drivers,
+thread subscriptions, MCP and publication are not implemented yet. Do not route
+new authority through the desktop merely because it is the visible client.

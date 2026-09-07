@@ -107,7 +107,8 @@ paste and pointer consistently. Scrolling belongs to explicit bounded regions.
 
 The workspace now owns broker and session lifetimes independently of the
 presenter. Live presenter retirement/rejoin and unexpected-exit recovery are
-covered by source and packed PTY tests. Disk persistence remains pending.
+covered by source and packed PTY tests. Workspace persistence has since shipped;
+see [workspace state](WORKSPACE_STATE.md) for its exact boundary.
 
 The application authority owns producer viewports; a replacement presenter
 receives fresh recipient-bound mounts. Application processes remain running;

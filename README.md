@@ -34,11 +34,12 @@ autostarted in a new workspace. There is one application/status bar and no reser
 |---|---|
 | `src/core/workspace` | Stable workspace lifetime and physical terminal ownership |
 | `src/core/applications` | App admission, instances, producer lifecycle and delegated view mounts |
-| `src/core/session` | Committed window geometry and focus |
+| `src/core/session` | Committed scene, tabs and preferences |
 | `src/core/desktop` | Pure scene model and shared hit/draw geometry |
 | `src/core/terminal` | Replaceable presenter, rendering, menus and input routing |
 | `src/core/protocol` | Validation at process boundaries |
-| `src/ui` | Shared appearance tokens and wallpaper rendering |
+| `src/core/storage` | Workspace state and verified migrations |
+| `src/ui` | App lifecycle helper, appearance tokens and wallpaper rendering |
 | `src/apps` | Default on-demand Terminal, Settings and Process Manager |
 | `examples/fixtures` | Acceptance apps, excluded from production |
 | `tests` | Unit, registry and terminal acceptance checks |
@@ -82,7 +83,8 @@ Hub discovery, workspace overlays, self-editing, agent/MCP adapters and filesyst
 watchers are separate planned subsystems. The current broker is not yet an
 untrusted-code host.
 
-See [foundation status](docs/FOUNDATION_STATUS.md),
+See the [documentation map](docs/README.md),
+[foundation status](docs/FOUNDATION_STATUS.md),
 [package boundaries](docs/PACKAGE_BOUNDARIES.md),
 [workspace state](docs/WORKSPACE_STATE.md), and
 [agent development guide](docs/AGENT_GUIDE.md).

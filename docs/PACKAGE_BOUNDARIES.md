@@ -6,11 +6,11 @@ are stable. Moving a file must not change an application's registry identity.
 
 | Layer | Owns | Depends on |
 |---|---|---|
-| Core | Desktop/session lifetime, composition, focus, geometry, admission and app lifecycle | Runtime primitives and shared UI values |
+| Core | Desktop/session lifetime, composition, focus, geometry, admission, app lifecycle and workspace persistence | Runtime primitives and shared UI values |
 | Shared UI | Appearance, wallpaper and reusable presentation helpers | Value contracts; no application authority |
 | Default apps | Terminal, Settings and local Process Manager | Explicit grants and core protocols |
 | Optional packages | Lookout, coding tools, harnesses, models and other future apps | Published capability/trait contracts |
-| Independent subsystems | Hub discovery/install, overlay editing/review, MCP, workspace storage | Runtime services and authenticated operation contracts |
+| Independent subsystems | Threads, Hub discovery/install, overlay editing/review, MCP | Runtime services and authenticated operation contracts |
 | Native Bee extensions | Future coding-specific I/O, file watching and adapters | Native runtime module registration |
 
 Core does not import a default application's implementation. A launcher can name
@@ -34,7 +34,8 @@ must remain recoverable. Being a core package must not make source uneditable;
 being an application actor must not imply core-publication permission.
 
 Edits to a replaceable presenter can reuse the existing live rejoin boundary.
-App producer replacement needs an explicit state/checkpoint protocol. Stable
+Apps now have an opt-in checkpoint/restore protocol; coordinated live producer
+replacement is still unimplemented. Stable
 workspace/session changes need a coordinated restart and recovery contract; F12
 alone does not replace those processes. The native binary has its own build and
 restart boundary. These distinctions must be visible to the edit subsystem.
@@ -55,3 +56,13 @@ execution: the CLI's loader and command execution are currently internal.
 A future native runtime change should expose that boundary for a small `cmd/bee`
 with an embedded base pack and optional Bee-native module registration. No native
 distribution code is part of this shell round.
+
+The next proposed slice is [durable threads and subscriptions](FOUNDATION_NEXT.md),
+with transport-neutral authorization and MCP as an adapter. Publication remains
+a separate authority even when its requests and receipts are carried on threads.
+
+Kickside component compatibility is an early acceptance requirement. Prove a
+minimal pinned component/contract host before creating Bee-specific equivalents;
+then add threads and other providers through that seam. Optional extension
+requirements must not become mandatory desktop boot dependencies. Backend
+contracts and web presentation have separate host requirements.
