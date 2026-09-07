@@ -1,6 +1,11 @@
 version: '1.0'
 namespace: bee.protocol
 entries:
+- name: commands
+  kind: library.lua
+  source: file://commands.lua
+  imports:
+    appearance: bee.desktop:appearance
 - name: input
   kind: library.lua
   source: file://input.lua
@@ -9,5 +14,9 @@ entries:
   kind: library.lua
   source: file://decode.lua
   imports:
+    contract: bee.protocol:application
     model: bee.desktop:model
     appearance: bee.desktop:appearance
+- name: application
+  kind: library.lua
+  source: file://application.lua

@@ -50,7 +50,7 @@ local function define_tests()
             test.is_nil(decode.ack({request_id = 1, scene = scene}))
             test.is_nil(decode.ack({request_id = string.rep("x", 81), scene = scene}))
             test.is_nil(decode.ack({request_id = "focus", scene = {}}))
-            local ack = decode.ack({request_id = "focus", scene = scene})
+            local ack = decode.ack({version = 1, request_id = "focus", scene = scene, tabs = {"view"}, error_code = "", error = ""})
             test.not_nil(ack)
             if ack then
                 test.eq(ack.request_id, "focus")

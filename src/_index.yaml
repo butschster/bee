@@ -12,12 +12,6 @@ entries:
     workers: 4
   lifecycle:
     auto_start: true
-- name: app_policy
-  kind: security.policy
-  policy:
-    actions: '*'
-    resources: '*'
-    effect: deny
 - name: broker_policy
   kind: security.policy
   policy:
@@ -38,23 +32,20 @@ entries:
     - process.security
     - security.scope.create
     - security.policy.get
-    resources: '*'
-    effect: allow
-- name: settings_policy
-  kind: security.policy
-  policy:
-    actions:
-    - tty.observe
-    - tty.input
-    - tty.resize
-    - process.send
+    - registry.snapshot
+    - registry.history
     resources: '*'
     effect: allow
 - name: processes_policy
   kind: security.policy
   policy:
-    actions: [system.read]
-    resources: [hosts, memory, goroutines, supervisor]
+    actions:
+    - system.read
+    resources:
+    - hosts
+    - memory
+    - goroutines
+    - supervisor
     effect: allow
 - name: desktop_policy
   kind: security.policy
@@ -64,8 +55,6 @@ entries:
     - tty.observe
     - tty.input
     - tty.resize
-    - process.spawn
-    - process.spawn.monitored
     - process.send
     - process.monitor
     - process.terminate
@@ -80,7 +69,12 @@ entries:
 - name: presenter_policy
   kind: security.policy
   policy:
-    actions: [tty.observe, tty.input, tty.resize, process.send, process.monitor]
+    actions:
+    - tty.observe
+    - tty.input
+    - tty.resize
+    - process.send
+    - process.monitor
     resources: '*'
     effect: allow
 - name: session_policy
@@ -93,9 +87,94 @@ entries:
     effect: allow
 - name: application_admission
   kind: registry.entry
-  definitions: [bee.settings:app, bee.processes:app]
+  bindings:
+  - definition_id: bee.settings:app
+    policies: []
+    appearance_write: true
+  - definition_id: bee.processes:app
+    policies:
+    - bee:processes_policy
+    application_stop: true
+  - definition_id: bee.console:app
+    policies:
+    - bee.console:executor_policy
+    - bee.console:command_policy
 - name: terminal
   kind: terminal.host
   hide_logs: true
   lifecycle:
     auto_start: true
+- name: base_app_policy
+  kind: security.policy
+  policy:
+    actions:
+    - process.send
+    resources: '*'
+    effect: allow
+- name: app_boundary_policy
+  kind: security.policy
+  policy:
+    actions:
+    - process.security
+    - security.scope.create
+    - security.policy.get
+    - process.context
+    - registry.apply
+    - registry.apply_version
+    - registry.overlay.apply
+    resources: '*'
+    effect: deny
+- name: core_spawn_boundary
+  kind: security.policy
+  policy:
+    actions:
+    - process.spawn
+    - process.spawn.monitored
+    resources:
+    - bee.workspace:main
+    - bee.session:main
+    - bee.applications:broker
+    - bee.terminal:main
+    effect: deny
+- name: core_spawn_policy
+  kind: security.policy
+  policy:
+    actions:
+    - process.spawn
+    - process.spawn.monitored
+    resources:
+    - bee.session:main
+    - bee.applications:broker
+    - bee.terminal:main
+    effect: allow
+- name: workspace_environment
+  kind: env.storage.os
+  lifecycle:
+    auto_start: true
+- name: workspace_db_path
+  kind: env.variable
+  storage: bee:workspace_environment
+  variable: BEE_WORKSPACE_DB
+  default: .wippy/workspace.db
+  readonly: true
+- name: workspace_db
+  kind: db.sql.sqlite
+  file: ${env:bee:workspace_db_path}
+  lifecycle:
+    auto_start: true
+- name: workspace_storage_policy
+  kind: security.policy
+  policy:
+    actions:
+    - db.get
+    resources:
+    - bee:workspace_db
+    effect: allow
+- name: workspace_storage_boundary
+  kind: security.policy
+  policy:
+    actions:
+    - db.get
+    resources:
+    - bee:workspace_db
+    effect: deny

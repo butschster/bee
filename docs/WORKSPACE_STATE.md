@@ -1,17 +1,17 @@
 # Workspace state and application restoration
 
-This is the persistence contract to implement after the current shell pass.
-The current workspace keeps preferences and layout in memory and supports live
-presenter replacement. It does not yet create this database or restore apps after
-runtime exit.
+Bee persists the workspace desktop and application resume envelope in the
+workspace SQLite store. The current store is documented in
+[storage](STORAGE.md) and is opened by the workspace owner during boot.
 
 ## Ownership and storage
 
-Each workspace has a stable UUID and its own local `.bee/workspace.sqlite`
-database, separate from Wippy registry/overlay history. The directory
-binding locates that workspace; moving the directory should not change its
-identity. The workspace owner is the sole writer of desktop state. Applications
-request scoped checkpoint writes; they do not receive SQL access to desktop tables.
+Each workspace has its own local `.wippy/workspace.db` database, separate from
+Wippy registry/overlay history in `.wippy/registry.db`. `BEE_WORKSPACE_DB`
+selects an explicit workspace path for an isolated run. The directory binding
+locates that workspace; moving the directory should not change its identity.
+The workspace owner is the sole writer of desktop state. Applications request
+scoped checkpoint writes; they do not receive SQL access to desktop tables.
 Use WAL with transactional migrations and a schema-version table. Do not open one
 SQLite file concurrently from different machines as a mesh synchronization design.
 

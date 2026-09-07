@@ -1,14 +1,23 @@
 local model = require("model")
 local appearance = require("appearance")
+local contract = require("contract")
 local M = {}
-type Reply = {request_id: string, op: string, id: string, instance_id: string, title: string, mount: string, error: string}
+type Reply = contract.Reply
 function M.reply(value: unknown): Reply?
-    if type(value) ~= "table" then return nil end
-    if type(value.request_id) ~= "string" or type(value.op) ~= "string" or type(value.id) ~= "string"
-        or type(value.instance_id) ~= "string" or type(value.title) ~= "string"
-        or type(value.mount) ~= "string" or type(value.error) ~= "string" then return nil end
-    return {request_id = value.request_id, op = value.op, id = value.id, instance_id = value.instance_id,
-        title = value.title, mount = value.mount, error = value.error}
+    if type(value) ~= "table" or value.version ~= 1 then return nil end
+    local op = value.op
+    if op ~= "open" and op ~= "close" and op ~= "closed" and op ~= "focus" and op ~= "attached"
+        and op ~= "bind" and op ~= "page" and op ~= "shutdown" then return nil end
+    local request_id, id = contract.text(value.request_id, 80), contract.text(value.id, 80)
+    local instance, title = contract.text(value.instance_id, 80), contract.text(value.title, 80)
+    local mount, code = contract.text(value.mount, 1024), contract.text(value.error_code, 80)
+    if not request_id or not id or not instance or not title or not mount or not code
+        or type(value.error) ~= "string" or #value.error > 4096 then return nil end
+    return {version = 1, request_id = request_id, op = op, id = id, instance_id = instance,
+        title = title, mount = mount, error_code = code, error = value.error,
+        definition_id = contract.text(value.definition_id, 160) or "", resume_schema = contract.text(value.resume_schema, 80) or "",
+        restart_policy = contract.text(value.restart_policy, 16) or "never",
+        resume_state = type(value.resume_state) == "string" and #value.resume_state <= 65536 and value.resume_state or ""}
 end
 local function integer(value: unknown): integer?
     if type(value) ~= "number" or value ~= value or value < -2147483647 or value > 2147483647 then return nil end
@@ -54,14 +63,30 @@ function M.scene(value: unknown): model.Scene?
     if value.focus ~= "" and not ids[value.focus] then return nil end
     return {width = width, height = height, revision = revision, focus = value.focus, windows = windows}
 end
-type Acknowledgement = {request_id: string, scene: model.Scene}
-function M.ack(value: unknown): Acknowledgement?
-    if type(value) ~= "table" or type(value.request_id) ~= "string" or #value.request_id > 80 then return nil end
-    local scene = M.scene(value.scene)
-    if not scene then return nil end
-    return {request_id = value.request_id, scene = scene}
+type Acknowledgement = {version: integer, request_id: string, scene: model.Scene, tabs: {string}?, preferences: appearance.Preferences?, error_code: string, error: string}
+type CatalogItem = contract.Descriptor
+type Desktop = {scene: model.Scene, tabs: {string}, preferences: appearance.Preferences, catalog: {CatalogItem}}
+function M.catalog(value: unknown): {CatalogItem}?
+    if type(value) ~= "table" then return nil end
+    local result: {CatalogItem} = {}
+    local count = 0
+    for key in pairs(value) do
+        if type(key) ~= "number" or key ~= math.floor(key) or key < 1 or key > 64 then return nil end
+        count = count + 1
+    end
+    local seen: {[string]: boolean} = {}
+    for index = 1, count do
+        local item: unknown = value[index]
+        if type(item) ~= "table" or type(item.singleton) ~= "boolean" then return nil end
+        local id, revision = contract.text(item.definition_id, 160), contract.text(item.definition_revision, 80)
+        local title, icon = contract.text(item.title, 80), contract.text(item.icon, 8)
+        local group, role = contract.text(item.group, 160), contract.text(item.role, 32)
+        if not id or id == "" or seen[id] or not revision or not title or not icon or not group or not role then return nil end
+        seen[id] = true
+        result[#result + 1] = {definition_id = id, definition_revision = revision, title = title, icon = icon, group = group, role = role, singleton = item.singleton, resume_schema = contract.text(item.resume_schema, 80) or "", restart_policy = contract.text(item.restart_policy, 16) or "never"}
+    end
+    return result
 end
-type Desktop = {scene: model.Scene, tabs: {string}, preferences: appearance.Preferences}
 function M.desktop(value: unknown): Desktop?
     if type(value) ~= "table" or type(value.tabs) ~= "table" then return nil end
     local scene = M.scene(value.scene)
@@ -83,6 +108,18 @@ function M.desktop(value: unknown): Desktop?
     end
     local preferences = value.preferences == nil and appearance.defaults() or appearance.decode(value.preferences)
     if not preferences then return nil end
-    return {scene = scene, tabs = tabs, preferences = preferences}
+    local catalog = value.catalog ~= nil and M.catalog(value.catalog) or {}
+    if not catalog then return nil end
+    return {scene = scene, tabs = tabs, preferences = preferences, catalog = catalog}
+end
+function M.ack(value: unknown): Acknowledgement?
+    if type(value) ~= "table" or value.version ~= 1 then return nil end
+    local request_id = contract.text(value.request_id, 80)
+    local code = contract.text(value.error_code, 80)
+    if not request_id or not code or type(value.error) ~= "string" or #value.error > 4096 then return nil end
+    local desktop = M.desktop(value)
+    if not desktop then return nil end
+    return {version = 1, request_id = request_id, scene = desktop.scene, tabs = desktop.tabs, preferences = desktop.preferences,
+        error_code = code, error = value.error}
 end
 return M

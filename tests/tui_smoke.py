@@ -45,7 +45,7 @@ class Desktop:
             args = [str(ROOT / "run.sh"), "--set", f"registry.history_path={directory}/registry.db"]
             cwd = directory
         self.process = subprocess.Popen(args, cwd=cwd, stdin=slave, stdout=slave, stderr=slave,
-                                        start_new_session=True, env={**os.environ, "TERM": "xterm-256color"})
+                                        start_new_session=True, env={**os.environ, "TERM": "xterm-256color", "BEE_WORKSPACE_DB": str(Path(directory) / "workspace.db")})
         os.close(slave)
 
     def pump(self, duration=.1):
@@ -168,7 +168,7 @@ class Desktop:
         deadline = time.monotonic() + 4
         while self.screen.display[0] == header and time.monotonic() < deadline:
             self.pump(.05)
-        assert self.screen.display[0] != header, "Presenter did not change incarnation"
+        assert self.screen.display[0] != header, f"Presenter did not change incarnation; exit={self.process.poll()}\n{self.text()}\n{bytes(self.raw[raw_start:])!r}"
         self.pump(.15)
         assert self.screen.display[1:] == body, (body, self.text())
         assert re.findall(r"App PID: (\S+)", self.text()) == app_pids

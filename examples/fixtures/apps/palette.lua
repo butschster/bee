@@ -1,9 +1,12 @@
 local tty = require("tty")
+local client = require("client")
 local security = require("security")
 local process = require("process")
 local channel = require("channel")
 
-local function main()
+local function main(value: unknown)
+    local launch = client.launch(value)
+    if not launch then error("Invalid application launch") end
     assert(not security.can("tty.observe", "foreign-surface"), "app inherited foreign surface authority")
     assert(not security.can("process.spawn", "bee.apps:welcome"), "app inherited spawn authority")
     assert(not security.can("registry.apply", "bee:definition"), "app inherited publication authority")
@@ -35,6 +38,7 @@ local function main()
         assert(output:present(canvas:rows(), {cursor = {x = 1, y = 1, visible = false}}))
     end
     paint()
+    client.ready(launch)
     while true do
         local selected = channel.select({input:case_receive(), lifecycle:case_receive()})
         if not selected.ok then break end

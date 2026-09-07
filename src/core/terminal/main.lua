@@ -1,4 +1,5 @@
 local tty = require("tty")
+local ctx = require("ctx")
 local process = require("process")
 local channel = require("channel")
 local time = require("time")
@@ -13,6 +14,7 @@ local appearance = require("appearance")
 
 type Attachment = {view: tty.Viewport, width: integer, height: integer, revision: integer}
 local function main(owner: string, initial_application: string?, secondary_application: string?)
+    if ctx.get("bee.workspace_owner") ~= owner or owner == "" then error("Untrusted presenter bootstrap") end
     local input = assert(tty.events())
     local lifecycle = assert(process.events())
     local replies = assert(process.listen("bee.app.reply", {message = true}))
@@ -27,6 +29,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
     assert(process.monitor(owner))
     local attachments: {[string]: Attachment} = {}
     local tabs_order: {string} = {}
+    local catalog: {menu.Descriptor} = {}
     local routing_scene: model.Scene = scene
     local routing_revision = scene.revision
     local pending_request: string? = nil
@@ -68,7 +71,8 @@ local function main(owner: string, initial_application: string?, secondary_appli
         elseif op == "minimize" then
             routing_scene = model.minimize(routing_scene, id); pending_request = request_id
         end
-        process.send(owner, "bee.desktop.command", {op = op, id = id, request_id = request_id})
+        local sent, err = process.send(owner, "bee.desktop.command", {version = 1, op = op, id = id, request_id = request_id})
+        if not sent then pending_request = nil; adopt_routing(); status = tostring(err) end
     end
     local function application(op: string, definition_id: string, id: string)
         if op == "close" and id == "" then return end
@@ -76,7 +80,8 @@ local function main(owner: string, initial_application: string?, secondary_appli
             closing[id] = true
             routing_scene = model.remove(routing_scene, id)
         end
-        process.send(owner, "bee.app.request", {request_id = uuid.v7(), op = op, definition_id = definition_id, id = id})
+        local sent, err = process.send(owner, "bee.app.request", {version = 1, request_id = uuid.v7(), op = op, definition_id = definition_id, id = id})
+        if not sent then closing[id] = nil; adopt_routing(); status = tostring(err) end
     end
     local function rectangle(win: model.Window): model.Rect
         return layout.rectangle(scene, win, capture, preview)
@@ -85,8 +90,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
         local target = start and start.target or input_focus()
         start = nil
         if action == "quit" then running = false
-        elseif action == "settings" then application("open", "bee.settings:app", "")
-        elseif action == "processes" then application("open", "bee.processes:app", "")
+        elseif action:sub(1, 5) == "open:" then application("open", action:sub(6), "")
         elseif action == "initial" and initial_application then application("open", initial_application, "")
         elseif action == "close" then application("close", "", target)
         elseif action == "restore" then
@@ -101,7 +105,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                     if win.mode == "fullscreen" then command("fullscreen", win.id) end
                     if win.mode == "collapsed" then command("restore", win.id) end
                     if action == "collapse" then command("collapse", win.id)
-                    else process.send(owner, "bee.desktop.command", {op = "snap", id = win.id, side = action == "snap_left" and "left" or "right"}) end
+                    else process.send(owner, "bee.desktop.command", {version = 1, op = "snap", id = win.id, side = action == "snap_left" and "left" or "right"}) end
                 end
             end
         elseif action == "restore_all" then
@@ -112,7 +116,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
             if #tabs_order > 0 then command("focus", tabs_order[#tabs_order]) end
         elseif action == "rejoin" then
             rejoining = true
-            process.send(owner, "bee.workspace.control", {op = "rejoin"})
+            process.send(owner, "bee.workspace.control", {version = 1, op = "rejoin"})
         end
     end
     local function paint()
@@ -123,8 +127,9 @@ local function main(owner: string, initial_application: string?, secondary_appli
                 local body = layout.interior(win, rectangle(win))
                 -- Drag previews do not resize producers. Only committed bounds do.
                 if not capture and (attached.width ~= body.width or attached.height ~= body.height) then
-                    attached.view:resize(body.width, body.height)
-                    attached.width, attached.height = body.width, body.height
+                    local resized, resize_error = attached.view:resize(body.width, body.height)
+                    if resized then attached.width, attached.height = body.width, body.height
+                    else status = tostring(resize_error or "Resize failed") end
                 end
                 local snapshot, err = attached.view:snapshot()
                 if snapshot then
@@ -134,12 +139,12 @@ local function main(owner: string, initial_application: string?, secondary_appli
             end
         end
         local frame = render.draw(scene, tabs_order, contents, capture, preview, status, "workspace / local",
-            preferences, start, initial_application ~= nil)
+            preferences, start, initial_application ~= nil, catalog)
         tab_hits = frame.tabs
         output:present(frame.rows, {cursor = frame.cursor})
         dirty = false
     end
-    assert(process.send(owner, "bee.workspace.control", {op = "ready"}))
+    assert(process.send(owner, "bee.workspace.control", {version = 1, op = "ready"}))
     while running do
         local selected = channel.select({input:case_receive(), lifecycle:case_receive(),
             replies:case_receive(), scenes:case_receive(), acknowledgements:case_receive(), retire:case_receive(), ticks:case_receive()})
@@ -211,7 +216,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                         for _, win in ipairs(scene.windows) do if win.id == start.target then found = true end end
                         if not found then start = nil end
                     end
-                    if state then tabs_order = state.tabs; preferences = state.preferences end
+                    if state then tabs_order = state.tabs; preferences = state.preferences; catalog = state.catalog end
                     hydrated = true
                     status = ""
                     if not pending_request then adopt_routing() end
@@ -247,7 +252,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                 if event.type == "key" then captured_releases[kind] = true else captured_mouse = true end
                 handled = true; dirty = true
             elseif start and event.type ~= "resize" and event.type ~= "close" then
-                local items = menu.entries(start, scene, initial_application ~= nil)
+                local items = menu.entries(start, scene, initial_application ~= nil, catalog)
                 local panel = menu.panel(width, height, #items, start)
                 local response = menu.respond(start, panel, items, event)
                 local changed = response.state.selected ~= start.selected or response.state.offset ~= start.offset
@@ -279,7 +284,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                         elseif action == "fullscreen" or action == "minimize" then command(action, input_focus())
                         elseif action == "rejoin" then
                             rejoining = true
-                            process.send(owner, "bee.workspace.control", {op = "rejoin"})
+                            process.send(owner, "bee.workspace.control", {version = 1, op = "rejoin"})
                         elseif action == "next" or action == "previous" then
                             local next_id = action == "previous" and tabs_order[#tabs_order] or tabs_order[1]
                             for index, id in ipairs(tabs_order) do
@@ -304,7 +309,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                         if event.action == "release" then
                             preview = layout.drag(scene, capture, x, y) or preview
                             if preview then
-                                process.send(owner, "bee.desktop.command", {op = "place", id = capture.id,
+                                process.send(owner, "bee.desktop.command", {version = 1, op = "place", id = capture.id,
                                     x = preview.x, y = preview.y, width = preview.width, height = preview.height})
                                 -- Keep the last preview until the committed scene
                                 -- reaches it; clearing here flashes the old bounds.
@@ -386,7 +391,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
         if dirty and hydrated then paint() end
     end
     ticker:stop()
-    if not rejoining then process.send(owner, "bee.workspace.control", {op = "quit"}) end
+    if not rejoining then process.send(owner, "bee.workspace.control", {version = 1, op = "quit"}) end
     for _, attached in pairs(attachments) do attached.view:close() end
     output:close()
     tty.stop()

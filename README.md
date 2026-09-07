@@ -6,8 +6,9 @@ An extensible terminal workspace built on Wippy. MIT licensed.
 ./run.sh
 ```
 
-Bee starts with an empty desktop. **BEE / F1 → Tools** opens Settings or
-Process Manager. Each application runs in its own process.
+A new workspace starts with an empty desktop. Preferences and opted-in apps
+(such as Settings) resume from the workspace database. **BEE / F1 → Tools** opens Settings or
+Process Manager; **BEE / F1 → Terminal** opens a normal shell. Each application runs in its own process.
 
 Settings offers 14 themes and 11 backgrounds. Process Manager shows live process
 and service state, heap and scheduler charts, GC counters and queue depth. It can
@@ -25,7 +26,7 @@ end workspace applications through the broker; core processes remain protected.
 | F12 | Replace the presenter, retaining live apps and desktop state |
 
 Start supports nested groups, hover selection and keyboard navigation. No app is
-autostarted. There is one application/status bar and no reserved desktop footer.
+autostarted in a new workspace. There is one application/status bar and no reserved desktop footer.
 
 ## Source organization
 
@@ -38,7 +39,7 @@ autostarted. There is one application/status bar and no reserved desktop footer.
 | `src/core/terminal` | Replaceable presenter, rendering, menus and input routing |
 | `src/core/protocol` | Validation at process boundaries |
 | `src/ui` | Shared appearance tokens and wallpaper rendering |
-| `src/apps` | Bundled, on-demand Settings and Process Manager |
+| `src/apps` | Default on-demand Terminal, Settings and Process Manager |
 | `examples/fixtures` | Acceptance apps, excluded from production |
 | `tests` | Unit, registry and terminal acceptance checks |
 
@@ -48,8 +49,15 @@ ambient authority; admission and capabilities are explicit.
 
 ## Development
 
-Set `BEE_RUNTIME` to a Wippy executable with viewport mounts/pages (runtime PR
-#653). The ignored `.wippy/bin/wippy` is the local development default.
+Build the pinned runtime first (`Go 1.27.0`, Git, a C compiler and Python required):
+
+```sh
+make setup
+python3 -m pip install -r tests/requirements.txt
+```
+
+The ignored `.wippy/bin/wippy` is the default. `BEE_RUNTIME` overrides the launcher;
+`make WIPPY=/path/to/wippy check` selects another compatible test runtime.
 
 ```sh
 make check
@@ -68,7 +76,8 @@ provided by this repository yet.
 ## Current boundary
 
 Presenter replacement preserves live app processes, their viewports, layout and
-appearance. Workspace state is not yet saved across a full restart. Installation,
+appearance. Workspace state is persisted in `.wippy/workspace.db`, separately
+from registry history in `.wippy/registry.db`. Installation,
 Hub discovery, workspace overlays, self-editing, agent/MCP adapters and filesystem
 watchers are separate planned subsystems. The current broker is not yet an
 untrusted-code host.
@@ -80,3 +89,10 @@ See [foundation status](docs/FOUNDATION_STATUS.md),
 
 The previous POC is archived outside the source tree and is neither loaded nor
 packed. Native runtime code and third-party dependencies retain their own licenses.
+
+See [current foundation status](docs/FOUNDATION_STATUS.md) and
+[application contracts](docs/APPLICATION_CONTRACTS.md) for ownership and security.
+Terminal runs `/bin/sh -i` with local user permissions; it is not an OS sandbox.
+
+Workspace state defaults to `.wippy/workspace.db`; set `BEE_WORKSPACE_DB` to
+select another local workspace store. This is separate from Wippy registry history.

@@ -1,20 +1,40 @@
 -- A standalone application: workspace owns preferences; view owns only geometry.
 local tty = require("tty")
+local client = require("client")
 local channel = require("channel")
 local process = require("process")
 local uuid = require("uuid")
+local time = require("time")
+local json = require("json")
 local appearance = require("appearance")
 local view = require("view")
-local function main(broker: string?)
+local function main(value: unknown)
+    local launch = client.launch(value)
+    if not launch then error("Invalid application launch") end
+    local broker = launch.broker_pid
+    local announced = false
     local input = assert(tty.events())
     local lifecycle = assert(process.events())
-    local states = assert(process.listen("bee.settings.state", {message = true}))
+    local states = assert(process.listen("bee.appearance.state", {message = true}))
     assert(tty.start())
     local output = assert(tty.surface())
     local width, height = tty.screen_size()
     local preferences = appearance.defaults()
+    local confirmed = preferences
+    local status = ""
+    local pending_ticks = 0
+    local ticker = assert(time.ticker("1s"))
+    local ticks = ticker:channel()
     local pane: view.Pane = "theme"
     local offset = 0
+    local last_checkpoint = ""
+    if launch.resume_state ~= "" then
+        local restored: unknown = json.decode(launch.resume_state)
+        if type(restored) ~= "table" or (restored.pane ~= "theme" and restored.pane ~= "background")
+            or type(restored.offset) ~= "number" or restored.offset < 0 or restored.offset > 10000
+            or restored.offset ~= math.floor(restored.offset) then error("Invalid Settings checkpoint") end
+        pane = restored.pane; offset = math.floor(restored.offset)
+    end
     local hits: {view.Hit} = {}
     local pending = ""
     local running, dirty = true, true
@@ -36,9 +56,10 @@ local function main(broker: string?)
         if pane == "theme" then next_preferences = {theme = appearance.themes()[value].id, background = preferences.background}
         else next_preferences = {theme = preferences.theme, background = appearance.backgrounds()[value]} end
         preferences = next_preferences
-        pending = preferences.theme .. "/" .. preferences.background
+        pending = uuid.v7(); pending_ticks = 0; status = ""
         if broker then
-            process.send(broker, "bee.settings.request", {request_id = uuid.v7(), op = "set", theme = preferences.theme, background = preferences.background})
+            local sent, err = process.send(broker, "bee.appearance.request", {version = 1, request_id = pending, op = "set", theme = preferences.theme, background = preferences.background})
+            if not sent then pending = ""; preferences = confirmed; status = tostring(err) end
         end
         reveal(); dirty = true
     end
@@ -50,27 +71,40 @@ local function main(broker: string?)
     local function switch(next_pane: view.Pane)
         pane = next_pane; offset = 0; reveal(); dirty = true
     end
-    if broker then process.send(broker, "bee.settings.request", {request_id = uuid.v7(), op = "state"}) end
+    if broker then process.send(broker, "bee.appearance.request", {version = 1, request_id = uuid.v7(), op = "state"}) end
     while running do
         if dirty then
-            local frame = view.draw(width, height, preferences, pane, offset)
+            local frame = view.draw(width, height, preferences, pane, offset, status)
             hits = frame.hits
-            output:present(frame.rows, {cursor = {x = 1, y = 1, visible = false}})
+            assert(output:present(frame.rows, {cursor = {x = 1, y = 1, visible = false}}))
+            if not announced then client.ready(launch); announced = true end
+            local checkpoint = json.encode({pane = pane, offset = offset})
+            if checkpoint ~= last_checkpoint then
+                local sent = client.checkpoint(launch, checkpoint)
+                if sent then last_checkpoint = checkpoint end
+            end
             dirty = false
         end
-        local event = channel.select({input:case_receive(), lifecycle:case_receive(), states:case_receive()})
+        local event = channel.select({input:case_receive(), lifecycle:case_receive(), states:case_receive(), ticks:case_receive()})
         if not event.ok then break end
         if event.channel == lifecycle then
             if event.value.kind == process.event.CANCEL then running = false end
+        elseif event.channel == ticks then
+            if pending ~= "" then
+                pending_ticks = pending_ticks + 1
+                if pending_ticks >= 5 then pending = ""; preferences = confirmed; status = "Appearance update timed out"; dirty = true end
+            end
         elseif event.channel == states then
             local message = event.value
             if broker and message:from() == broker then
-                local next_preferences = appearance.decode(message:payload():data())
-                if next_preferences then
+                local payload: unknown = message:payload():data()
+                local next_preferences = appearance.decode(payload)
+                if next_preferences and type(payload) == "table" and payload.version == 1 then
+                    confirmed = next_preferences
                     -- An older acknowledgement must not undo a newer key/click.
-                    local key = next_preferences.theme .. "/" .. next_preferences.background
-                    if pending == "" or pending == key then
+                    if pending == "" or pending == payload.request_id then
                         preferences = next_preferences; pending = ""; dirty = true
+                        status = type(payload.error) == "string" and payload.error or ""
                     end
                 end
             end
@@ -112,6 +146,7 @@ local function main(broker: string?)
             end
         end
     end
+    ticker:stop()
     process.unlisten(states)
     output:close()
     tty.stop()

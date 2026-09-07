@@ -1,141 +1,96 @@
 # Foundation status
 
-The next implementation boundary is specified in
-[Local desktop](LOCAL_DESKTOP.md): workspace bindings and attachment ownership,
-then the maintained shell and a standalone native Terminal. It distinguishes
-the target design from the current core-only checkpoint below.
+Bee is a local terminal desktop with three on-demand default applications:
+Terminal, Settings and Process Manager. A fresh workspace opens no applications;
+later boots restore applications that opted into automatic recovery. The source
+and portable pack load only `src/`; fixtures and the legacy archive are excluded.
+This file and [application contracts](APPLICATION_CONTRACTS.md) describe the
+implemented boundary. Older design documents are proposals where they differ.
 
-The production composition is the desktop core plus standalone **Settings** and **Process Manager** applications. Default boot opens no applications.
-This supersedes earlier checkpoints that bundled Welcome and Colors or started
-Welcome automatically. The large desktop design remains a roadmap, not a claim
-that every subsystem already exists.
+## Ownership
 
-## Production boundary
+| Owner | Responsibility | Replacement boundary |
+|---|---|---|
+| Workspace | Physical terminal, child bootstrap, recovery, routing authenticated messages | Workspace restart |
+| Session | Complete committed desktop projection: scene, stable tabs, preferences | Workspace restart |
+| Broker | Protected app admission, instance/process identities, producer viewports, app lifecycle | Workspace restart |
+| Presenter | Input prediction, drag previews, menus, composition and delegated attachments | Live F12 rejoin |
+| Application | Its own content and child resources | Close/stop then fresh instance |
 
-`wippy.lock` loads only `src/` and has no external module dependencies. Settings and Process Manager are the bundled applications; both launch on demand.
-The loaded registry includes pure UI libraries, scoped process definitions,
-policies and explicit hosts; these are not application instances.
+The workspace caches the session projection; it does not independently edit tabs
+or preferences. Rendering consumes values. App metadata supplies launcher groups
+and presentation roles; core code contains no bundled-app IDs. Shared UI helpers
+are optional; the Terminal uses Wippy's native PTY proxy directly.
 
-The workspace starts a private desktop session, broker and replaceable presenter.
-The session and broker own layout and application lifecycle respectively. The
-workspace retains the physical terminal lease. No fixture, AI, MCP, chat, HTTP,
-SQL, exec provider, workflow, or domain subsystem is installed or started by default.
-The terminal host is an explicit native core resource, not an implicit dependency
-on a test or utility package.
+Applications receive identities before spawn and acknowledge readiness. A spawn
+alone is not an opened application. Readiness has a three-second deadline. Close
+first sends the producer a cooperative close event, then requests termination
+after 250ms. Records remain owned until EXIT; unsuccessful termination reports
+uncertainty rather than claiming the process stopped. Workspace exit starts all
+child cleanup together and does not serially wait for each close deadline.
 
-Every subsequently admitted app runs as its own process. The current admission
-list contains Settings and Process Manager and supports only view-owned apps; it is a protected host declaration,
-not a second application catalog. The broker validates metadata after admission.
-It does not admit an arbitrary process merely because it declares app metadata.
+F12 retires only the presenter. The broker revokes old mounts and binds new ones
+to the fresh PID. App processes, PTYs, viewport content, geometry, tab order and
+preferences survive. Retry exhaustion preserves the last physical frame and
+allows F12 retry or Ctrl+Q exit. Failure of the session or broker ends the workspace.
+Workspace preferences and opt-in app checkpoints survive cold starts in the primary
+workspace database. Settings demonstrates the resume contract. Terminal does not
+claim to resurrect native processes after runtime shutdown.
 
-Child scopes are replaced explicitly. Fixture app scopes deny ambient actions;
-their own terminals work through assigned producer capabilities. Presenter mounts
-are bound to its PID. The bootstrap owner argument is trusted only because private
-core entries are spawned by the trusted workspace entry. The presenter cannot
-spawn processes or create scopes. Before admitting arbitrary code,
-restrict spawn targets and bind attachment creation to authenticated bootstrap
-context. Later sender checks alone do not authenticate a caller-supplied owner.
+## Security
 
-The pure model contains no PID, grant, terminal handle, registry or application
-code. The session owns committed geometry and focus; the presenter previews drags
-and routes input to a requested focus while its session acknowledgement is pending.
-The model supports minimize/restore, collapse and left/right snap through session
-commands, exposed through title controls, shortcuts and window context menus. Window
-messages retain restoration mode, and the decoder rejects minimized focus as
-well as malformed, sparse and duplicate window records. View revocation
-is handled without indexing missing snapshots.
+Ordinary apps receive `process.send` and their producer capability, plus only
+policies named in protected admission bindings. Metadata cannot select grants.
+App scopes explicitly deny scope/context escalation and direct registry/overlay
+mutation. Private core process spawning is denied to apps and the broker. Core
+bootstrap checks the context installed by the workspace, not just a caller-supplied
+owner argument. Receivers authenticate actual sender PIDs before interpreting data.
 
-Rendering receives only value snapshots and cannot launch, message or resize
-applications. The layout library supplies both drawing and pointer geometry;
-the bindings library classifies press and release consistently. Cursor mapping
-respects the focused viewport's content bounds. Collapsed windows retain the
-producer's dimensions instead of shrinking a live application's terminal.
+Settings receives an appearance-write operation grant. Process Manager receives
+read-only runtime metrics plus a broker stop operation grant; core and supervisor
+service control remain protected. Terminal alone receives its named native executor
+and the fixed `/bin/sh -i` launch command. It has no ambient foreign TTY authority.
+Producer capabilities and recipient-bound mounts carry terminal rights.
 
-F12 performs an acknowledged presenter retirement and fresh-PID attachment.
-The broker revokes the previous mounts before granting new ones. Application
-processes, producer viewports, session state and stable tab order survive. The
-physical output holds its last frame until a hydrated presenter draws. Unexpected
-presenter exit has a bounded retry path. Exhaustion or readiness timeout keeps
-the applications and last screen, with F12 to retry and Ctrl+Q to exit. Core
-service failure still ends the workspace.
-This is live rejoin, not disk persistence or a native release update mechanism.
+**Native shells run with the local OS user's authority.** They can access that
+user's files and network, including editable Bee source. Runtime policies isolate
+Lua actors; they do not sandbox native code or protect against the OS account
+owning the files. No untrusted-code sandbox is claimed. An overlay-owning service
+will be the sole runtime publication authority when implemented; direct registry
+mutation is denied to applications today.
 
-## Tests and archive isolation
+## Reproducible runtime and validation
 
-The old implementation and local state live outside the repo at `../bee-legacy/`.
-All 246 previously tracked paths were checked after the move. There are no source
-or package references to that archive. Shells that were already inside it can
-retain a stale logical working-directory prompt; launching their `run.sh` still
-starts the old `casha-shell`. Use the new repository root launcher explicitly.
+`make setup` builds the commit and checksum-verified patch in `runtime/lock.json`.
+It disables ambient Go workspaces and never consumes a checkout's dirty files.
+The patch preserves the native startup, full-width surface and scheduler shutdown
+fixes needed by this desktop. These runtime files retain their upstream MPL-2.0
+license; Bee's own source is MIT. The runtime patch should move upstream before
+a public stable release; carrying it here makes this development checkpoint reproducible.
 
-`tests/lua/` contains unit entries and `examples/fixtures/` contains Welcome and
-Colors. A temporary test workspace composes those with a copy of the core and an
-explicit fixture admission list. Its pinned test dependency is isolated from the
-production lock and pack. These files are never part of default registry loading.
+The workspace alone opens `bee:workspace_db`, a separate SQLite store from runtime
+registry history. Its append-only migration ledger verifies names and checksums;
+newer or altered migrations fail closed. Generation checks reject stale writers.
+Apps checkpoint through their broker; a successful receipt follows database commit.
+See [storage](STORAGE.md) and [application contracts](APPLICATION_CONTRACTS.md).
 
-`make check` verifies the actual source and packed registries match the declared
-core and bundled-app entries, with no fixture/test/legacy definitions. It tests empty
-source and pack boot, plus the optional fixture source/pack interaction suite:
-independent state, scope denial, immediate post-focus key delivery, Tab passthrough,
-active-tab fullscreen preservation, four resize corners, color semantics, shrink
-and growth through 1×1, close and clean exit. Unit cases cover model and decoder
-invariants. The fixture presenter has an injected incarnation marker and crash
-trigger, excluded from core source and pack. Tests prove six explicit rejoins
-and crash recovery, including retry exhaustion and manual retry, preserve
-content, app PID, geometry and tab order without
-releasing the physical screen. The PTY harness applies synchronized output as
-complete frames. Tests use temporary registry stores, not user state.
+`make check` runs typed lint, pure model/protocol/lifecycle tests, import and loaded
+registry audits, and real source/pack terminal acceptance. Native terminal tests
+exercise execution, PTY isolation, input, resize, interruption, rejoin, color fill,
+close and registry/TTY access denial. Acceptance uses disposable stores and never
+modifies a user's workspace history. CI runs the same setup and checks.
 
-The local `.wippy/registry.db` inspected during cleanup contained only an empty
-version-0 changeset, so no saved app changes were being replayed there. The reported
-old sixteen-app UI was launched explicitly as `casha-shell` from the moved POC
-working directory. No user registry data was deleted to address it.
+## Next boundaries
 
-## Remaining gates
+The shell remains the delivery focus. Hub installation, authorized overlay editing,
+MCP, AI drivers, native binary packaging and service/run
+lifetimes are separate subsystems, not unfinished responsibilities of the presenter.
 
-Durable workspace identity, filesystem bindings, persistence, external attachment,
-service/run ownership, application installation, user overlays and native release
-updates are not implemented yet. The broker is not a production untrusted-code admission
-service. The presenter polls cached viewport revisions every 33 ms; load and latency
-need measurement before choosing a different invalidation mechanism.
-
-Native releases update the protected runtime/core. A future single executable
-embeds the same core pack; user data and overlays remain external. The desired
-`bee <application>` path opens the chosen app directly without a dashboard or
-provider wizard. Provider drivers, hooks, threads and MCP remain independent.
-
-The shell now has a cell-native Bee wordmark, one application/status bar, bounded
-Start menu and standalone Settings with 14 themes and 11 backgrounds. Shell
-appearance is retained across presenter replacement. The next persistence boundary
-is durable workspace preferences. Filesystem bindings and an independently installed Terminal follow
-those boundaries. Shared UI libraries are not a mandatory application framework.
-
-## Native startup
-
-The local runtime includes a CLI startup fix: lint/pack progress no longer imports
-a UI dependency that queried terminal background from package initialization.
-That query could block before Bee could draw its boot frame. A native regression
-uses a controlling PTY that never answers queries; the Bee acceptance suite also
-launches the real `run.sh` from another directory without answering terminal queries.
-The runtime change lives in the native checkout; copying the Bee pack alone does
-not upgrade an older executable.
-
-## Latest shell refinement
-
-Start is a compact hierarchical launcher: Tools contains Settings and Process
-Manager. Window actions are contextual, menus support hover without activation,
-and nested levels have a back control instead of an instruction legend. Drag
-previews remain visible until the session commits placement, preventing the old
-bounds from flashing after a drop.
-
-Process Manager samples host processes, supervised services, heap, GC, goroutines
-and scheduler counters once a second while running. Histories retain 60 samples;
-unavailable data and counter resets produce gaps. Scheduler steps are not CPU
-utilization. The broker authenticates its end-app requests and permits only
-workspace-owned app instances. Supervisor inspection does not grant service
-control. Inspection covers processes exposed by runtime hosts, not an OS-wide
-process inventory. Pause suspends sampling; closing the app ends its sampler.
-
-The source now separates `src/core`, `src/ui` and `src/apps` without changing
-registry identities. See PACKAGE_BOUNDARIES.md for the planned multi-package,
-runtime installation and complete authorized self-edit requirements.
+The first resource subsystem should own a workspace's named filesystem roots:
+a stable resource ID, provider, authorized root, display name, and entry points.
+Terminals, file views, Docker mounts and watchers reference those IDs instead of
+embedding host paths into desktop state. Discovery may propose projects; it must
+not authorize a root automatically. Native paths, container roots and virtual
+providers need explicit resolution and containment checks at the provider boundary.
+The terminal currently starts in the runtime's working directory; a resource binding
+will replace that implicit choice once this subsystem exists.

@@ -8,7 +8,7 @@ are stable. Moving a file must not change an application's registry identity.
 |---|---|---|
 | Core | Desktop/session lifetime, composition, focus, geometry, admission and app lifecycle | Runtime primitives and shared UI values |
 | Shared UI | Appearance, wallpaper and reusable presentation helpers | Value contracts; no application authority |
-| Default apps | Settings and local Process Manager | Explicit grants and core protocols |
+| Default apps | Terminal, Settings and local Process Manager | Explicit grants and core protocols |
 | Optional packages | Lookout, coding tools, harnesses, models and other future apps | Published capability/trait contracts |
 | Independent subsystems | Hub discovery/install, overlay editing/review, MCP, workspace storage | Runtime services and authenticated operation contracts |
 | Native Bee extensions | Future coding-specific I/O, file watching and adapters | Native runtime module registration |

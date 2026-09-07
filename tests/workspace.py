@@ -48,7 +48,7 @@ def fixture_workspace(presenter_probe=False):
         document["entries"].append({"name": "test_dependency", "kind": "ns.dependency", "component": "wippy/test", "version": "0.4.17"})
         for entry in document["entries"]:
             if entry["name"] == "application_admission":
-                entry["definitions"] = ["bee.settings:app", "bee.processes:app", "bee.apps:welcome", "bee.apps:palette"]
+                entry["bindings"] += [{"definition_id": identity, "policies": []} for identity in ["bee.apps:welcome", "bee.apps:palette"]]
         host.write_text(yaml.safe_dump(document, sort_keys=False))
         if missing_dependency:
             subprocess.run([str(RUNTIME), "install"], cwd=folder, check=True)

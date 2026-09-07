@@ -28,7 +28,7 @@ local function put(canvas: tty.Canvas, x: integer, y: integer, text: string, wid
     if width <= 0 then return end
     canvas:put(x, y, appearance.style(fg, bg) .. text .. RESET, width)
 end
-function M.draw(width: integer, height: integer, preferences: appearance.Preferences, pane: Pane, offset: integer): Frame
+function M.draw(width: integer, height: integer, preferences: appearance.Preferences, pane: Pane, offset: integer, message: string?): Frame
     local theme = appearance.theme(preferences.theme)
     local grid = M.grid(width, height)
     local themes, backgrounds = appearance.themes(), appearance.backgrounds()
@@ -96,6 +96,7 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
     local range = tostring(offset + 1) .. "–" .. tostring(last) .. "/" .. tostring(count)
     local status = "Theme: " .. theme.title .. "  Background: " .. preferences.background
     if width < 48 then status = pane == "theme" and ("Theme: " .. theme.title) or ("Background: " .. preferences.background) end
+    if message and message ~= "" then status = message:gsub("%c", " ") end
     put(canvas, 2, height - 2, status, width - 2, theme.text, theme.surface)
     local pager = " ‹ " .. range .. " › "
     if tty.text.width(pager) > width - 2 then pager = " ‹  › " end

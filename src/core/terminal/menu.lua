@@ -2,23 +2,34 @@
 local tty = require("tty")
 local appearance = require("appearance")
 local model = require("model")
+type Descriptor = {definition_id: string, title: string, group: string, role: string}
 type Item = {label: string, action: string, enabled: boolean, children: {Item}?}
 type State = {selected: integer, offset: integer, kind: string?, target: string?, x: integer?, y: integer?, path: {integer}?}
 type Panel = {x: integer, y: integer, width: integer, height: integer, capacity: integer, inset: integer}
 type Response = {state: State, action: string, close: boolean}
 local M = {}
-function M.items(focused: boolean, initial: boolean, has_windows: boolean?): {Item}
-    local items: {Item} = {
-        {label = "Tools                          ›", action = "", enabled = true, children = {
-            {label = "Settings", action = "settings", enabled = true},
-            {label = "Process Manager", action = "processes", enabled = true},
-        }},
-        {label = "Exit                     Ctrl+Q", action = "quit", enabled = true},
-    }
+function M.items(focused: boolean, initial: boolean, has_windows: boolean?, catalog: {Descriptor}?): {Item}
+    local items: {Item} = {}
+    for _, descriptor in ipairs(catalog or {}) do
+        local current = items
+        for part in descriptor.group:gmatch("[^/]+") do
+            local found: Item? = nil
+            for _, item in ipairs(current) do
+                if item.children and item.action == "group:" .. part then found = item; break end
+            end
+            if not found then
+                found = {label = part .. "  ›", action = "group:" .. part, enabled = true, children = {}}
+                current[#current + 1] = found
+            end
+            if found.children then current = found.children end
+        end
+        current[#current + 1] = {label = descriptor.title, action = "open:" .. descriptor.definition_id, enabled = true}
+    end
     if initial then table.insert(items, 1, {label = "Open application         Ctrl+N", action = "initial", enabled = true}) end
+    items[#items + 1] = {label = "Exit                     Ctrl+Q", action = "quit", enabled = true}
     return items
 end
-function M.entries(state: State, scene: model.Scene, initial: boolean): {Item}
+function M.entries(state: State, scene: model.Scene, initial: boolean, catalog: {Descriptor}?): {Item}
     if state.kind == "window" then
         for _, win in ipairs(scene.windows) do
             if win.id == state.target then
@@ -35,14 +46,17 @@ function M.entries(state: State, scene: model.Scene, initial: boolean): {Item}
         end
         return {}
     elseif state.kind == "desktop" then
-        return {
-            {label = "Appearance", action = "settings", enabled = true},
-            {label = "Process Manager", action = "processes", enabled = true},
-            {label = "Restore windows", action = "restore_all", enabled = #scene.windows > 0},
-            {label = "Reload desktop              F12", action = "rejoin", enabled = true},
-        }
+        local items: {Item} = {}
+        for _, descriptor in ipairs(catalog or {}) do
+            if descriptor.role == "appearance" or descriptor.role == "inspection" then
+                items[#items + 1] = {label = descriptor.title, action = "open:" .. descriptor.definition_id, enabled = true}
+            end
+        end
+        items[#items + 1] = {label = "Restore windows", action = "restore_all", enabled = #scene.windows > 0}
+        items[#items + 1] = {label = "Reload desktop              F12", action = "rejoin", enabled = true}
+        return items
     end
-    local items = M.items(scene.focus ~= "", initial, #scene.windows > 0)
+    local items = M.items(scene.focus ~= "", initial, #scene.windows > 0, catalog)
     for _, index in ipairs(state.path or {}) do
         local item = items[index]
         if item and item.children then items = item.children else break end
@@ -69,6 +83,7 @@ function M.fit(state: State, panel: Panel, count: integer): State
     return {selected = selected, offset = offset, kind = state.kind, target = state.target, x = state.x, y = state.y, path = state.path}
 end
 function M.move(state: State, step: integer, items: {Item}, panel: Panel): State
+    if #items == 0 then return state end
     local index = state.selected
     for _ = 1, #items do
         index = (index - 1 + step + #items) % #items + 1
@@ -112,11 +127,14 @@ function M.respond(state: State, panel: Panel, items: {Item}, event: unknown): R
                 local direction = event.key_type == "pgup" and -1 or 1
                 local index = math.floor(math.max(1, math.min(#items, next_state.selected + direction * math.max(1, panel.capacity))))
                 next_state = M.fit({selected = index, offset = next_state.offset, kind = state.kind, target = state.target, x = state.x, y = state.y, path = state.path}, panel, #items)
-                if not items[index].enabled then next_state = M.move(next_state, direction, items, panel) end
+                if items[index] and not items[index].enabled then next_state = M.move(next_state, direction, items, panel) end
             elseif event.key_type == "home" then next_state = M.fit({selected = 1, offset = 0, kind = state.kind, target = state.target, x = state.x, y = state.y, path = state.path}, panel, #items)
             elseif event.key_type == "end" then next_state = M.fit({selected = #items, offset = 0, kind = state.kind, target = state.target, x = state.x, y = state.y, path = state.path}, panel, #items)
-            elseif event.key_type == "enter" or event.key_type == "right" then
+            elseif event.key_type == "enter" then
                 activate(next_state.selected)
+            elseif event.key_type == "right" then
+                local item = items[next_state.selected]
+                if item and item.children then activate(next_state.selected) end
             elseif event.key_type == "left" or event.key_type == "backspace" then back()
             elseif event.key_type == "f9" and event.alt == true then
                 for _, item in ipairs(items) do if item.action == "minimize" and item.enabled then action = "minimize" end end

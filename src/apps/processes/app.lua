@@ -1,5 +1,6 @@
 -- On-demand runtime observer. Only the broker can end a workspace application.
 local tty = require("tty")
+local client = require("client")
 local process = require("process")
 local channel = require("channel")
 local time = require("time")
@@ -7,11 +8,15 @@ local uuid = require("uuid")
 local appearance = require("appearance")
 local probe = require("probe")
 local view = require("view")
-local function main(broker: string?)
+local function main(value: unknown)
+    local launch = client.launch(value)
+    if not launch then error("Invalid application launch") end
+    local broker = launch.broker_pid
+    local announced = false
     local input = assert(tty.events())
     local lifecycle = assert(process.events())
-    local states = assert(process.listen("bee.settings.state", {message = true}))
-    local replies = assert(process.listen("bee.processes.reply", {message = true}))
+    local states = assert(process.listen("bee.appearance.state", {message = true}))
+    local replies = assert(process.listen("bee.application.result", {message = true}))
     assert(tty.start())
     local output = assert(tty.surface())
     local ticker = assert(time.ticker("1s"))
@@ -27,6 +32,7 @@ local function main(broker: string?)
     local paused, confirming, by_steps, services = false, false, false, false
     local rows: {view.Row} = {}
     local status, pending = "", ""
+    local pending_ticks = 0
     local running, dirty = true, true
     local function order()
         rows = view.items(snapshot, services)
@@ -76,12 +82,13 @@ local function main(broker: string?)
         if not services and broker and selected ~= "" and pending == "" then confirming = true; dirty = true end
     end
     order()
-    if broker then process.send(broker, "bee.settings.request", {request_id = uuid.v7(), op = "state"}) end
+    if broker then process.send(broker, "bee.appearance.request", {version = 1, request_id = uuid.v7(), op = "state"}) end
     while running do
         if dirty then
             local frame = view.draw(width, height, snapshot, history, preferences, selected, offset, paused, status, confirming, services, rows, by_steps)
             first, capacity, offset = frame.first, frame.capacity, frame.offset
-            output:present(frame.rows, {cursor = {x = 1, y = 1, visible = false}})
+            assert(output:present(frame.rows, {cursor = {x = 1, y = 1, visible = false}}))
+            if not announced then client.ready(launch); announced = true end
             dirty = false
         end
         local event = channel.select({input:case_receive(), lifecycle:case_receive(), ticks:case_receive(), states:case_receive(), replies:case_receive()})
@@ -89,6 +96,10 @@ local function main(broker: string?)
         if event.channel == lifecycle then
             if event.value.kind == process.event.CANCEL then break end
         elseif event.channel == ticks then
+            if pending ~= "" then
+                pending_ticks = pending_ticks + 1
+                if pending_ticks >= 5 then pending = ""; status = "Stop result timed out; refresh before retrying"; dirty = true end
+            end
             if not paused then sample() end
         elseif event.channel == states then
             local msg = event.value
@@ -100,7 +111,7 @@ local function main(broker: string?)
             local msg = event.value
             if broker and msg:from() == broker then
                 local data: unknown = msg:payload():data()
-                if type(data) == "table" and data.request_id == pending and type(data.error) == "string" then
+                if type(data) == "table" and data.version == 1 and pending ~= "" and data.request_id == pending and type(data.error) == "string" then
                     status = data.error ~= "" and data.error or "Application ended"
                     pending = ""; sample()
                 end
@@ -113,8 +124,8 @@ local function main(broker: string?)
                 local key = data.key_type
                 if confirming then
                     if key == "enter" and broker then
-                        pending = uuid.v7()
-                        process.send(broker, "bee.processes.request", {request_id = pending, op = "close", pid = selected})
+                        pending = uuid.v7(); pending_ticks = 0
+                        process.send(broker, "bee.application.control", {version = 1, request_id = pending, op = "stop", execution_pid = selected})
                         confirming = false; status = "Ending application…"; dirty = true
                     elseif key == "esc" or key == "escape" then confirming = false; dirty = true end
                 elseif key == "tab" then

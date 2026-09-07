@@ -62,7 +62,8 @@ function M.draw(scene: model.Scene, order: {string}, status: string, label: stri
     end
     local restore = restore_id ~= "" and width >= 36 and " −  ◇  × " or ""
     local right = ""
-    if width >= 60 then right = " " .. label .. "  │  " .. (status ~= "" and status or "Ready") .. " "
+    if status ~= "" and width >= 36 then right = " " .. status .. " "
+    elseif width >= 60 then right = " " .. label .. "  │  Ready "
     elseif width >= 36 then right = " " .. (status ~= "" and status or "Ready") .. " " end
     right = tty.text.truncate(right, math.floor(math.max(0, width // 2)))
     local room = math.floor(math.max(0, width - 7 - tty.text.width(right) - tty.text.width(restore)))

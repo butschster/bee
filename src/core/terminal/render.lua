@@ -16,7 +16,7 @@ local function styled(style: string, text: string): string return style .. text 
 
 function M.draw(scene: model.Scene, order: {string}, contents: {[string]: Content},
     capture: layout.Capture?, preview: model.Rect?, status: string, label: string,
-    preferences: appearance.Preferences?, start: menu.State?, initial: boolean?): Frame
+    preferences: appearance.Preferences?, start: menu.State?, initial: boolean?, catalog: {menu.Descriptor}?): Frame
     local prefs = preferences or appearance.defaults()
     local theme = appearance.theme(prefs.theme)
     local FRAME = appearance.style(theme.border, theme.surface)
@@ -55,7 +55,7 @@ function M.draw(scene: model.Scene, order: {string}, contents: {[string]: Conten
         canvas:put(1, 1, strip.text, width)
     end
     if start then
-        local items = menu.entries(start, scene, initial == true)
+        local items = menu.entries(start, scene, initial == true, catalog)
         local panel = menu.panel(width, height, #items, start)
         menu.draw(canvas, panel, menu.fit(start, panel, #items), items, prefs)
         cursor.visible = false

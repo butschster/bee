@@ -1,17 +1,41 @@
 local process = require("process")
 local channel = require("channel")
-local model = require("model")
+local ctx = require("ctx")
+local commands = require("commands")
+local state = require("state")
+local appearance = require("appearance")
 
 -- Only the attachment owner can mutate this private desktop session.
 -- No application launch, terminal lease, or opaque handle enters its state.
-local function main(owner: string, width: integer, height: integer)
-    local commands = assert(process.listen("bee.desktop.command", {message = true}))
+local function main(owner: string, width: integer, height: integer, preferences: unknown)
+    local command_channel = assert(process.listen("bee.desktop.command", {message = true}))
     local lifecycle = assert(process.events())
+    local bootstrap: unknown = ctx.get("bee.workspace_owner")
+    if bootstrap ~= owner or owner == "" then error("Untrusted session bootstrap") end
     assert(process.monitor(owner))
-    local scene = model.new(width, height)
-    assert(process.send(owner, "bee.desktop.scene", scene))
+    local desktop = state.new(width, height, appearance.decode(preferences))
+
+    local function send_scene()
+        assert(process.send(owner, "bee.desktop.scene", state.envelope(desktop)))
+    end
+
+    local function send_ack(request_id: string, error_code: string, error: string)
+        local envelope = state.envelope(desktop)
+        -- Keep scene as the historical bare model.Scene while returning the
+        -- complete projection so a preference result cannot race its scene.
+        process.send(owner, "bee.desktop.ack", {
+            version = 1, request_id = request_id,
+            scene = envelope.scene,
+            tabs = envelope.tabs,
+            preferences = envelope.preferences,
+            error_code = error_code,
+            error = error,
+        })
+    end
+
+    send_scene()
     while true do
-        local selected = channel.select({commands:case_receive(), lifecycle:case_receive()})
+        local selected = channel.select({command_channel:case_receive(), lifecycle:case_receive()})
         if not selected.ok then break end
         if selected.channel == lifecycle then
             if selected.value.kind == process.event.CANCEL then break end
@@ -19,38 +43,38 @@ local function main(owner: string, width: integer, height: integer)
         else
             local msg = selected.value
             if msg:from() == owner then
-                local data: unknown = msg:payload():data()
-                if type(data) == "table" and type(data.op) == "string" then
-                    if data.op == "shutdown" then break end
-                    local before = scene
-                    if data.op == "screen" and type(data.width) == "number" and type(data.height) == "number" then
-                        scene = model.resize_screen(scene, math.floor(data.width), math.floor(data.height))
-                    elseif type(data.id) == "string" then
-                        if data.op == "add" and type(data.instance_id) == "string" and type(data.title) == "string" then
-                            scene = model.add(scene, data.id, data.instance_id, data.title)
-                        elseif data.op == "focus" then scene = model.focus(scene, data.id)
-                        elseif data.op == "fullscreen" then scene = model.toggle_fullscreen(scene, data.id)
-                        elseif data.op == "minimize" then scene = model.minimize(scene, data.id)
-                        elseif data.op == "collapse" then scene = model.collapse(scene, data.id)
-                        elseif data.op == "restore" then scene = model.restore(scene, data.id)
-                        elseif data.op == "snap" and type(data.side) == "string" then
-                            scene = model.snap(scene, data.id, data.side)
-                        elseif data.op == "remove" then scene = model.remove(scene, data.id)
-                        elseif data.op == "place" and type(data.x) == "number" and type(data.y) == "number"
-                            and type(data.width) == "number" and type(data.height) == "number" then
-                            scene = model.place(scene, data.id, {x = math.floor(data.x), y = math.floor(data.y),
-                                width = math.floor(data.width), height = math.floor(data.height)})
-                        end
+                local raw: unknown = msg:payload():data()
+                local command = commands.decode(raw)
+                if command then
+                    if command.op == "shutdown" then
+                        if command.request_id then send_ack(command.request_id, "", "") end
+                        break
                     end
-                    if scene ~= before or data.op == "snapshot" or data.op == "place" then process.send(owner, "bee.desktop.scene", scene) end
-                    -- No-op commands also acknowledge the caller's input intent.
-                    if type(data.request_id) == "string" and #data.request_id <= 80 then
-                        process.send(owner, "bee.desktop.ack", {request_id = data.request_id, scene = scene})
+
+                    local stale = command.op == "appearance"
+                        and command.expected_revision ~= nil
+                        and command.expected_revision ~= desktop.scene.revision
+                    if stale then
+                        if command.request_id then send_ack(command.request_id, "stale_revision", "Desktop revision changed") end
+                    else
+                        local before = desktop
+                        desktop = state.reduce(desktop, command)
+                        if desktop ~= before or command.op == "snapshot" or command.op == "place" then send_scene() end
+                        -- No-op commands still acknowledge the caller's input intent.
+                        if command.request_id then send_ack(command.request_id, "", "") end
+                    end
+                else
+                    -- Preserve correlation for malformed requests when the
+                    -- caller supplied a bounded request ID. No state change
+                    -- can occur because decoding failed at the boundary.
+                    if type(raw) == "table" and type(raw.request_id) == "string"
+                        and #raw.request_id <= 80 then
+                        send_ack(raw.request_id, "invalid_command", "Command rejected")
                     end
                 end
             end
         end
     end
-    process.unlisten(commands)
+    process.unlisten(command_channel)
 end
 return {main = main}

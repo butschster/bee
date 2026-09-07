@@ -5,7 +5,7 @@ entries:
   kind: process.lua
   source: file://main.lua
   method: main
-  modules: [tty, process, channel, time, uuid]
+  modules: [tty, process, channel, time, uuid, ctx]
   imports:
     model: bee.desktop:model
     decode: bee.protocol:decode
