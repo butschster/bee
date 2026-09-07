@@ -1,6 +1,18 @@
 version: '1.0'
 namespace: bee.protocol
 entries:
+- name: application_test
+  kind: function.lua
+  source: file://application_test.lua
+  method: run
+  meta:
+    type: test
+    suite: bee
+  imports:
+    test: wippy.test:test
+    contract: bee.protocol:application
+    client: bee.application:client
+    arguments: bee.application:arguments
 - name: decode_test
   kind: function.lua
   source: file://decode_test.lua

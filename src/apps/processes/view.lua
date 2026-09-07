@@ -46,8 +46,8 @@ function M.draw(width: integer, height: integer, snapshot: probe.Snapshot, histo
     end
     canvas:clear(appearance.style(theme.text, theme.surface) .. " \27[0m")
     local state = paused and "Paused" or "Live · 1s"
-    put(2, 1, " Processes ", 11, services and theme.muted or theme.ground, services and theme.surface or theme.accent)
-    if width >= 26 then put(14, 1, " Services ", 10, services and theme.ground or theme.muted, services and theme.accent or theme.surface) end
+    put(2, 1, " Processes ", 11, services and theme.muted or appearance.selection_text(theme), services and theme.surface or theme.accent)
+    if width >= 26 then put(14, 1, " Services ", 10, services and appearance.selection_text(theme) or theme.muted, services and theme.accent or theme.surface) end
     if height >= 13 and width >= 48 then
         put(2, 2, state .. "  ·  " .. tostring(#rows) .. (services and " services" or " processes"), width - 2, theme.muted)
     end
@@ -80,7 +80,7 @@ function M.draw(width: integer, height: integer, snapshot: probe.Snapshot, histo
         local item = rows[next_offset + row]
         if item then
             local active = item.pid == selected
-            local fg, bg = active and theme.ground or theme.text, active and theme.accent or theme.surface
+            local fg, bg = active and appearance.selection_text(theme) or theme.text, active and theme.accent or theme.surface
             put(1, first + row - 1, string.rep(" ", width), width, fg, bg)
             local room = math.floor(math.max(1, width >= 38 and width - 24 or width - 2))
             local label = item.source ~= "" and item.source or item.pid

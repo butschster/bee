@@ -1,9 +1,10 @@
 -- Small application lifecycle adapter. No grants, registry access or UI framework.
 local process = require("process")
 local uuid = require("uuid")
+local arguments = require("arguments")
 local M = {}
 type Launch = {version: integer, broker_pid: string, workspace_pid: string, instance_id: string,
-    view_id: string, definition_id: string, definition_revision: string, registry_revision: string, launch_token: string, resume_schema: string, resume_state: string}
+    view_id: string, definition_id: string, definition_revision: string, registry_revision: string, launch_token: string, resume_schema: string, resume_state: string, arguments: {string}}
 local function field(value: unknown, size: integer): string?
     if type(value) ~= "string" or value == "" or #value > size or value:find("%c") then return nil end
     return value
@@ -18,8 +19,10 @@ function M.launch(value: unknown): Launch?
     local schema = type(value.resume_schema) == "string" and value.resume_schema or ""
     local state = type(value.resume_state) == "string" and value.resume_state or ""
     if #schema > 80 or #state > 65536 then return nil end
+    local args = arguments.decode(value.arguments)
+    if not args then return nil end
     return {version = 1, broker_pid = broker, workspace_pid = workspace, instance_id = instance,
-        view_id = view, definition_id = definition, definition_revision = revision, registry_revision = registry_revision, launch_token = token, resume_schema = schema, resume_state = state}
+        view_id = view, definition_id = definition, definition_revision = revision, registry_revision = registry_revision, launch_token = token, resume_schema = schema, resume_state = state, arguments = args}
 end
 function M.ready(launch: Launch)
     assert(process.send(launch.broker_pid, "bee.application.ready", {version = 1, instance_id = launch.instance_id,

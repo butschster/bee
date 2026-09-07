@@ -10,7 +10,7 @@ A new workspace starts with an empty desktop. Preferences and opted-in apps
 (such as Settings) resume from the workspace database. **BEE / F1 → Tools** opens Settings or
 Process Manager; **BEE / F1 → Terminal** opens a normal shell. Each application runs in its own process.
 
-Settings offers 14 themes and 11 backgrounds. Process Manager shows live process
+Settings offers 16 themes and 11 backgrounds. Process Manager shows live process
 and service state, heap and scheduler charts, GC counters and queue depth. It can
 end workspace applications through the broker; core processes remain protected.
 

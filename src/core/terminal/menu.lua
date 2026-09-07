@@ -186,7 +186,7 @@ function M.draw(canvas: tty.Canvas, panel: Panel, state: State, items: {Item}, p
         local item = items[index]
         if item then
             local style = item.enabled and normal or appearance.style(theme.border, theme.surface)
-            if index == state.selected then style = appearance.style(theme.ground, theme.accent) end
+            if index == state.selected then style = appearance.style(appearance.selection_text(theme), theme.accent) end
             canvas:put(panel.x + 1, panel.y + panel.inset + row, style .. " " .. item.label .. string.rep(" ", inside) .. "\27[0m", inside)
         end
     end

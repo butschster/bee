@@ -54,7 +54,7 @@ function M.draw(scene: model.Scene, order: {string}, status: string, label: stri
     local theme = appearance.theme(preferences.theme)
     local normal = appearance.style(theme.text, theme.surface)
     local muted = appearance.style(theme.muted, theme.surface)
-    local active = appearance.style(theme.ground, theme.accent)
+    local active = appearance.style(appearance.selection_text(theme), theme.accent)
     local width = scene.width
     local restore_id = ""
     for _, win in ipairs(model.visible(scene)) do

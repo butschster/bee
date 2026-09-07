@@ -82,6 +82,13 @@ modifies a user's workspace history. CI runs the same setup and checks.
 
 ## Next boundaries
 
+The isolated Lua thread prototype is exercised by `make threads` and `make check`.
+It proves bounded durable replay and native contract actor/scope framing; it is
+not loaded in production. The broker now accepts bounded launch arguments, but
+desktop argument selection, a background run owner and the live test-status app
+remain unfinished. See [threads](THREADS.md) for exact proof limits and
+[workspace attachments](WORKSPACE_ATTACHMENTS.md) for the proposed identity split.
+
 The shell remains the delivery focus. Hub installation, authorized overlay editing,
 MCP, AI drivers, native binary packaging and service/run
 lifetimes are separate subsystems, not unfinished responsibilities of the presenter.

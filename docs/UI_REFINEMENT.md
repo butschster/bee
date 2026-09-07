@@ -14,7 +14,7 @@ Four focused passes prepare the desktop for the next foundation phase.
    resize and application closure release capture safely. Regression scenarios
    send shortcuts and text in the same terminal read.
 3. **Appearance and small windows.** Settings remains an independent process.
-   Its 14 themes and 11 backgrounds have clickable previews using the same
+   Its 16 themes and 11 backgrounds have clickable previews using the same
    wallpaper renderer as the desktop. Wheel and Page Up/Down browse without
    changing preferences. Short windows use compact selection controls. Frame
    and body backgrounds agree across light and dark themes.
@@ -25,8 +25,8 @@ Four focused passes prepare the desktop for the next foundation phase.
    exclude legacy code, fixtures and test entries from the production package.
 
 Live presenter replacement preserves application producers, window state and
-appearance. A full runtime restart still loses workspace state. Local SQLite
-migrations and application checkpoint/restore are the next phase, as described
+appearance. Local SQLite migrations and opt-in application checkpoint/restore
+now preserve workspace state across full restarts, as described
 in [WORKSPACE_STATE.md](WORKSPACE_STATE.md). General installation, MCP and agent
 drivers remain separate from the desktop.
 
@@ -51,3 +51,61 @@ stable workspace and session processes, which F12 does not replace.
 The panel-colored Settings frame is retained: the frame and body share one
 surface color, with contrast against the desktop. This avoids mismatched border
 bands across light and dark themes.
+
+Compact Settings now retains an error row and truncates long selection labels
+with an ellipsis. Wallpaper previews use the desktop background token, including
+Windows Classic. A failed final drag-placement send releases capture and reports
+the error instead of waiting indefinitely for an acknowledgement that cannot
+arrive. The successful drag handoff still retains its preview until committed.
+
+
+## Remaining UI requests and current boundary
+
+The maintained shell includes standalone Settings, themes/background previews,
+nested Start navigation with hover, title/tab context menus, four-corner resizing,
+minimize/maximize/restore, and a process/service monitor. Source/pack acceptance
+covers these interactions and the drag handoff. DOS Blue and Windows Classic add
+retro palettes; selection text has its own semantic color so navy selections
+remain readable on a teal desktop. Background choice remains independent; Solid
+is the closest match to the classic desktops.
+
+The reported Claude resize/repeated-text artifact remains unconfirmed, not fixed.
+The boot logo remains the current block wordmark; it has not received a new visual
+approval. App icons exist in metadata, but an icon-only taskbar preference is not
+implemented. The legacy demo Studio/chat/training apps are not restored into the
+new core. Agent-driven layout/settings operations are not yet published through
+MCP. These requests must not disappear behind the subsystem roadmap.
+
+## Instance titles and accents (pending)
+
+Multiple terminals need distinguishable names. Keep the definition's launcher
+title, the application's announced instance title, and the user's title override
+separate. Display the user override first, then the announced title, then the
+definition title. Clearing the override returns to the latest announced title.
+Renaming never changes definition, instance, view or workspace identity.
+
+An app may announce only its own title through an authenticated broker operation;
+the broker checks actual sender PID, instance/view IDs and launch token. Bound
+titles, reject terminal controls, coalesce repeated announcements and commit
+changes through the session. A user override must survive further announcements
+and presenter replacement. Save overrides with supported application restoration;
+do not imply that saving a Terminal label resurrects its dead native process.
+
+Expose Rename and an optional accent selector in the title/tab context menu.
+Accents distinguish instances in tabs and frame details, remain readable in every
+theme and do not override application content backgrounds or workspace labels.
+The future client-layout owner owns user labels and accents; the application owns
+its announced title.
+
+Native programs commonly announce titles using OSC 0/2. The current Bee Terminal
+attachment exposes no title event in the inspected TTY/proxy boundary. Verify and,
+if needed, add a bounded native title notification there, then let the Terminal
+app forward it through the same title operation. Do not parse or duplicate the
+PTY output stream in Lua. Programs that do not announce a title can still be
+renamed manually.
+
+Acceptance must cover two independently named terminals, unauthorized cross-app
+rename, control/oversize rejection, repeated announcements while an override is
+active, clearing the override, minimized/overflow tabs, presenter rejoin and
+supported cold restore. Native OSC reporting needs a real PTY test, including
+split escape sequences; an API-only test does not prove that path.

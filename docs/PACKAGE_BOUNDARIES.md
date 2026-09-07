@@ -61,8 +61,7 @@ The next proposed slice is [durable threads and subscriptions](FOUNDATION_NEXT.m
 with transport-neutral authorization and MCP as an adapter. Publication remains
 a separate authority even when its requests and receipts are carried on threads.
 
-Kickside component compatibility is an early acceptance requirement. Prove a
-minimal pinned component/contract host before creating Bee-specific equivalents;
-then add threads and other providers through that seam. Optional extension
-requirements must not become mandatory desktop boot dependencies. Backend
-contracts and web presentation have separate host requirements.
+Bee must remain self-sufficient. Kickside components are optional later extensions,
+not a prerequisite or current compatibility milestone. Domain adapters should
+preserve explicit resource and authorization boundaries so integration remains
+possible without coupling the desktop to a web host or external platform.

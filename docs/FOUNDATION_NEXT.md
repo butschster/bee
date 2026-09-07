@@ -44,20 +44,12 @@ checkpoint sequences, workspace UUIDs and pinned revisions. The agent guide and
 workspace-state page now describe the actual implementation. Historical studies
 remain labeled references. There is no shipped agent-facing callable API yet.
 
-## Early compatibility requirement
+## Self-sufficient foundation
 
-Kickside components must become installable extensions early, not after Bee has
-invented competing resource, thread and connection models. The first compatibility
-fixture is the minimum pinned component/contract host with SQLite migrations,
-actor scope and lifecycle wiring. Add threads on that verified base. Keep this
-fixture outside production until its dependency/startup closure is understood.
-The production desktop must still boot without optional extensions.
-
-The fixture supplies the installer contract: dependency versions, host requirements,
-storage/migration ownership, policy bindings, readiness and teardown. First prove
-composition/restart; then prove runtime installation and catalog refresh. Passing
-a static composition test is not a live-install claim. Backend contracts can be
-useful immediately without porting each module's web UI.
+Bee's primary work has no Kickside dependency or compatibility gate. The current
+priority is Settings/UI and a small Bee-owned thread/subscriber proof. Kickside
+components remain optional future integrations. Their architecture is a reference,
+not a required host or an implementation dependency.
 
 ## Next: durable threads shared by participants
 
@@ -67,8 +59,7 @@ connectors and hooks can participate through the same authorized contract.
 A thread view is optional and can close without deleting the resource or stopping
 its consumers. The desktop's transient window commands remain process messages.
 
-Use the Kickside component/thread contracts if their minimum host can be proved.
-The inspected reference is `~/kickside/main` at
+For historical comparison only, the inspected Kickside reference is `~/kickside/main` at
 `6c994a67c7a833b78f278c0443f08abf92670e39`:
 
 - `app/src/app/docs/kickside-development/03-threads-events-projections.md`
@@ -79,23 +70,21 @@ The inspected reference is `~/kickside/main` at
 Kickside addresses a component's thread by the component ID. Its writer gates
 access through the component authority, owns transactions and sequencing, and
 supports external dedupe identities. Notifications wake readers; the durable log
-remains authoritative. Projection execution carries an actor identity. Reuse that
-model rather than inventing a parallel chat journal or reading its private tables.
-Source inspection is not proof that the full dependency closure runs in Bee.
+remains authoritative. Projection execution carries an actor identity. Bee can retain
+these useful separation principles without importing the implementation. No
+Kickside dependency closure has been admitted into Bee.
 
 ### First implementation gate
 
-Build an isolated fixture using a coherent pinned component/core/contract closure
-and local SQLite. Supply the documented DB, scope, process host and lifecycle
-requirements. Prove two participants, create/open, denied access, concurrent
-append, replay, restart and teardown. Inventory which services and migrations
-actually start. No models, chat UI or GitHub dependency is needed for this gate.
-If the closure cannot run minimally, record the exact dependency or runtime gap
-and extract/fix that seam; do not silently substitute a second component system.
+Build an isolated Bee-owned fixture on Wippy and local SQLite. Prove authenticated
+participants, ordered append, dedupe, denied access, replay, restart and bounded
+subscription delivery. Demonstrate a real test-status projection. Keep it outside
+production until the protocol and lifecycle are reviewed. No models, MCP, Hub or
+Kickside dependency is required for this first proof.
 
 ### Minimum communication contract
 
-These are semantic requirements; exact Bee adapter names follow the reuse proof.
+These are semantic requirements; exact APIs follow the standalone prototype proof.
 
 | Operation | Required behavior |
 |---|---|
@@ -142,6 +131,28 @@ A durable consumer cursor is distinct from the app's visual browsing cursor.
 
 ## Hooks, connections and publication after that proof
 
+Harness hook adapters and application producers append through the same thread
+owner. Bind the adapter to an authenticated source; retain its original hook
+name, stable source-event identity, session/run reference and event schema version.
+Do not infer a successful tool operation merely because a generic hook fired.
+Preserve source timestamps as metadata; committed sequence determines local order.
+Adapters differ by harness capability, so lack of a hook must be explicit.
+
+Parent/child thread relationships describe organization, not inherited permission
+or automatic event forwarding. A project can contain run threads and those runs
+can contain worker threads. Validate parent existence and prevent cycles; reading
+a parent must not reveal unauthorized child content. Cross-thread causes use
+explicit event references and correlation. A summary subscriber may publish an
+aggregate only to an audience authorized to receive its source information.
+
+Hook handling separates observation from effects. A subscriber maintains its own
+cursor and can rebuild a test-status projection after restart. A trigger that
+runs code needs an independently admitted execution identity and a durable work
+receipt keyed to the source event. Duplicate hook delivery must not create a new
+logical request. Self-generated events need explicit filtering/causation guards
+and bounded fan-out to avoid trigger loops. Cancellation, timeout and retry are
+separate outcomes; a timed-out external effect can still have happened.
+
 A visualization folds events. A hook may cause external effects and needs its own
 admitted execution identity, idempotency, bounded attempts and failure reporting.
 Assume at-least-once consumption; do not promise exactly-once GitHub or shell
@@ -170,7 +181,7 @@ source and activation records; durable installation needs the publication lane.
 Keeper's `keeper/src/keeper/hub/service.lua` is the plan/publication/migration
 reference. No cross-database atomic rollback is implied by a registry receipt.
 
-Deliver threads plus one MCP participant and a real inspector first; then add
+Deliver the standalone thread/test-status proof first, then MCP and a real inspector; then add
 subscriber execution, local publication/catalog refresh, and Hub acquisition.
 Provider-specific agent drivers and richer project dashboards consume these
 contracts later. Keep each subsystem independently testable and installable.

@@ -386,7 +386,7 @@ def core_boot(packed):
             ui.key(b"\x1b[6~")
             ui.wait("Ember")
             ui.wait("Theme: Honey")
-            pager_y, pager_line = next((y, line) for y, line in enumerate(ui.screen.display, 1) if "/14" in line and "‹" in line)
+            pager_y, pager_line = next((y, line) for y, line in enumerate(ui.screen.display, 1) if "/16" in line and "‹" in line)
             back_x = pager_line.index("‹") + 1
             ui.mouse(0, back_x, pager_y)
             ui.mouse(0, back_x, pager_y, True)
@@ -402,10 +402,14 @@ def core_boot(packed):
             ui.wait("Theme: Ocean")
             ui.key(b"\x1b[H")
             ui.wait("Theme: Honey")
-            for theme in ["Ocean", "Forest", "Plum", "Ember", "Graphite", "Paper", "Aurora", "Rose", "Cobalt", "Sand", "Midnight", "Lavender", "Mono"]:
+            for theme in ["Ocean", "Forest", "Plum", "Ember", "Graphite", "Paper", "Aurora", "Rose", "Cobalt", "Sand", "Midnight", "Lavender", "Mono", "DOS Blue", "Windows Classic"]:
                 ui.key(b"\x1b[C")
                 ui.wait("Theme: " + theme)
                 ui.settings_frame_colors()
+                if theme == "Windows Classic":
+                    row, line = next((y, line) for y, line in enumerate(ui.screen.display) if "Themes" in line)
+                    cell = ui.screen.buffer[row][line.index("Themes")]
+                    assert (cell.fg, cell.bg) == ("ffffff", "000080"), (cell.fg, cell.bg)
             ui.key(b"\x1b[H")
             ui.key(b"\x1b[C")
             ui.wait("Theme: Ocean")

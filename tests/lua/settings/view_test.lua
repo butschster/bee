@@ -4,6 +4,14 @@ local view = require("view")
 local appearance = require("appearance")
 local function define_tests()
     test.describe("Appearance chooser", function()
+        test.it("shows errors in compact settings without losing selection controls", function()
+            local frame = view.draw(28, 6, appearance.defaults(), "theme", 0, "Permission denied")
+            test.is_true(table.concat(frame.rows, "\n"):find("Permission denied", 1, true) ~= nil)
+            local steps = 0
+            for _, hit in ipairs(frame.hits) do if hit.kind == "step" then steps = steps + 1 end end
+            test.eq(steps, 2)
+            for _, row in ipairs(frame.rows) do test.eq(tty.text.width(row), 28) end
+        end)
         test.it("keeps cards, tabs and hits inside every terminal size", function()
             for _, width in ipairs({1, 12, 28, 62, 100}) do
                 for _, height in ipairs({1, 8, 18, 30}) do

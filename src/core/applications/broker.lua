@@ -297,7 +297,7 @@ local function main(owner: string, initial_preferences: unknown)
         elseif selected.channel == requests and selected.value:from() == owner then
             local req = contract.request(selected.value:payload():data())
             if req then
-                local fingerprint = req.op .. "\0" .. req.id .. "\0" .. req.definition_id .. "\0" .. req.recipient .. "\0" .. req.restore_instance_id .. "\0" .. req.restore_view_id .. "\0" .. req.resume_schema .. "\0" .. req.resume_state
+                local fingerprint = req.op .. "\0" .. req.id .. "\0" .. req.definition_id .. "\0" .. req.recipient .. "\0" .. req.restore_instance_id .. "\0" .. req.restore_view_id .. "\0" .. req.resume_schema .. "\0" .. tostring(#req.resume_state) .. ":" .. req.resume_state .. contract.argument_fingerprint(req.arguments)
                 local cached = completed[req.request_id]
                 if fingerprints[req.request_id] and fingerprints[req.request_id] ~= fingerprint then
                     emit(contract.reply(req.request_id, "open", "request_conflict", "Request ID was reused for another operation"))
@@ -369,7 +369,7 @@ local function main(owner: string, initial_preferences: unknown)
                                     local pid, spawn_err = process.with_options({terminal = grant}):with_scope(scope_cache[req.definition_id])
                                         :spawn_monitored(req.definition_id, "bee:workers", {version = 1, broker_pid = tostring(process.pid()), workspace_pid = owner,
                                             instance_id = instance_id, view_id = view_id, definition_id = req.definition_id,
-                                            definition_revision = descriptor.definition_revision, registry_revision = version:string(), launch_token = token, resume_schema = descriptor.resume_schema, resume_state = req.resume_state})
+                                            definition_revision = descriptor.definition_revision, registry_revision = version:string(), launch_token = token, resume_schema = descriptor.resume_schema, resume_state = req.resume_state, arguments = req.arguments})
                                     if not pid then view:close(); emit(contract.reply(req.request_id, "open", "spawn_failed", tostring(spawn_err)), true)
                                     else
                                         instances[view_id] = {view_id = view_id, instance_id = instance_id, execution_pid = tostring(pid), view = view,

@@ -5,3 +5,8 @@ entries:
   kind: library.lua
   source: file://client.lua
   modules: [process, uuid]
+  imports:
+    arguments: bee.application:arguments
+- name: arguments
+  kind: library.lua
+  source: file://arguments.lua

@@ -20,3 +20,5 @@ entries:
 - name: application
   kind: library.lua
   source: file://application.lua
+  imports:
+    arguments: bee.application:arguments

@@ -1,5 +1,5 @@
 WIPPY ?= .wippy/bin/wippy
-.PHONY: setup run lint test pack check
+.PHONY: setup run lint test threads pack check
 setup:
 	python3 scripts/runtime_setup.py
 run:
@@ -8,14 +8,17 @@ lint:
 	$(WIPPY) lint
 test:
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/unit.py
+threads:
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/threads.py
 pack:
 	mkdir -p dist
 	$(WIPPY) pack dist/bee.wapp
 
-check: lint test pack
+check: lint test threads pack
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/architecture.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/storage.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/tui_smoke.py
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/drag_failure.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/console.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/lifecycle.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/recovery.py

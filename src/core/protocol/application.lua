@@ -1,10 +1,11 @@
 -- Versioned application boundary. Records contain values, never terminal handles.
+local arguments = require("arguments")
 local M = {}
 type ReplyOp = "open" | "close" | "closed" | "focus" | "attached" | "bind" | "page" | "shutdown"
 type Reply = {version: integer, request_id: string, op: ReplyOp, id: string, instance_id: string,
     title: string, mount: string, definition_id: string, resume_schema: string, restart_policy: string, resume_state: string, error: string, error_code: string}
 type RequestOp = "open" | "close" | "bind" | "shutdown"
-type Request = {version: integer, request_id: string, op: RequestOp, id: string, definition_id: string, recipient: string, restore_instance_id: string, restore_view_id: string, resume_schema: string, resume_state: string}
+type Request = {version: integer, request_id: string, op: RequestOp, id: string, definition_id: string, recipient: string, restore_instance_id: string, restore_view_id: string, resume_schema: string, resume_state: string, arguments: {string}}
 type Descriptor = {definition_id: string, definition_revision: string, title: string, icon: string,
     group: string, role: string, singleton: boolean, resume_schema: string, restart_policy: string}
 type Binding = {definition_id: string, policies: {string}, appearance_write: boolean, application_stop: boolean}
@@ -30,8 +31,13 @@ function M.request(value: unknown): Request?
     local state = value.resume_state or ""
     if not restore_instance or not restore_view or not schema or type(state) ~= "string" or #state > 65536 then return nil end
     if (restore_instance == "") ~= (restore_view == "") then return nil end
+    local args = arguments.decode(value.arguments)
+    if not args or (op ~= "open" and #args > 0) then return nil end
     return {version = 1, request_id = request_id, op = op, id = id, definition_id = definition_id, recipient = recipient,
-        restore_instance_id = restore_instance, restore_view_id = restore_view, resume_schema = schema, resume_state = state}
+        restore_instance_id = restore_instance, restore_view_id = restore_view, resume_schema = schema, resume_state = state, arguments = args}
+end
+function M.argument_fingerprint(values: {string}): string
+    return arguments.fingerprint(values)
 end
 function M.reply(request_id: string, op: ReplyOp, code: string?, message: string?): Reply
     return {version = 1, request_id = request_id, op = op, id = "", instance_id = "", title = "", mount = "",

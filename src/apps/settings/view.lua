@@ -43,20 +43,24 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
         if width < 26 then text = kind == "theme" and " Theme " or " BG " end
         local size = math.floor(math.max(0, math.min(tty.text.width(text), width - tab_x)))
         local selected = pane == kind
-        put(canvas, tab_x, 2, text, size, selected and theme.ground or theme.muted, selected and theme.accent or theme.surface)
+        put(canvas, tab_x, 2, text, size, selected and appearance.selection_text(theme) or theme.muted, selected and theme.accent or theme.surface)
         if size >= 3 and height >= 2 then hits[#hits + 1] = {kind = kind, index = 0, x = tab_x, y = 2, width = size, height = 1} end
         tab_x = tab_x + size + 1
     end
     if grid.capacity == 0 or width < 12 then
         local label = pane == "theme" and theme.title or preferences.background
-        put(canvas, 2, 4, label, width - 2, theme.text, theme.surface)
+        put(canvas, 2, 4, tty.text.truncate(label, maximum(0, width - 2), "…"), width - 2, theme.text, theme.surface)
         if height >= 5 and width >= 16 then
             put(canvas, 2, 4, string.rep(" ", width - 2), width - 2, theme.text, theme.surface)
             put(canvas, 2, 4, " ‹ ", 3, theme.accent, theme.surface)
-            put(canvas, 6, 4, label, width - 11, theme.text, theme.surface)
+            put(canvas, 6, 4, tty.text.truncate(label, width - 11, "…"), width - 11, theme.text, theme.surface)
             put(canvas, width - 4, 4, " › ", 3, theme.accent, theme.surface)
             hits[#hits + 1] = {kind = "step", index = -1, x = 2, y = 4, width = 3, height = 1}
             hits[#hits + 1] = {kind = "step", index = 1, x = width - 4, y = 4, width = 3, height = 1}
+        end
+        if message and message ~= "" and height >= 3 then
+            local row = height >= 5 and height or 3
+            put(canvas, 2, row, tty.text.truncate(message:gsub("%c", " "), maximum(0, width - 2), "…"), width - 2, theme.text, theme.surface)
         end
         return {rows = canvas:rows(), hits = hits}
     end

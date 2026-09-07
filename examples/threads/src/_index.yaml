@@ -1,0 +1,105 @@
+version: '1.0'
+namespace: bee.thread_demo
+entries:
+- name: main
+  kind: process.lua
+  source: file://main.lua
+  method: main
+  modules: [process, channel, security, time, io]
+  imports:
+    store: bee.thread_demo.storage:store
+  meta:
+    command:
+      name: thread-demo
+      short: Run an isolated durable test-status thread
+      security:
+        actor: {id: bee.thread_demo.local}
+        policies: [bee.thread_demo:owner]
+- name: producer
+  kind: process.lua
+  source: file://producer.lua
+  method: main
+  modules: [process, json]
+  imports:
+    model: bee.thread_demo:model
+    client: bee.thread_demo:client
+- name: subscriber
+  kind: process.lua
+  source: file://subscriber.lua
+  method: main
+  modules: [process, sql, contract, security]
+  imports:
+    client: bee.thread_demo:client
+- name: identity_contract
+  kind: contract.definition
+  methods:
+  - name: inspect
+    description: Inspect caller framing in the isolated contract proof
+- name: identity_binding
+  kind: contract.binding
+  contracts:
+  - contract: bee.thread_demo:identity_contract
+    methods:
+      inspect: bee.thread_demo:identity_probe
+- name: identity_probe
+  kind: function.lua
+  source: file://identity_probe.lua
+  method: main
+  modules: [process, sql, security]
+- name: client
+  kind: library.lua
+  source: file://client.lua
+  modules: [process, channel, time]
+- name: model
+  kind: library.lua
+  source: file://model.lua
+- name: workers
+  kind: process.host
+  host: {max_processes: 4, workers: 2}
+  lifecycle: {auto_start: true}
+- name: environment
+  kind: env.storage.os
+  lifecycle: {auto_start: true}
+- name: database_path
+  kind: env.variable
+  storage: bee.thread_demo:environment
+  variable: BEE_THREAD_DEMO_DB
+  default: thread-demo.db
+  readonly: true
+- name: db
+  kind: db.sql.sqlite
+  file: ${env:bee.thread_demo:database_path}
+  lifecycle: {auto_start: true}
+- name: participant
+  kind: security.policy
+  policy:
+    actions: [process.send]
+    resources: '*'
+    effect: allow
+- name: binding_policy
+  kind: security.policy
+  policy:
+    actions: [contract.open]
+    resources: [bee.thread_demo:identity_binding]
+    effect: allow
+- name: method_policy
+  kind: security.policy
+  policy:
+    actions: [contract.call]
+    resources: [inspect]
+    effect: allow
+- name: function_policy
+  kind: security.policy
+  policy:
+    actions: [funcs.call]
+    resources: [bee.thread_demo:identity_probe]
+    effect: allow
+- name: owner
+  kind: security.policy
+  policy:
+    actions: [db.get, process.send, process.spawn, process.spawn.monitored, process.host, process.terminate, process.security, process.context, security.scope.create, security.policy.get, process.monitor]
+    resources: '*'
+    effect: allow
+- name: terminal
+  kind: terminal.host
+  lifecycle: {auto_start: true}

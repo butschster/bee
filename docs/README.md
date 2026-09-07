@@ -20,6 +20,8 @@ Historical and design references:
 - [Desktop foundation](DESKTOP_FOUNDATION.md) and [local desktop](LOCAL_DESKTOP.md): target architecture, including unimplemented systems.
 - [Foundation review](FOUNDATION_REVIEW.md): critique of baseline `ddf6ba8`, before the foundation sweep.
 - [UI refinement](UI_REFINEMENT.md): UI design intent; current acceptance tests establish verified behavior.
+- [Threads](THREADS.md): proposed contract and the limits of the isolated, executable local proof.
+- [Workspace attachments](WORKSPACE_ATTACHMENTS.md): proposed workspace identity, client layout ownership and local/remote view boundaries.
 
 When these disagree, implemented contracts and their source/tests take precedence
 over roadmap prose. Fix the disagreement rather than adding another design page

@@ -68,3 +68,7 @@ their own append/read/subscription owner and tables; do not put their event log
 inside the desktop JSON. Future publication records, resource bindings and shared
 catalogs likewise need explicit owners. Sharing a local SQLite file would not
 grant cross-owner SQL access or provide synchronization between machines.
+
+[Workspace attachments](WORKSPACE_ATTACHMENTS.md) specifies the proposed identity
+and client layout split for future mixed-workspace tabs. That identity and remote
+attachment protocol are not implemented by the current envelope.

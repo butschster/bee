@@ -309,11 +309,15 @@ local function main(owner: string, initial_application: string?, secondary_appli
                         if event.action == "release" then
                             preview = layout.drag(scene, capture, x, y) or preview
                             if preview then
-                                process.send(owner, "bee.desktop.command", {version = 1, op = "place", id = capture.id,
+                                local sent, send_error = process.send(owner, "bee.desktop.command", {version = 1, op = "place", id = capture.id,
                                     x = preview.x, y = preview.y, width = preview.width, height = preview.height})
                                 -- Keep the last preview until the committed scene
                                 -- reaches it; clearing here flashes the old bounds.
-                                awaiting_place = true
+                                if sent then awaiting_place = true
+                                else
+                                    capture, preview, awaiting_place = nil, nil, false
+                                    status = tostring(send_error or "Could not place window")
+                                end
                             else capture, preview = nil, nil end
                         else
                             preview = layout.drag(scene, capture, x, y)

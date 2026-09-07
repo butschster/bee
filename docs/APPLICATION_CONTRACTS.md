@@ -35,6 +35,20 @@ and `launch_token`. `bee.application:client` validates it. The revision identifi
 the registry state observed for launch; it is not a promise that a mutable loader
 pins every future import. Transactional activation is a future installer concern.
 
+Open requests may carry `arguments`, a dense list of up to 16 strings (1 KiB each,
+8 KiB combined, no control characters). Omission means an empty list. The broker
+copies validated arguments into the launch value, and `client.launch` validates
+and copies them again. Applications own semantic decoding: argument text never
+grants access to a thread, filesystem or executor. Arguments participate in the
+broker's bounded request deduplication identity. They are not accepted on close,
+bind or shutdown operations.
+
+This is a launch-only boundary: focusing an existing singleton does not deliver
+new arguments or restart it. Arguments are not automatically persisted; an app
+must checkpoint the domain identifiers it needs for recovery. The desktop launcher
+currently opens with an empty list; CLI argument selection and the test-status
+consumer are pending integration.
+
 After initializing its input/output, the app calls `client.ready(launch)`.
 The broker checks the actual sender PID, instance/view identities and launch token.
 UI apps signal after their initial frame; Terminal signals after PTY attachment.
