@@ -12,7 +12,7 @@ local function main(value: unknown)
     assert(tty.start())
     local width, height = tty.screen_size()
     local executor = assert(exec.get("bee.console:executor"))
-    local child, spawn_error = executor:exec("/bin/sh -i", {pty = {term = "xterm-256color", width = width, height = height}})
+    local child, spawn_error = executor:exec("/bin/bash -i", {pty = {term = "xterm-256color", width = width, height = height}})
     if not child then executor:release(); error(tostring(spawn_error)) end
     local terminal, attach_error = child:attach_terminal()
     if not terminal then child:close(true); executor:release(); error(tostring(attach_error)) end

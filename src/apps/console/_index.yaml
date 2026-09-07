@@ -45,7 +45,7 @@ entries:
     actions:
     - exec.run
     resources:
-    - /bin/sh -i
+    - /bin/bash -i
     effect: allow
 - name: environment
   kind: env.storage.os

@@ -58,6 +58,14 @@ Windows Classic. A failed final drag-placement send releases capture and reports
 the error instead of waiting indefinitely for an acknowledgement that cannot
 arrive. The successful drag handoff still retains its preview until committed.
 
+Native Terminal now launches Bash for interactive editing; `/bin/sh` can resolve
+to Dash, which echoes arrow escape sequences at its prompt. Runtime #653 also
+preserves legacy navigation modifiers, Shift+Tab and application-mode Home/End.
+`tests/navigation.py` verifies 161 actual PTY deliveries through the desktop and
+viewport; `tests/console.py` verifies Readline editing and history navigation.
+Runtime proxy tests additionally cover function keys, release suppression and
+Kitty keyboard modes. Reserved shell shortcuts remain desktop operations.
+
 
 ## Remaining UI requests and current boundary
 

@@ -46,6 +46,8 @@ def exercise(packed):
         index = project / "src/apps/console/_index.yaml"
         doc = yaml.safe_load(index.read_text())
         doc["entries"][0]["modules"] += ["security", "registry", "sql"]
+        executor_entry = next(entry for entry in doc["entries"] if entry["name"] == "executor")
+        executor_entry["default_env"].update({"HOME": str(folder), "HISTFILE": "/dev/null", "PS1": "$ "})
         index.write_text(yaml.safe_dump(doc, sort_keys=False))
         # Deliberately broad package policy cannot override the host's deny boundary.
         host_index = project / "src/_index.yaml"
@@ -65,6 +67,19 @@ def exercise(packed):
             ui.wait("Terminal")
             ui.key(b"printf 'SHELL_%s\\n' READY\r")
             ui.wait("SHELL_READY")
+            # Readline editing, not merely forwarding bytes to a minimal sh.
+            ui.key(b"printf 'ARROW_%s\\n' OX\x1b[D\x1b[3~K\r")
+            ui.wait("ARROW_OK")
+            ui.key(b"printf 'BACK_%s\\n' OX\x7fK\r")
+            ui.wait("BACK_OK")
+            ui.key(b"discard\x1b[H\x0bprintf 'HOME_%s\\n' OK\r")
+            ui.wait("HOME_OK")
+            ui.key(b"printf 'END_%s\\n' O\x1b[H\x1b[FK\r")
+            ui.wait("END_OK")
+            ui.key(b"printf 'HISTORY_%s\\n' OK\r")
+            ui.wait("HISTORY_OK")
+            ui.key(b"\x1b[A\x1b[Bprintf 'DOWN_%s\\n' OK\r")
+            ui.wait("DOWN_OK")
             # Native process identity and cwd survive presenter replacement.
             ui.key(b"bee_marker=keep; printf 'PID=%s\\n' $$\r")
             ui.wait("PID=")
@@ -82,6 +97,8 @@ def exercise(packed):
             ui.wait("ISOLATED_unset")
             assert ui.screen.display[0].count("Terminal") == 2, ui.text()
             ui.key(b"exit\r")
+            ui.pump(.2)
+            ui.key(b"printf 'STATE_%s\\n' $bee_marker\r")
             ui.wait("STATE_keep")
             # Ctrl+C reaches the foreground native process without killing Bee.
             ui.key(b"sleep 30\r")

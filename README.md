@@ -94,7 +94,9 @@ packed. Native runtime code and third-party dependencies retain their own licens
 
 See [current foundation status](docs/FOUNDATION_STATUS.md) and
 [application contracts](docs/APPLICATION_CONTRACTS.md) for ownership and security.
-Terminal runs `/bin/sh -i` with local user permissions; it is not an OS sandbox.
+Terminal requires Bash at `/bin/bash` and runs `/bin/bash -i` with local user
+permissions; it is not an OS sandbox. Bash supplies interactive line editing and
+history navigation; a minimal POSIX shell such as Dash does not.
 
 Workspace state defaults to `.wippy/workspace.db`; set `BEE_WORKSPACE_DB` to
 select another local workspace store. This is separate from Wippy registry history.

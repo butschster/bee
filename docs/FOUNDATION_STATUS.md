@@ -49,7 +49,8 @@ owner argument. Receivers authenticate actual sender PIDs before interpreting da
 Settings receives an appearance-write operation grant. Process Manager receives
 read-only runtime metrics plus a broker stop operation grant; core and supervisor
 service control remain protected. Terminal alone receives its named native executor
-and the fixed `/bin/sh -i` launch command. It has no ambient foreign TTY authority.
+and the fixed `/bin/bash -i` launch command. Bash supplies interactive line editing
+and history navigation. It has no ambient foreign TTY authority.
 Producer capabilities and recipient-bound mounts carry terminal rights.
 
 **Native shells run with the local OS user's authority.** They can access that
