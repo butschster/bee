@@ -5,6 +5,7 @@ entries:
   kind: function.lua
   source: file://render_test.lua
   method: run
+  modules: [tty]
   meta:
     type: test
     suite: bee
@@ -13,6 +14,7 @@ entries:
     model: bee.desktop:model
     layout: bee.desktop:layout
     render: bee.terminal:render
+    chrome: bee.terminal:chrome
     bindings: bee.terminal:bindings
     menu: bee.terminal:menu
     appearance: bee.desktop:appearance
