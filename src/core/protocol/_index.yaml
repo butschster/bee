@@ -1,0 +1,13 @@
+version: '1.0'
+namespace: bee.protocol
+entries:
+- name: input
+  kind: library.lua
+  source: file://input.lua
+  modules: [tty]
+- name: decode
+  kind: library.lua
+  source: file://decode.lua
+  imports:
+    model: bee.desktop:model
+    appearance: bee.desktop:appearance
