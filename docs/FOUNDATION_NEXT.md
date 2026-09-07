@@ -5,6 +5,12 @@ is a proposal, not an installed API. This pass does not implement threads, Hub
 or self-update; core review and explicit activation boundaries come first. The goal is to move real external-agent work
 into Bee quickly, without making the desktop an agent framework.
 
+Implementation update: the local journal, native contract consumer and standalone
+Test Status worker/view are now implemented; see [Threads](THREADS.md) for the
+current API and acceptance checks. The review below remains historical where it
+describes threads as absent. Durable subscriptions, participant membership,
+workflow scheduling, Hub and self-update remain proposals.
+
 ## What exists, and what is missing
 
 | Area | Current state | Needed next boundary |

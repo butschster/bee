@@ -8,11 +8,16 @@ An extensible terminal workspace built on Wippy. MIT licensed.
 
 A new workspace starts with an empty desktop. Preferences and opted-in apps
 (such as Settings) resume from the workspace database. **BEE / F1 → Tools** opens Settings or
-Process Manager; **BEE / F1 → Terminal** opens a normal shell. Each application runs in its own process.
+Process Manager or Test Status; **BEE / F1 → Terminal** opens a normal shell. Each application runs in its own process.
 
 Settings offers 16 themes and 11 backgrounds. Process Manager shows live process
 and service state, heap and scheduler charts, GC counters and queue depth. It can
 end workspace applications through the broker; core processes remain protected.
+
+Test Status runs shared-UI checks in a separate worker and replays recorded results
+after its view closes. `./run.sh --app bee.test_status:app desktop-checks first-run`
+selects a thread and starts a run; repeating that run ID replays without rerunning.
+See [threads](docs/THREADS.md) for the local journal's API and scheduling limits.
 
 | Interaction | Action |
 |---|---|
@@ -40,7 +45,8 @@ autostarted in a new workspace. There is one application/status bar and no reser
 | `src/core/protocol` | Validation at process boundaries |
 | `src/core/storage` | Workspace state and verified migrations |
 | `src/ui` | App lifecycle helper, appearance tokens and wallpaper rendering |
-| `src/apps` | Default on-demand Terminal, Settings and Process Manager |
+| `src/apps` | Default on-demand Terminal, Settings, Process Manager and Test Status |
+| `src/threads` | Native journal contract, typed consumer and owned SQLite storage |
 | `examples/fixtures` | Acceptance apps, excluded from production |
 | `tests` | Unit, registry and terminal acceptance checks |
 

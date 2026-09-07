@@ -97,6 +97,29 @@ integration and the profile CLI are separate, unimplemented slices.
 
 ## Implementation sequence and acceptance
 
+### Headless nodes and composed applications
+
+A Bee node may be headless. The intended headless profile starts the workspace's
+authorized services and background workers without a physical terminal host,
+presenter, input loop or default UI processes. A desktop is an optional client;
+its disconnection must not stop independently owned runs. This profile is not
+implemented by today's terminal-dependent launcher.
+
+An application can compose several modules and standalone workers behind native
+contracts. Keep its definition, execution placement, durable run state and views
+separate. Remote calls require explicit resource authorization and report unknown
+outcomes during connection loss; replaying history must not rerun side effects.
+An application's own run owner coordinates dependencies and cancellation, rather
+than adding a workflow engine to the desktop. A headless worker need not publish
+a TTY view: it may expose only authorized operations and durable progress events.
+
+Acceptance for that profile must boot without a TTY, finish a run without any
+client, attach a desktop later and replay results, then detach while work
+continues. Local mode must still create no mesh traffic. Export to a future
+hosted service should carry versioned definitions, resource references and
+checkpoints; local credentials, live PIDs and terminal grants are not exportable
+authority. Hosted execution and billing are outside this foundation.
+
 1. Finish the local run/view separation using the test-status application. A
    closed view must not cancel its run; reopening replays committed events.
 2. Persist workspace identity and carry it through launch, snapshot, checkpoint

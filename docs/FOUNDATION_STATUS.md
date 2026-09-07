@@ -1,7 +1,7 @@
 # Foundation status
 
-Bee is a local terminal desktop with three on-demand default applications:
-Terminal, Settings and Process Manager. A fresh workspace opens no applications;
+Bee is a local terminal desktop with four on-demand default applications:
+Terminal, Settings, Process Manager and Test Status. A fresh workspace opens no applications;
 later boots restore applications that opted into automatic recovery. The source
 and portable pack load only `src/`; fixtures and the legacy archive are excluded.
 This file and [application contracts](APPLICATION_CONTRACTS.md) describe the
@@ -83,12 +83,14 @@ modifies a user's workspace history. CI runs the same setup and checks.
 
 ## Next boundaries
 
-The isolated Lua thread prototype is exercised by `make threads` and `make check`.
-It proves bounded durable replay and native contract actor/scope framing; it is
-not loaded in production. The broker now accepts bounded launch arguments, but
-desktop argument selection, a background run owner and the live test-status app
-remain unfinished. See [threads](THREADS.md) for exact proof limits and
-[workspace attachments](WORKSPACE_ATTACHMENTS.md) for the proposed identity split.
+The local native thread journal and Test Status app are implemented. Explicit
+launch arguments select a thread and optional idempotent run ID. A standalone
+worker finishes while its view is closed; source and pack acceptance verify
+reopening and cold replay. The isolated Lua subscriber fixture remains separate.
+Production views currently poll; crash-safe job scheduling, dynamic membership
+and durable subscriptions remain future work. See [threads](THREADS.md) for the
+implemented API and limits, and [workspace attachments](WORKSPACE_ATTACHMENTS.md)
+for the proposed identity split.
 
 The shell remains the delivery focus. Hub installation, authorized overlay editing,
 MCP, AI drivers, native binary packaging and service/run

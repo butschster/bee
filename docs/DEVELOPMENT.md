@@ -17,6 +17,7 @@ to create empty directories or web adapters in Bee.
 | `src/core/terminal` | Replaceable presenter, input and composition |
 | `src/core/storage` | Workspace database and migration ledger |
 | `src/ui` | Optional app-facing lifecycle helper, appearance and rendering values |
+| `src/threads` | Native local journal contract, typed consumer and owned SQLite store |
 | `src/apps/<name>` | A default app process and its own view/domain helpers |
 
 Registry IDs are public identities independent of file location. Existing
@@ -26,8 +27,8 @@ and `view.lua` a renderer. Use domain names for helpers, not generic `utils.lua`
 Extract by responsibility when an actor grows; do not create a universal manager.
 
 Core may import core/shared UI, shared UI may import shared UI, and apps may
-import their own helpers/shared UI. Apps must not import private broker or store
-implementations. Keep pure reducers free of registry, process, SQL and terminal
+import their own helpers/shared UI. Apps may import the public `bee.threads:client` and `bee.threads:protocol`.
+Apps must not import private broker or store implementations. Keep pure reducers free of registry, process, SQL and terminal
 side effects. `tests/architecture.py` checks the production import graph.
 
 For a future independent subsystem, add only the slices it actually needs:

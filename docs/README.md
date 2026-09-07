@@ -11,6 +11,7 @@ package these same pages with status and version, not maintain a second copy.
 | Code style and placement | [Development conventions](DEVELOPMENT.md) |
 | App admission, launch, messages and recovery | [Application contracts](APPLICATION_CONTRACTS.md) |
 | Database guarantees | [Storage](STORAGE.md), [workspace state](WORKSPACE_STATE.md) |
+| Local journal, Test Status and future subscriptions | [Threads](THREADS.md) |
 | Package seams and native distribution | [Package boundaries](PACKAGE_BOUNDARIES.md) |
 | Current critique and recommended next slice | [Foundation next steps](FOUNDATION_NEXT.md) |
 
@@ -20,7 +21,6 @@ Historical and design references:
 - [Desktop foundation](DESKTOP_FOUNDATION.md) and [local desktop](LOCAL_DESKTOP.md): target architecture, including unimplemented systems.
 - [Foundation review](FOUNDATION_REVIEW.md): critique of baseline `ddf6ba8`, before the foundation sweep.
 - [UI refinement](UI_REFINEMENT.md): UI design intent; current acceptance tests establish verified behavior.
-- [Threads](THREADS.md): proposed contract and the limits of the isolated, executable local proof.
 - [Workspace attachments](WORKSPACE_ATTACHMENTS.md): proposed workspace identity, client layout ownership and local/remote view boundaries.
 
 When these disagree, implemented contracts and their source/tests take precedence

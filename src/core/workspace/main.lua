@@ -21,7 +21,8 @@ local function new_display(width: integer, height: integer): tty.Viewport
     return view
 end
 
-local function main(initial_application: string?, secondary_application: string?)
+local arguments = require("arguments")
+local function main(initial_application: string?, secondary_application: string?, initial_arguments: {string}?)
     local input = assert(tty.events())
     local lifecycle = assert(process.events())
     local control = assert(process.listen("bee.workspace.control", {message = true}))
@@ -99,7 +100,7 @@ local function main(initial_application: string?, secondary_application: string?
     local function broker_request(op: string, definition_id: string, id: string, recipient: string)
         local request_id = uuid.v7()
         local restored: recovery.Record? = nil
-        if op == "open" then
+        if op == "open" and (not initial_arguments or #initial_arguments == 0) then
             for _, saved_id in ipairs(record_order) do
                 local record = records[saved_id]
                 if record and record.definition_id == definition_id then
@@ -112,7 +113,8 @@ local function main(initial_application: string?, secondary_application: string?
         process.send(broker, "bee.app.request", {version = 1, request_id = request_id, op = op,
             definition_id = definition_id, id = id, recipient = recipient,
             restore_instance_id = restored and restored.instance_id or "", restore_view_id = restored and restored.id or "",
-            resume_schema = restored and restored.resume_schema or "", resume_state = restored and restored.resume_state or ""})
+            resume_schema = restored and restored.resume_schema or "", resume_state = restored and restored.resume_state or "",
+            arguments = op == "open" and initial_arguments or nil})
         return request_id
     end
     local function persist(): (boolean, string?)
@@ -433,4 +435,10 @@ local function main(initial_application: string?, secondary_application: string?
     tty.stop()
     if fatal then error(fatal) end
 end
-return {main = main}
+local function launch(application: string, ...)
+    local values: unknown = {...}
+    local decoded = arguments.decode(values)
+    if not decoded then error("Invalid application arguments") end
+    return main(application, nil, decoded)
+end
+return {main = main, launch = launch}

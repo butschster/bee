@@ -12,6 +12,9 @@ local function main(owner: string, thread: string, after: integer, read_capabili
     local actor = assert(security.actor())
     assert(type(framing.pid) == "string" and framing.pid ~= tostring(process.pid()), "Contract function must have its own execution identity")
     assert(framing.actor == actor:id() and framing.storage_denied == true, "Contract lost caller actor or scope")
+    local owned: unknown = binding:inspect_owned_storage()
+    assert(type(owned) == "table" and owned.actor == actor:id() and owned.storage_denied == false,
+        "Function-owned storage policy did not preserve caller actor")
     local journal = assert(reader.open(owner, thread, read_capability))
     local initial, initial_error = journal:read_after(after)
     assert(initial and not initial_error, "Native contract read failed")

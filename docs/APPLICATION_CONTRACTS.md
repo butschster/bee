@@ -45,9 +45,12 @@ bind or shutdown operations.
 
 This is a launch-only boundary: focusing an existing singleton does not deliver
 new arguments or restart it. Arguments are not automatically persisted; an app
-must checkpoint the domain identifiers it needs for recovery. The desktop launcher
-currently opens with an empty list; CLI argument selection and the test-status
-consumer are pending integration.
+must checkpoint the domain identifiers it needs for recovery. Start opens with an
+empty list. `./run.sh --app definition-id [arguments...]` uses the native `bee-app`
+command to launch an application with explicit arguments. Nonempty explicit
+arguments take precedence over a saved checkpoint for that initial launch.
+Test Status accepts a thread ID and optional run ID; its checkpoint saves only
+the thread, so restoration never requests a new run automatically.
 
 After initializing its input/output, the app calls `client.ready(launch)`.
 The broker checks the actual sender PID, instance/view identities and launch token.

@@ -25,7 +25,7 @@ RUNTIME = Path(os.environ.get("BEE_RUNTIME", ROOT / ".wippy/bin/wippy")).resolve
 
 
 class Desktop:
-    def __init__(self, directory, packed=False, project=ROOT, pack_file=None, apps=(), launcher=False):
+    def __init__(self, directory, packed=False, project=ROOT, pack_file=None, apps=(), launcher=False, command_name="bee"):
         self.master, slave = pty.openpty()
         self.width, self.height = 100, 30
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 100, 0, 0))
@@ -37,15 +37,15 @@ class Desktop:
         cwd = directory if packed else project
         args = [str(RUNTIME), "run"]
         if packed:
-            args += [str(pack_file or ROOT / "dist/bee.wapp"), "bee"]
+            args += [str(pack_file or ROOT / "dist/bee.wapp"), command_name]
         else:
-            args += ["bee"]
+            args += [command_name]
         args += list(apps) + ["--host", "bee:terminal", "--set", f"registry.history_path={directory}/registry.db"]
         if launcher:
             args = [str(ROOT / "run.sh"), "--set", f"registry.history_path={directory}/registry.db"]
             cwd = directory
         self.process = subprocess.Popen(args, cwd=cwd, stdin=slave, stdout=slave, stderr=slave,
-                                        start_new_session=True, env={**os.environ, "TERM": "xterm-256color", "BEE_WORKSPACE_DB": str(Path(directory) / "workspace.db")})
+                                        start_new_session=True, env={**os.environ, "TERM": "xterm-256color", "BEE_WORKSPACE_DB": str(Path(directory) / "workspace.db"), "BEE_THREADS_DB": str(Path(directory) / "threads.db")})
         os.close(slave)
 
     def pump(self, duration=.1):

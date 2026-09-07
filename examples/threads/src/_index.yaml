@@ -44,6 +44,8 @@ entries:
     description: Inspect caller framing in the isolated contract proof
   - name: read_after
     description: Read committed events with an owner-issued read capability
+  - name: inspect_owned_storage
+    description: Verify function-owned SQL authority without granting it to the caller
 - name: reader_binding
   kind: contract.binding
   contracts:
@@ -51,6 +53,20 @@ entries:
     methods:
       inspect: bee.thread_demo:identity_probe
       read_after: bee.thread_demo:read_after
+      inspect_owned_storage: bee.thread_demo:owned_storage_probe
+- name: owned_storage_probe
+  kind: function.lua
+  source: file://identity_probe.lua
+  method: main
+  modules: [process, sql, security]
+  security:
+    policies: [bee.thread_demo:owned_storage_policy]
+- name: owned_storage_policy
+  kind: security.policy
+  policy:
+    actions: [db.get]
+    resources: [bee.thread_demo:db]
+    effect: allow
 - name: read_after
   kind: function.lua
   source: file://read_after.lua
@@ -102,13 +118,13 @@ entries:
   kind: security.policy
   policy:
     actions: [contract.call]
-    resources: [inspect, read_after]
+    resources: [inspect, read_after, inspect_owned_storage]
     effect: allow
 - name: function_policy
   kind: security.policy
   policy:
     actions: [funcs.call]
-    resources: [bee.thread_demo:identity_probe, bee.thread_demo:read_after]
+    resources: [bee.thread_demo:identity_probe, bee.thread_demo:read_after, bee.thread_demo:owned_storage_probe]
     effect: allow
 - name: owner
   kind: security.policy

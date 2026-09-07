@@ -73,7 +73,9 @@ for identity, entry in entries.items():
         if location.parts[0] == "ui":
             assert target_location.parts[0] == "ui", (identity, target)
         if location.parts[0] == "apps":
-            assert target_location.parts[0] == "ui" or target_location.parts[:2] == location.parts[:2], (identity, target)
+            assert target_location.parts[0] == "ui" or target_location.parts[:2] == location.parts[:2] or target in {"bee.threads:client", "bee.threads:protocol"}, (identity, target)
+        if location.parts[0] == "threads":
+            assert target_location.parts[0] == "threads", (identity, target)
 visiting, visited = set(), set()
 def visit(identity):
     assert identity not in visiting, ("Import cycle", identity)
@@ -99,7 +101,7 @@ assert entries["bee.terminal:render"]["modules"] == ["tty"]
 for pure in ["bee.desktop:layout", "bee.terminal:bindings"]:
     assert not entries[pure].get("modules"), pure
 assert {i for i, e in entries.items() if e["kind"] == "terminal.host"} == {"bee:terminal"}
-assert {i for i,e in entries.items() if e["kind"] == "db.sql.sqlite"} == {"bee:workspace_db"}
+assert {i for i,e in entries.items() if e["kind"] == "db.sql.sqlite"} == {"bee:workspace_db", "bee.threads:db"}
 assert not any(e["kind"] == "http.service" for e in entries.values())
 print(f"Architecture: {len(entries)} entries; on-demand default applications, closed imports, denied ambient app authority")
 
@@ -112,7 +114,7 @@ import tempfile
 
 runtime = Path(os.environ.get("BEE_RUNTIME", ROOT / ".wippy/bin/wippy")).resolve()
 allowed = {"bee", "bee.applications", "bee.desktop", "bee.protocol",
-           "bee.session", "bee.settings", "bee.processes", "bee.terminal", "bee.workspace", "bee.console", "bee.application", "bee.storage"}
+           "bee.session", "bee.settings", "bee.processes", "bee.terminal", "bee.workspace", "bee.console", "bee.application", "bee.storage", "bee.threads", "bee.threads.persist", "bee.test_status"}
 
 def check_loaded(cwd, packed=False):
     loaded = json.loads(subprocess.check_output([str(runtime), "registry", "list", "--json"], cwd=cwd))

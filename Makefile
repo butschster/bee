@@ -17,9 +17,11 @@ pack:
 check: lint test threads pack
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/architecture.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/storage.py
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/thread_storage.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/tui_smoke.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/drag_failure.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/console.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/navigation.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/lifecycle.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/recovery.py
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/test_status.py

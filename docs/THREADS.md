@@ -1,9 +1,62 @@
 # Threads, hooks and subscriptions
 
-**Status: proposed Bee contract.** Threads are absent from production Bee. An
-isolated [examples/threads](../examples/threads/README.md) fixture proves a subset of the bounded local behavior below,
-but it does not install a runtime API or make this contract callable. The proof
-has no Kickside, AI, MCP or Hub dependency.
+**Status: a bounded local journal and Test Status application are implemented.**
+The richer membership, subscription and workflow contract below remains a
+proposal. No Kickside, AI, MCP or Hub dependency is required.
+
+## Implemented local slice
+
+`bee.threads:journal` is a native contract, bound by `bee.threads:local`.
+The public `bee.threads:client` Lua library provides `open(thread)`, then
+`claim(run)`, `append(run, key, kind, body)` and `read_after(cursor)`.
+Events contain `seq`, `run`, `key`, `kind` and JSON string `body`.
+Reads return at most 64 ordered events; bodies are limited to 16 KiB.
+The store bounds runs and events per thread and rejects conflicting retries.
+
+Native methods derive ownership from the authenticated `security.actor()`;
+a payload cannot select its author. Host-selected function policies grant those
+methods their own SQLite access without granting the caller direct SQL access.
+The subsystem owns `bee.threads:db` (`BEE_THREADS_DB`, default
+`.wippy/threads.db`) and its checked migration ledger. This is separate from the
+primary desktop store and registry history. Ownership is actor-based, not a
+per-window isolation boundary; applications sharing an actor and granted journal
+operations share that actor's access. Dynamic membership is not implemented.
+
+One runtime owns this SQLite file. Concurrent actor callers are tested through
+that runtime's SQL pool. Multiple runtimes opening the same file are unsupported:
+a stress probe encountered write-lock failures. Future remote callers must use
+the owner's contract; mesh membership does not make SQLite a replicated store.
+
+**Test Status** is an on-demand application under Start → Tools. Run it with:
+
+```sh
+./run.sh --app bee.test_status:app desktop-checks first-run
+```
+
+The first argument selects a thread; the optional second starts an idempotently
+claimed run. Without arguments it shows `desktop-checks`. R starts another run;
+G replays; arrows, Page Up/Down, Home/End and the wheel browse recorded results.
+Six real shared-UI checks execute in a standalone worker, paced 300ms apart for
+visibility. Closing the view does not stop the worker. Reopening or restarting
+Bee replays committed results; it does not resurrect a process. The view keeps
+200 display lines and currently polls one bounded journal page every 300ms.
+There is no production push subscription or durable consumer cursor yet.
+
+A run claim and process spawn are separate operations. Failure between them can
+leave a claim without execution; retrying that run ID will not spawn again.
+Unexpected shutdown may leave queued/started as the last recorded event. The UI
+labels this as recorded history, not evidence of current liveness. Durable job
+scheduling, automatic retries and arbitrary script execution are not implemented.
+
+`tests/test_status.py`, included in `make check`, exercises source and pack
+argument launch, completion after view close, reopen/F12/cold replay and duplicate
+run suppression. `make threads` exercises the separate subscriber prototype.
+`tests/thread_storage.py` checks the production contract's caller SQL denial,
+actor spoof denial, page boundaries, retry conflicts and migration integrity.
+The live worker fixture also checks that spawning through the run contract does
+not inherit a TTY surface or direct journal SQL authority.
+
+## Proposed full contract
 
 ## Durable resource
 

@@ -36,7 +36,7 @@ activation requests. Document whether an update supports live rejoin, app
 checkpoint/restore or a full restart. Do not describe planned operations as
 already callable.
 
-The next communication foundation is a durable thread contract shared by apps,
-agents and plugins; see [foundation next steps](FOUNDATION_NEXT.md). Agent drivers,
+The local journal and Test Status app establish the first durable communication
+slice; see [foundation next steps](FOUNDATION_NEXT.md). Agent drivers,
 thread subscriptions, MCP and publication are not implemented yet. Do not route
 new authority through the desktop merely because it is the visible client.
