@@ -13,6 +13,8 @@ Process Manager or Test Status; **BEE / F1 → Terminal** opens a normal shell. 
 Settings offers 16 themes and 11 backgrounds. Process Manager shows live process
 and service state, heap and scheduler charts, GC counters and queue depth. It can
 end workspace applications through the broker; core processes remain protected.
+Settings → Tabs switches between labeled tabs and compact application icons.
+The choice is saved with workspace preferences.
 
 Test Status runs shared-UI checks in a separate worker and replays recorded results
 after its view closes. `./run.sh --app bee.test_status:app desktop-checks first-run`

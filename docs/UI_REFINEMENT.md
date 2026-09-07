@@ -79,8 +79,10 @@ is the closest match to the classic desktops.
 
 The reported Claude resize/repeated-text artifact remains unconfirmed, not fixed.
 The boot logo remains the current block wordmark; it has not received a new visual
-approval. App icons exist in metadata, but an icon-only taskbar preference is not
-implemented. The legacy demo Studio/chat/training apps are not restored into the
+approval. Settings → Tabs now selects Labels or Icons. Admitted app icons travel
+with window state; icon tabs retain focus, minimize and overflow behavior, with
+a short title fallback for apps without icons. The preference survives cold
+restart and F12. Old preferences default to Labels. The legacy demo Studio/chat/training apps are not restored into the
 new core. Agent-driven layout/settings operations are not yet published through
 MCP. These requests must not disappear behind the subsystem roadmap.
 

@@ -30,7 +30,7 @@ local function main(value: unknown)
     local last_checkpoint = ""
     if launch.resume_state ~= "" then
         local restored: unknown = json.decode(launch.resume_state)
-        if type(restored) ~= "table" or (restored.pane ~= "theme" and restored.pane ~= "background")
+        if type(restored) ~= "table" or (restored.pane ~= "theme" and restored.pane ~= "background" and restored.pane ~= "taskbar")
             or type(restored.offset) ~= "number" or restored.offset < 0 or restored.offset > 10000
             or restored.offset ~= math.floor(restored.offset) then error("Invalid Settings checkpoint") end
         pane = restored.pane; offset = math.floor(restored.offset)
@@ -38,8 +38,9 @@ local function main(value: unknown)
     local hits: {view.Hit} = {}
     local pending = ""
     local running, dirty = true, true
-    local function count(): integer return pane == "theme" and #appearance.themes() or #appearance.backgrounds() end
+    local function count(): integer return pane == "taskbar" and 2 or (pane == "theme" and #appearance.themes() or #appearance.backgrounds()) end
     local function selected(): integer
+        if pane == "taskbar" then return preferences.taskbar == "icons" and 2 or 1 end
         if pane == "theme" then
             for index, theme in ipairs(appearance.themes()) do if theme.id == preferences.theme then return index end end
         else
@@ -53,12 +54,13 @@ local function main(value: unknown)
     local function choose(index: integer)
         local value = math.floor(math.max(1, math.min(count(), index)))
         local next_preferences: appearance.Preferences
-        if pane == "theme" then next_preferences = {theme = appearance.themes()[value].id, background = preferences.background}
-        else next_preferences = {theme = preferences.theme, background = appearance.backgrounds()[value]} end
+        if pane == "theme" then next_preferences = {theme = appearance.themes()[value].id, background = preferences.background, taskbar = preferences.taskbar}
+        elseif pane == "background" then next_preferences = {theme = preferences.theme, background = appearance.backgrounds()[value], taskbar = preferences.taskbar}
+        else next_preferences = {theme = preferences.theme, background = preferences.background, taskbar = value == 2 and "icons" or "labels"} end
         preferences = next_preferences
         pending = uuid.v7(); pending_ticks = 0; status = ""
         if broker then
-            local sent, err = process.send(broker, "bee.appearance.request", {version = 1, request_id = pending, op = "set", theme = preferences.theme, background = preferences.background})
+            local sent, err = process.send(broker, "bee.appearance.request", {version = 1, request_id = pending, op = "set", theme = preferences.theme, background = preferences.background, taskbar = preferences.taskbar})
             if not sent then pending = ""; preferences = confirmed; status = tostring(err) end
         end
         reveal(); dirty = true
@@ -125,7 +127,7 @@ local function main(value: unknown)
                 elseif key == "end" then choose(count())
                 elseif key == "pgup" then browse(-grid.capacity)
                 elseif key == "pgdown" then browse(grid.capacity)
-                elseif key == "tab" then switch(pane == "theme" and "background" or "theme")
+                elseif key == "tab" then switch(pane == "theme" and "background" or (pane == "background" and "taskbar" or "theme"))
                 elseif key == "esc" or key == "escape" then running = false end
             elseif data.type == "mouse" then
                 local x, y = math.floor(tonumber(data.x) or 1), math.floor(tonumber(data.y) or 1)
@@ -138,6 +140,7 @@ local function main(value: unknown)
                     if hit then
                         if hit.kind == "theme" then switch("theme")
                         elseif hit.kind == "background" then switch("background")
+                        elseif hit.kind == "taskbar" then switch("taskbar")
                         elseif hit.kind == "select" then choose(hit.index)
                         elseif hit.kind == "step" then choose(selected() + hit.index)
                         elseif hit.kind == "page" then browse(hit.index * view.grid(width, height).capacity) end

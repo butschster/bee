@@ -8,6 +8,7 @@ type Window = {
     id: string,
     instance_id: string,
     title: string,
+    icon: string?,
     bounds: Rect,
     normal_bounds: Rect,
     mode: Mode,
@@ -41,7 +42,7 @@ local function copy_window(value: Window): Window
     return {
         id = value.id,
         instance_id = value.instance_id,
-        title = value.title,
+        title = value.title, icon = value.icon,
         bounds = copy_rect(value.bounds),
         normal_bounds = copy_rect(value.normal_bounds),
         mode = value.mode,
@@ -201,7 +202,7 @@ function M.new(width: integer, height: integer): Scene
     }
 end
 
-function M.add(scene: Scene, id: string, instance_id: string, title: string): Scene
+function M.add(scene: Scene, id: string, instance_id: string, title: string, icon: string?): Scene
     if find_index(scene.windows, id) ~= nil then return scene end
 
     local area = workspace(scene.width, scene.height)
@@ -209,7 +210,7 @@ function M.add(scene: Scene, id: string, instance_id: string, title: string): Sc
     local added: Window = {
         id = id,
         instance_id = instance_id,
-        title = title,
+        title = title, icon = icon,
         bounds = copy_rect(rect),
         normal_bounds = copy_rect(rect),
         mode = "floating",

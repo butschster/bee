@@ -25,11 +25,13 @@ type Command = {
     id: string?,
     instance_id: string?,
     title: string?,
+    icon: string?,
     side: string?,
     x: integer?,
     y: integer?,
     theme: string?,
     background: string?,
+    taskbar: string?,
     expected_revision: integer?,
 }
 
@@ -79,9 +81,11 @@ function M.decode(value: unknown): Command?
         local id = text(value.id, MAX_ID, true)
         local instance_id = text(value.instance_id, MAX_INSTANCE_ID, true)
         local title = text(value.title, MAX_TITLE, false)
+        local icon = value.icon == nil and "" or text(value.icon, 8, false)
+        if not icon then return nil end
         if not id or not instance_id or not title then return nil end
         return {version = base.version, request_id = base.request_id, op = "add", id = id,
-            instance_id = instance_id, title = title} :: Command
+            instance_id = instance_id, title = title, icon = icon} :: Command
     elseif value.op == "focus" or value.op == "fullscreen" or value.op == "minimize"
         or value.op == "collapse" or value.op == "restore" or value.op == "remove" then
         local id = text(value.id, MAX_ID, value.op ~= "focus")
@@ -112,9 +116,9 @@ function M.decode(value: unknown): Command?
             if not expected_revision then return nil end
         end
         if not theme or not background then return nil end
-        if not appearance.decode({theme = theme, background = background}) then return nil end
+        if not appearance.decode({theme = theme, background = background, taskbar = value.taskbar}) then return nil end
         return {version = base.version, request_id = base.request_id, op = "appearance", theme = theme,
-            background = background, expected_revision = expected_revision} :: Command
+            background = background, taskbar = value.taskbar == "icons" and "icons" or "labels", expected_revision = expected_revision} :: Command
     elseif value.op == "snapshot" then
         return {version = base.version, request_id = base.request_id, op = "snapshot"} :: Command
     elseif value.op == "shutdown" then

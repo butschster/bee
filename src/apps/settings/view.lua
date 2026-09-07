@@ -1,7 +1,7 @@
 -- Appearance cards and their hit rectangles. No processes or workspace authority.
 local tty = require("tty")
 local appearance = require("appearance")
-type Pane = "theme" | "background"
+type Pane = "theme" | "background" | "taskbar"
 type Hit = {kind: string, index: integer, x: integer, y: integer, width: integer, height: integer}
 type Grid = {columns: integer, rows: integer, capacity: integer, card_width: integer}
 type Frame = {rows: {string}, hits: {Hit}}
@@ -32,15 +32,15 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
     local theme = appearance.theme(preferences.theme)
     local grid = M.grid(width, height)
     local themes, backgrounds = appearance.themes(), appearance.backgrounds()
-    local count = pane == "theme" and #themes or #backgrounds
+    local count = pane == "taskbar" and 2 or (pane == "theme" and #themes or #backgrounds)
     local canvas = tty.canvas(width, height)
     local hits: {Hit} = {}
     canvas:clear(appearance.style(theme.text, theme.surface) .. " " .. RESET)
     put(canvas, 2, 1, "BEE SETTINGS", width - 2, theme.text, theme.surface)
     local tab_x = 2
-    for _, kind in ipairs({"theme", "background"}) do
-        local text = kind == "theme" and " Themes " or " Backgrounds "
-        if width < 26 then text = kind == "theme" and " Theme " or " BG " end
+    for _, kind in ipairs({"theme", "background", "taskbar"}) do
+        local text = kind == "theme" and " Themes " or (kind == "background" and " Backgrounds " or " Tabs ")
+        if width < 26 then text = kind == "theme" and " Theme " or (kind == "background" and " BG " or " Tabs ") end
         local size = math.floor(math.max(0, math.min(tty.text.width(text), width - tab_x)))
         local selected = pane == kind
         put(canvas, tab_x, 2, text, size, selected and appearance.selection_text(theme) or theme.muted, selected and theme.accent or theme.surface)
@@ -48,7 +48,7 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
         tab_x = tab_x + size + 1
     end
     if grid.capacity == 0 or width < 12 then
-        local label = pane == "theme" and theme.title or preferences.background
+        local label = pane == "taskbar" and (preferences.taskbar == "icons" and "Icons" or "Labels") or (pane == "theme" and theme.title or preferences.background)
         put(canvas, 2, 4, tty.text.truncate(label, maximum(0, width - 2), "…"), width - 2, theme.text, theme.surface)
         if height >= 5 and width >= 16 then
             put(canvas, 2, 4, string.rep(" ", width - 2), width - 2, theme.text, theme.surface)
@@ -69,9 +69,9 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
         if index > count then break end
         local x = 2 + ((slot - 1) % grid.columns) * (grid.card_width + 2)
         local y = 4 + ((slot - 1) // grid.columns) * 6
-        local id = pane == "theme" and themes[index].id or backgrounds[index]
+        local id = pane == "taskbar" and (index == 1 and "labels" or "icons") or (pane == "theme" and themes[index].id or backgrounds[index])
         local title = pane == "theme" and themes[index].title or (id:sub(1, 1):upper() .. id:sub(2))
-        local selected = id == (pane == "theme" and preferences.theme or preferences.background)
+        local selected = id == (pane == "taskbar" and (preferences.taskbar or "labels") or (pane == "theme" and preferences.theme or preferences.background))
         local edge = selected and theme.accent or theme.border
         local inside = grid.card_width - 2
         put(canvas, x, y, "╭" .. string.rep("─", inside) .. "╮", grid.card_width, edge, theme.surface)
@@ -81,7 +81,10 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
         put(canvas, x, y + 4, "╰" .. string.rep("─", inside) .. "╯", grid.card_width, edge, theme.surface)
         local label = " " .. (selected and "✓ " or "") .. title .. " "
         put(canvas, x + 1, y, tty.text.truncate(label, inside, "…"), inside, selected and theme.accent or theme.text, theme.surface)
-        if pane == "background" then
+        if pane == "taskbar" then
+            local sample = index == 1 and " Terminal  Settings " or " >_  S  P "
+            put(canvas, x + 1, y + 2, tty.text.truncate(sample, inside, "…"), inside, theme.text, theme.surface)
+        elseif pane == "background" then
             for row = 1, 3 do
                 put(canvas, x + 1, y + row, appearance.background_row(id, inside, row, 3), inside, theme.pattern, theme.ground)
             end
@@ -100,6 +103,7 @@ function M.draw(width: integer, height: integer, preferences: appearance.Prefere
     local range = tostring(offset + 1) .. "–" .. tostring(last) .. "/" .. tostring(count)
     local status = "Theme: " .. theme.title .. "  Background: " .. preferences.background
     if width < 48 then status = pane == "theme" and ("Theme: " .. theme.title) or ("Background: " .. preferences.background) end
+    if pane == "taskbar" then status = "Tabs: " .. (preferences.taskbar == "icons" and "Icons" or "Labels") end
     if message and message ~= "" then status = message:gsub("%c", " ") end
     put(canvas, 2, height - 2, status, width - 2, theme.text, theme.surface)
     local pager = " ‹ " .. range .. " › "

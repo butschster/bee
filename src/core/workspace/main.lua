@@ -161,7 +161,7 @@ local function main(initial_application: string?, secondary_application: string?
     local function send_appearance_state(request_id: string?, code: string?, message: string?)
         if broker_ready then
             process.send(broker, "bee.appearance.state", {version = 1, request_id = request_id or "", revision = scene.revision,
-                theme = preferences.theme, background = preferences.background, error_code = code or "", error = message or ""})
+                theme = preferences.theme, background = preferences.background, taskbar = preferences.taskbar, error_code = code or "", error = message or ""})
         end
     end
     local function spawn_presenter()
@@ -311,7 +311,7 @@ local function main(initial_application: string?, secondary_application: string?
                     elseif reply.op == "page" then send_scene()
                     elseif reply.op == "open" and reply.error == "" then
                         process.send(session, "bee.desktop.command", {version = 1, op = "add", id = reply.id,
-                            instance_id = reply.instance_id, title = reply.title})
+                            instance_id = reply.instance_id, title = reply.title, icon = reply.icon})
                         local record = records[reply.id]
                         if record then restore_window(record) end
                     elseif reply.op == "focus" and reply.error == "" then
@@ -366,7 +366,7 @@ local function main(initial_application: string?, secondary_application: string?
             if selected.value:from() == session then
                 local envelope = decode.desktop(selected.value:payload():data())
                 if envelope and envelope.scene.revision >= scene.revision then
-                    local changed = preferences.theme ~= envelope.preferences.theme or preferences.background ~= envelope.preferences.background
+                    local changed = preferences.theme ~= envelope.preferences.theme or preferences.background ~= envelope.preferences.background or preferences.taskbar ~= envelope.preferences.taskbar
                     scene, tabs, preferences = envelope.scene, envelope.tabs, envelope.preferences
                     local ordered: {string} = {}
                     local included: {[string]: boolean} = {}

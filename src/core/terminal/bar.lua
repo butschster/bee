@@ -6,7 +6,7 @@ type TabHit = {id: string, x: integer, width: integer, action: string?}
 type Frame = {text: string, hits: {TabHit}}
 local M = {}
 type Strip = {text: string, hits: {TabHit}}
-local function tabstrip(scene: model.Scene, order: {string}, width: integer): Strip
+local function tabstrip(scene: model.Scene, order: {string}, width: integer, icons: boolean): Strip
     local labels: {string} = {}
     local ids: {string} = {}
     local focused = 1
@@ -14,6 +14,10 @@ local function tabstrip(scene: model.Scene, order: {string}, width: integer): St
         for _, win in ipairs(scene.windows) do
             if win.id == id then
                 local title = tty.text.truncate(string.gsub(win.title, "%c", " "), math.floor(math.max(1, math.min(22, width - 7))), "…")
+                if icons then
+                    title = tty.text.truncate(win.icon ~= nil and win.icon ~= "" and win.icon or title, 2, "")
+                    if tty.text.width(title) == 0 then title = "•" end
+                end
                 local badge = win.mode == "fullscreen" and "▣ " or (win.mode == "minimized" and "− " or (win.mode == "collapsed" and "▸ " or ""))
                 labels[#labels + 1] = " " .. badge .. title .. " "
                 ids[#ids + 1] = id
@@ -67,7 +71,7 @@ function M.draw(scene: model.Scene, order: {string}, status: string, label: stri
     elseif width >= 36 then right = " " .. (status ~= "" and status or "Ready") .. " " end
     right = tty.text.truncate(right, math.floor(math.max(0, width // 2)))
     local room = math.floor(math.max(0, width - 7 - tty.text.width(right) - tty.text.width(restore)))
-    local strip = tabstrip(scene, order, room)
+    local strip = tabstrip(scene, order, room, preferences.taskbar == "icons")
     local text = active .. (opened and " BEE ▴ " or " BEE ▾ ") .. normal
     local hits: {TabHit} = {}
     -- Style each application independently without changing its hit geometry.

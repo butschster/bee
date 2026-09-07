@@ -25,7 +25,7 @@ local function copy_window(value: model.Window): model.Window
     return {
         id = value.id,
         instance_id = value.instance_id,
-        title = value.title,
+        title = value.title, icon = value.icon,
         bounds = copy_rect(value.bounds),
         normal_bounds = copy_rect(value.normal_bounds),
         mode = value.mode,
@@ -52,7 +52,7 @@ local function copy_tabs(value: {string}): {string}
 end
 
 local function copy_preferences(value: appearance.Preferences): appearance.Preferences
-    return {theme = value.theme, background = value.background}
+    return {theme = value.theme, background = value.background, taskbar = value.taskbar}
 end
 
 local function next_state(value: State, scene: model.Scene, tabs: {string}?): State
@@ -78,7 +78,7 @@ function M.reduce(value: State, command: commands.Command): State
     elseif command.op == "add" then
         if not command.id or not command.instance_id or not command.title then return value end
         if #value.scene.windows >= MAX_WINDOWS then return value end
-        local scene = model.add(value.scene, command.id, command.instance_id, command.title)
+        local scene = model.add(value.scene, command.id, command.instance_id, command.title, command.icon)
         if scene == value.scene then return value end
         local tabs = copy_tabs(value.tabs)
         tabs[#tabs + 1] = command.id
@@ -134,9 +134,9 @@ function M.reduce(value: State, command: commands.Command): State
     elseif command.op == "appearance" then
         if not command.theme or not command.background then return value end
         if command.expected_revision ~= nil and command.expected_revision ~= value.scene.revision then return value end
-        local preferences = appearance.decode({theme = command.theme, background = command.background})
+        local preferences = appearance.decode({theme = command.theme, background = command.background, taskbar = command.taskbar})
         if not preferences then return value end
-        if preferences.theme == value.preferences.theme and preferences.background == value.preferences.background then
+        if preferences.theme == value.preferences.theme and preferences.background == value.preferences.background and preferences.taskbar == value.preferences.taskbar then
             return value
         end
         local scene = copy_scene(value.scene)

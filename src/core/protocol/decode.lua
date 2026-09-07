@@ -13,7 +13,9 @@ function M.reply(value: unknown): Reply?
     local mount, code = contract.text(value.mount, 1024), contract.text(value.error_code, 80)
     if not request_id or not id or not instance or not title or not mount or not code
         or type(value.error) ~= "string" or #value.error > 4096 then return nil end
-    return {version = 1, request_id = request_id, op = op, id = id, instance_id = instance,
+    local icon = contract.text(value.icon, 8)
+    if value.icon ~= nil and not icon then return nil end
+    return {version = 1, request_id = request_id, op = op, id = id, instance_id = instance, icon = icon,
         title = title, mount = mount, error_code = code, error = value.error,
         definition_id = contract.text(value.definition_id, 160) or "", resume_schema = contract.text(value.resume_schema, 80) or "",
         restart_policy = contract.text(value.restart_policy, 16) or "never",
@@ -39,7 +41,9 @@ local function window(value: unknown): model.Window?
     if mode ~= "floating" and mode ~= "fullscreen" and mode ~= "minimized" and mode ~= "collapsed" then return nil end
     local restore = value.restore_mode
     if restore ~= "floating" and restore ~= "fullscreen" and restore ~= "collapsed" then return nil end
-    return {id = value.id, instance_id = value.instance_id, title = value.title,
+    local icon = contract.text(value.icon, 8)
+    if value.icon ~= nil and not icon then return nil end
+    return {id = value.id, instance_id = value.instance_id, title = value.title, icon = icon,
         bounds = bounds, normal_bounds = normal, mode = mode, restore_mode = restore}
 end
 function M.scene(value: unknown): model.Scene?

@@ -23,6 +23,11 @@ contextual discoverability, never authority. Only protected
 `bee:application_admission.bindings` selects allowed definitions, policy IDs and
 operation grants (`appearance_write`, `application_stop`).
 
+The admitted icon is copied into the window's presentation state. Settings can
+select compact icon tabs; the taskbar clips icons to two terminal cells and falls
+back to a short title when no icon is declared. Icons never identify or authorize
+an application: actions still target the stable view ID.
+
 `src/apps/` is the default package composition, currently shipped in the same
 pack as core. Physical directories do not change registry IDs. Separate Hub
 package releases will follow contract stabilization.

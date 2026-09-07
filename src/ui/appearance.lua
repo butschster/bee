@@ -1,7 +1,7 @@
 -- Semantic desktop colors and validated presentation preferences.
 type Theme = {id: string, title: string, ground: string, surface: string, text: string,
     muted: string, border: string, accent: string, pattern: string, on_accent: string?}
-type Preferences = {theme: string, background: string}
+type Preferences = {theme: string, background: string, taskbar: string?}
 local M = {}
 local themes: {Theme} = {
     {id = "honey", title = "Honey", ground = "#0c1119", surface = "#17202c", text = "#d8e2ef", muted = "#8999ad", border = "#6f89a5", accent = "#ffc963", pattern = "#1c2937"},
@@ -49,7 +49,7 @@ end
 function M.selection_text(theme: Theme): string return theme.on_accent or theme.ground end
 function M.themes(): {Theme} return themes end
 function M.backgrounds(): {string} return backgrounds end
-function M.defaults(): Preferences return {theme = "honey", background = "dots"} end
+function M.defaults(): Preferences return {theme = "honey", background = "dots", taskbar = "labels"} end
 function M.theme(id: string): Theme
     for _, item in ipairs(themes) do if item.id == id then return item end end
     return themes[1]
@@ -57,13 +57,14 @@ end
 function M.decode(value: unknown): Preferences?
     if type(value) ~= "table" or type(value.theme) ~= "string" or type(value.background) ~= "string" then return nil end
     if M.theme(value.theme).id ~= value.theme then return nil end
+    if value.taskbar ~= nil and value.taskbar ~= "labels" and value.taskbar ~= "icons" then return nil end
     for _, background in ipairs(backgrounds) do
-        if value.background == background then return {theme = value.theme, background = background} end
+        if value.background == background then return {theme = value.theme, background = background, taskbar = value.taskbar == "icons" and "icons" or "labels"} end
     end
     return nil
 end
 function M.cycle(value: Preferences, field: string): Preferences
-    local next_value: Preferences = {theme = value.theme, background = value.background}
+    local next_value: Preferences = {theme = value.theme, background = value.background, taskbar = value.taskbar}
     if field == "theme" then
         for index, item in ipairs(themes) do
             if item.id == value.theme then next_value.theme = themes[index % #themes + 1].id; break end

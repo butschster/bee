@@ -75,13 +75,14 @@ local function main(owner: string, initial_preferences: unknown)
     local function identified(item: Instance, op: contract.ReplyOp, request_id: string, code: string?, message: string?): contract.Reply
         local reply = contract.reply(request_id, op, code, message)
         reply.id, reply.instance_id, reply.title, reply.mount = item.view_id, item.instance_id, item.descriptor.title, item.mount
+        reply.icon = item.descriptor.icon
         reply.definition_id, reply.resume_schema = item.descriptor.definition_id, item.descriptor.resume_schema
         reply.restart_policy, reply.resume_state = item.descriptor.restart_policy, item.resume_state
         return reply
     end
     local function appearance_state(item: Instance, request_id: string?, code: string?, message: string?)
         process.send(item.execution_pid, "bee.appearance.state", {version = 1, request_id = request_id or "",
-            revision = appearance_revision, theme = preferences.theme, background = preferences.background,
+            revision = appearance_revision, theme = preferences.theme, background = preferences.background, taskbar = preferences.taskbar,
             error_code = code or "", error = message or ""})
     end
     local function find_pid(pid: string): Instance?
@@ -271,7 +272,7 @@ local function main(owner: string, initial_preferences: unknown)
                             local routed_id = uuid.v7()
                             preference_waiters[routed_id] = {request_id = request_id, recipient = item.execution_pid, control = false}
                             local sent, err = process.send(owner, "bee.appearance.request", {version = 1, op = "appearance", request_id = routed_id,
-                                theme = prefs.theme, background = prefs.background})
+                                theme = prefs.theme, background = prefs.background, taskbar = prefs.taskbar})
                             if not sent then
                                 preference_waiters[routed_id] = nil
                                 appearance_state(item, request_id, "unavailable", tostring(err))

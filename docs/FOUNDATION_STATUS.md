@@ -7,6 +7,10 @@ and portable pack load only `src/`; fixtures and the legacy archive are excluded
 This file and [application contracts](APPLICATION_CONTRACTS.md) describe the
 implemented boundary. Older design documents are proposals where they differ.
 
+Settings provides 16 themes, 11 backgrounds and a Labels/Icons taskbar choice.
+These preferences persist with the workspace. Compact tabs retain admitted app
+icons, minimize/restore actions and the normal focus/overflow behavior.
+
 ## Ownership
 
 | Owner | Responsibility | Replacement boundary |

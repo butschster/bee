@@ -3,7 +3,7 @@ local arguments = require("arguments")
 local M = {}
 type ReplyOp = "open" | "close" | "closed" | "focus" | "attached" | "bind" | "page" | "shutdown"
 type Reply = {version: integer, request_id: string, op: ReplyOp, id: string, instance_id: string,
-    title: string, mount: string, definition_id: string, resume_schema: string, restart_policy: string, resume_state: string, error: string, error_code: string}
+    title: string, icon: string?, mount: string, definition_id: string, resume_schema: string, restart_policy: string, resume_state: string, error: string, error_code: string}
 type RequestOp = "open" | "close" | "bind" | "shutdown"
 type Request = {version: integer, request_id: string, op: RequestOp, id: string, definition_id: string, recipient: string, restore_instance_id: string, restore_view_id: string, resume_schema: string, resume_state: string, arguments: {string}}
 type Descriptor = {definition_id: string, definition_revision: string, title: string, icon: string,
