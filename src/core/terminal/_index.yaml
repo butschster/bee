@@ -7,6 +7,7 @@ entries:
   method: main
   modules: [tty, process, channel, time, uuid, ctx]
   imports:
+    title_editor: bee.terminal:title_editor
     model: bee.desktop:model
     decode: bee.protocol:decode
     layout: bee.desktop:layout
@@ -19,6 +20,7 @@ entries:
   source: file://render.lua
   modules: [tty]
   imports:
+    title_editor: bee.terminal:title_editor
     model: bee.desktop:model
     layout: bee.desktop:layout
     appearance: bee.desktop:appearance
@@ -56,4 +58,10 @@ entries:
   imports:
     model: bee.desktop:model
     layout: bee.desktop:layout
+    appearance: bee.desktop:appearance
+- name: title_editor
+  kind: library.lua
+  source: file://title_editor.lua
+  modules: [tty]
+  imports:
     appearance: bee.desktop:appearance

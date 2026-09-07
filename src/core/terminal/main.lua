@@ -1,4 +1,5 @@
 local tty = require("tty")
+local title_editor = require("title_editor")
 local ctx = require("ctx")
 local process = require("process")
 local channel = require("channel")
@@ -38,6 +39,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
     local capture: layout.Capture? = nil
     local preview: model.Rect? = nil
     local awaiting_place = false
+    local editor: title_editor.State? = nil
     local preferences = appearance.defaults()
     local start: menu.State? = nil
     local captured_releases: {[string]: boolean} = {}
@@ -86,10 +88,23 @@ local function main(owner: string, initial_application: string?, secondary_appli
     local function rectangle(win: model.Window): model.Rect
         return layout.rectangle(scene, win, capture, preview)
     end
+    local function personalize(id: string, title: string, accent: string)
+        local sent, err = process.send(owner, "bee.desktop.command", {version = 1, op = "personalize", id = id,
+            user_title = title, accent = accent, request_id = uuid.v7()})
+        if not sent then status = tostring(err) end
+    end
     local function invoke(action: string)
         local target = start and start.target or input_focus()
         start = nil
-        if action == "quit" then running = false
+        if action == "rename" then
+            for _, win in ipairs(scene.windows) do
+                if win.id == target then editor = title_editor.open(win.id, model.display_title(win), win.accent or ""); break end
+            end
+        elseif action:sub(1, 7) == "accent:" then
+            for _, win in ipairs(scene.windows) do
+                if win.id == target then personalize(win.id, win.user_title or "", action:sub(8)); break end
+            end
+        elseif action == "quit" then running = false
         elseif action:sub(1, 5) == "open:" then application("open", action:sub(6), "")
         elseif action == "initial" and initial_application then application("open", initial_application, "")
         elseif action == "close" then application("close", "", target)
@@ -120,6 +135,11 @@ local function main(owner: string, initial_application: string?, secondary_appli
         end
     end
     local function paint()
+        if editor then
+            local present = false
+            for _, win in ipairs(scene.windows) do if win.id == editor.id then present = true; break end end
+            if not present then editor = nil end
+        end
         local contents: {[string]: render.Content} = {}
         for _, win in ipairs(model.visible(scene)) do
             local attached = attachments[win.id]
@@ -139,7 +159,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
             end
         end
         local frame = render.draw(scene, tabs_order, contents, capture, preview, status, "workspace / local",
-            preferences, start, initial_application ~= nil, catalog)
+            preferences, start, initial_application ~= nil, catalog, editor)
         tab_hits = frame.tabs
         output:present(frame.rows, {cursor = frame.cursor})
         dirty = false
@@ -239,6 +259,21 @@ local function main(owner: string, initial_application: string?, secondary_appli
                 captured_releases[kind] = nil; handled = true
             elseif event.type == "mouse" and event.action == "release" and captured_mouse then
                 captured_mouse = false; handled = true
+            elseif editor and event.type ~= "resize" and event.type ~= "close" then
+                if event.type == "key" and event.ctrl == true and event.key == "q" then running = false
+                elseif event.type == "key" and kind == "f12" and event.action ~= "release" then
+                    editor = nil; rejoining = true
+                    process.send(owner, "bee.workspace.control", {version = 1, op = "rejoin"})
+                else
+                    local response = title_editor.respond(editor, event, title_editor.panel(width, height))
+                    editor = response.state
+                    if response.action == "save" then
+                        personalize(editor.id, editor.left .. editor.right, editor.accent); editor = nil
+                    elseif response.action == "cancel" then editor = nil end
+                end
+                if event.type == "key" and event.action ~= "release" then captured_releases[kind] = true end
+                if event.type == "mouse" and event.action == "press" then captured_mouse = true end
+                handled = true; dirty = true
             elseif capture and not awaiting_place and event.type == "key" and (kind == "esc" or kind == "escape") and event.action ~= "release" then
                 capture, preview = nil, nil; awaiting_place = false
                 captured_releases[kind] = true; captured_mouse = true

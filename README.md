@@ -25,7 +25,7 @@ See [threads](docs/THREADS.md) for the local journal's API and scheduling limits
 |---|---|
 | Title controls | Minimize, maximize/restore, close |
 | Title drag / corner drag | Move / resize |
-| Right-click a title or app tab | Window actions |
+| Right-click a title or app tab | Window actions, rename and accent |
 | Right-click the desktop | Appearance and desktop actions |
 | Alt+Tab / Alt+Shift+Tab | Switch applications; restore minimized tabs |
 | Alt+F9 / F11 | Minimize / maximize |

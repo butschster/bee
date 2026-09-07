@@ -91,7 +91,25 @@ restart and F12. Old preferences default to Labels. The legacy demo Studio/chat/
 new core. Agent-driven layout/settings operations are not yet published through
 MCP. These requests must not disappear behind the subsystem roadmap.
 
-## Instance titles and accents (pending)
+## Instance titles and accents
+
+User labels and accents are implemented. Right-click a title or tab and choose
+Rename or Accent. Rename supports selection, cursor movement, grapheme deletion,
+bounded paste, Enter/Save and Escape/Cancel. An empty label restores the app title.
+The dialog consumes input; it does not type into the underlying terminal.
+
+The session owns `user_title` and `accent` independently of the application title.
+Labels are limited to 80 bytes with no control characters. Accents are named
+Amber, Cyan, Green, Rose or Violet, with a theme-default reset and contrasting
+light/dark palette variants. They color chrome only. Identity, permissions and
+application content colors do not change. Values survive F12 and supported cold
+application recovery; labels do not resurrect dead native PTYs.
+
+Source/pack acceptance covers two separately named terminals, modal input
+isolation, cancel/clear, accents, minimized restore and Settings cold recovery.
+A fixture also verifies that an app cannot submit a private personalization
+command directly to the workspace. Automatic app announcements and native OSC
+title forwarding below remain unimplemented.
 
 Multiple terminals need distinguishable names. Keep the definition's launcher
 title, the application's announced instance title, and the user's title override

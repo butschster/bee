@@ -10,6 +10,9 @@ implemented boundary. Older design documents are proposals where they differ.
 Settings provides 16 themes, 11 backgrounds and a Labels/Icons taskbar choice.
 These preferences persist with the workspace. Compact tabs retain admitted app
 icons, minimize/restore actions and the normal focus/overflow behavior.
+Title/tab context menus also support user labels and named accents. The session
+owns these values independently of application identity; supported recovery
+restores them. Automatic application/PTY title announcements are not implemented.
 
 ## Ownership
 

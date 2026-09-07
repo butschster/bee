@@ -28,6 +28,12 @@ select compact icon tabs; the taskbar clips icons to two terminal cells and fall
 back to a short title when no icon is declared. Icons never identify or authorize
 an application: actions still target the stable view ID.
 
+The user can set a separate per-window label and named accent through the
+presenter's context menu. The session commits these values, and supported
+checkpoint recovery preserves them. Applications cannot submit that private
+desktop command themselves. An application-owned title announcement operation
+is not implemented yet.
+
 `src/apps/` is the default package composition, currently shipped in the same
 pack as core. Physical directories do not change registry IDs. Separate Hub
 package releases will follow contract stabilization.

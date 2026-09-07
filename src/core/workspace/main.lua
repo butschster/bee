@@ -146,6 +146,8 @@ local function main(initial_application: string?, secondary_application: string?
     local function restore_window(record: recovery.Record)
         local window = record.window
         if not window then return end
+        process.send(session, "bee.desktop.command", {version = 1, op = "personalize", id = record.id,
+            user_title = window.user_title or "", accent = window.accent or ""})
         local rect = window.normal_bounds
         process.send(session, "bee.desktop.command", {version = 1, op = "place", id = record.id,
             x = rect.x, y = rect.y, width = rect.width, height = rect.height})
@@ -288,7 +290,7 @@ local function main(initial_application: string?, secondary_application: string?
                 local data: unknown = selected.value:payload():data()
                 -- Application lifecycle alone creates/removes logical windows.
                 if type(data) == "table" and (data.op == "focus" or data.op == "place" or data.op == "fullscreen"
-                    or data.op == "minimize" or data.op == "collapse" or data.op == "restore" or data.op == "snap") then
+                    or data.op == "minimize" or data.op == "collapse" or data.op == "restore" or data.op == "snap" or data.op == "personalize") then
                     process.send(session, "bee.desktop.command", data)
                 end
             end
