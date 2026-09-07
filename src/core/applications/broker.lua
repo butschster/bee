@@ -15,12 +15,13 @@ type Waiter = {request_id: string, recipient: string, control: boolean}
 type Checkpoint = {request_id: string, pid: string, deadline: number}
 type Instance = {view_id: string, instance_id: string, execution_pid: string, view: tty.Viewport,
     descriptor: contract.Descriptor, binding: contract.Binding, mount: string, launch_token: string,
-    state: lifecycle.State, open_request: string, opened: boolean, ready_received: boolean, resume_state: string, waiters: {Waiter}, attempts: integer}
+    announced_title: string?, title_dirty: boolean?, state: lifecycle.State, open_request: string, opened: boolean, ready_received: boolean, resume_state: string, waiters: {Waiter}, attempts: integer}
 local function now(): number return time.now():unix_nano() / 1000000000 end
 local function main(owner: string, initial_preferences: unknown)
     local bootstrap: unknown = ctx.get("bee.workspace_owner")
     if bootstrap ~= owner or owner == "" then error("Untrusted broker bootstrap") end
     local requests = assert(process.listen("bee.app.request", {message = true}))
+    local titles = assert(process.listen("bee.application.title", {message = true}))
     local app_ready = assert(process.listen("bee.application.ready", {message = true}))
     local appearance_requests = assert(process.listen("bee.appearance.request", {message = true}))
     local appearance_states = assert(process.listen("bee.appearance.state", {message = true}))
@@ -74,7 +75,7 @@ local function main(owner: string, initial_preferences: unknown)
     end
     local function identified(item: Instance, op: contract.ReplyOp, request_id: string, code: string?, message: string?): contract.Reply
         local reply = contract.reply(request_id, op, code, message)
-        reply.id, reply.instance_id, reply.title, reply.mount = item.view_id, item.instance_id, item.descriptor.title, item.mount
+        reply.id, reply.instance_id, reply.title, reply.mount = item.view_id, item.instance_id, item.announced_title or item.descriptor.title, item.mount
         reply.icon = item.descriptor.icon
         reply.definition_id, reply.resume_schema = item.descriptor.definition_id, item.descriptor.resume_schema
         reply.restart_policy, reply.resume_state = item.descriptor.restart_policy, item.resume_state
@@ -162,9 +163,16 @@ local function main(owner: string, initial_preferences: unknown)
     end
     assert(process.send(owner, "bee.application.catalog", {version = 1, items = catalog.items(bindings)}))
     assert(process.send(owner, "bee.app.ready", {version = 1}))
+    local function tick_instance(item: Instance)
+        transition(item, "tick")
+        if item.opened and item.state.phase == "ready" and item.title_dirty then
+            emit(identified(item, "title", ""))
+            item.title_dirty = false
+        end
+    end
     local running = true
     while running do
-        local selected = channel.select({requests:case_receive(), app_ready:case_receive(), appearance_requests:case_receive(),
+        local selected = channel.select({requests:case_receive(), app_ready:case_receive(), titles:case_receive(), appearance_requests:case_receive(),
             appearance_states:case_receive(), controls:case_receive(), checkpoints:case_receive(), persisted:case_receive(), events:case_receive(), ticks:case_receive()})
         if not selected.ok then break end
         if selected.channel == events then
@@ -182,7 +190,22 @@ local function main(owner: string, initial_preferences: unknown)
                     checkpoint_waiters[id] = nil
                 end
             end
-            for _, item in pairs(instances) do transition(item, "tick") end
+            for _, item in pairs(instances) do tick_instance(item) end
+        elseif selected.channel == titles then
+            local message = selected.value
+            local item = find_pid(tostring(message:from()))
+            local data: unknown = message:payload():data()
+            if item and (item.state.phase == "starting" or item.state.phase == "ready")
+                and type(data) == "table" and data.version == 1 and data.instance_id == item.instance_id
+                and data.id == item.view_id and data.launch_token == item.launch_token then
+                local title = contract.text(data.title, 80)
+                if title then
+                    if title == "" then title = item.descriptor.title end
+                    if title ~= (item.announced_title or item.descriptor.title) then
+                        item.announced_title = title; item.title_dirty = true
+                    end
+                end
+            end
         elseif selected.channel == checkpoints then
             local msg = selected.value
             local item = find_pid(tostring(msg:from()))
@@ -388,6 +411,7 @@ local function main(owner: string, initial_preferences: unknown)
     ticker:stop()
     -- Workspace exit is bounded; per-app graceful deadlines are for normal stop.
     for _, item in pairs(instances) do process.terminate(item.execution_pid); item.view:close() end
+    process.unlisten(titles)
     process.unlisten(requests); process.unlisten(app_ready); process.unlisten(appearance_requests)
     process.unlisten(appearance_states); process.unlisten(controls)
     process.unlisten(checkpoints); process.unlisten(persisted)

@@ -28,6 +28,14 @@ function M.ready(launch: Launch)
     assert(process.send(launch.broker_pid, "bee.application.ready", {version = 1, instance_id = launch.instance_id,
         view_id = launch.view_id, launch_token = launch.launch_token}))
 end
+-- True means queued; it is not a persistence or presentation acknowledgement.
+function M.title(launch: Launch, title: string): (boolean, string?)
+    if #title > 80 or title:find("%c") then return false, "Invalid application title" end
+    local sent, err = process.send(launch.broker_pid, "bee.application.title", {version = 1,
+        instance_id = launch.instance_id, id = launch.view_id, launch_token = launch.launch_token, title = title})
+    if not sent then return false, tostring(err) end
+    return true, nil
+end
 function M.checkpoint(launch: Launch, state: string): (string?, string?)
     if launch.resume_schema == "" or #state > 65536 then return nil, "Checkpoint unsupported or too large" end
     local request_id = uuid.v7()

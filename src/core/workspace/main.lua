@@ -310,6 +310,9 @@ local function main(initial_application: string?, secondary_application: string?
                             restore_next()
                         end
                         end
+                    elseif reply.op == "title" and reply.error == "" then
+                        process.send(session, "bee.desktop.command", {version = 1, op = "announce", id = reply.id,
+                            instance_id = reply.instance_id, title = reply.title})
                     elseif reply.op == "page" then send_scene()
                     elseif reply.op == "open" and reply.error == "" then
                         process.send(session, "bee.desktop.command", {version = 1, op = "add", id = reply.id,

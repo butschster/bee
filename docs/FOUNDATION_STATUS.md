@@ -12,7 +12,8 @@ These preferences persist with the workspace. Compact tabs retain admitted app
 icons, minimize/restore actions and the normal focus/overflow behavior.
 Title/tab context menus also support user labels and named accents. The session
 owns these values independently of application identity; supported recovery
-restores them. Automatic application/PTY title announcements are not implemented.
+restores them. Apps can announce their own bounded titles through the authenticated
+broker; user labels retain precedence. Native PTY title forwarding is not implemented.
 
 ## Ownership
 

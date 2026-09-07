@@ -15,7 +15,7 @@ local MAX_APPEARANCE_VALUE = 80
 local MAX_COORDINATE = 2147483647
 
 type Op = "screen" | "add" | "focus" | "fullscreen" | "minimize" | "collapse" | "restore"
-    | "snap" | "place" | "remove" | "personalize" | "appearance" | "snapshot" | "shutdown"
+    | "snap" | "place" | "remove" | "personalize" | "announce" | "appearance" | "snapshot" | "shutdown"
 type Command = {
     version: integer,
     request_id: string?,
@@ -117,6 +117,13 @@ function M.decode(value: unknown): Command?
         if not id or not x or not y or not width or not height then return nil end
         return {version = base.version, request_id = base.request_id, op = "place", id = id, x = x, y = y,
             width = width, height = height} :: Command
+    elseif value.op == "announce" then
+        local id = text(value.id, MAX_ID, true)
+        local instance_id = text(value.instance_id, MAX_INSTANCE_ID, true)
+        local title = text(value.title, 80, true)
+        if not id or not instance_id or not title then return nil end
+        return {version = base.version, request_id = base.request_id, op = "announce", id = id,
+            instance_id = instance_id, title = title} :: Command
     elseif value.op == "personalize" then
         local id = text(value.id, MAX_ID, true)
         local user_title = text(value.user_title, MAX_APPEARANCE_VALUE, false)

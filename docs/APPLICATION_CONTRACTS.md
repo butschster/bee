@@ -31,8 +31,16 @@ an application: actions still target the stable view ID.
 The user can set a separate per-window label and named accent through the
 presenter's context menu. The session commits these values, and supported
 checkpoint recovery preserves them. Applications cannot submit that private
-desktop command themselves. An application-owned title announcement operation
-is not implemented yet.
+desktop command themselves.
+
+`bee.application:client.title(launch, title)` queues an application title update.
+Titles are limited to 80 bytes without controls; an empty string restores the
+admitted definition title. Success means queued, not committed or persisted.
+The broker authenticates the sender PID, instance/view IDs and launch token,
+coalesces updates on its 100ms tick and routes them through the session. User
+labels take precedence and clearing a label reveals the latest app title.
+Updates survive presenter replacement; apps must announce again after cold
+restart. Native PTY OSC title forwarding is not implemented.
 
 `src/apps/` is the default package composition, currently shipped in the same
 pack as core. Physical directories do not change registry IDs. Separate Hub
@@ -139,3 +147,56 @@ contain reusable grants, credentials or runtime objects. The database is a local
 workspace file, not an encrypted secret store. Future overlay/Hub activation must
 validate migration compatibility before activation and keep a tested recovery path;
 these install/activation transactions are not implemented by this store.
+
+## Proposed shell interactions and close negotiation
+
+This section is a design boundary, not a callable API. Current close still sends
+an app close event and begins the 250ms termination deadline; apps cannot veto it.
+Do not attempt to protect unsaved work by opening a dialog on that event.
+
+The shell owns presentation, focus isolation and user responses. The application
+owns the question, the meaning of each action and whether its work may close.
+Use the existing broker boundary rather than introducing another service:
+
+- An authenticated instance may have one outstanding interaction, identified by
+  an opaque request ID. Bound text, action count and any input value. Permit
+  confirmation and single-field text queries first, with explicit cancellation.
+- The broker owns pending requests independently of the replaceable presenter.
+  Session projections expose the dialog belonging to each view. Switching apps
+  leaves the request pending; an app cannot steal global focus by asking.
+- The presenter renders the focused app's dialog and consumes all app input while
+  it is visible. Escape cancels; keyboard and mouse select the same actions.
+  Other app tabs remain usable. Small screens clip safely and retain buttons.
+- Responses pass through the workspace and broker, authenticated against the
+  current presenter and the matching request/instance. Resolve once; reject stale
+  responses. App EXIT removes its request. F12 reconstructs pending presentation.
+  Dialog requests are transient and are not restored as permissions after reboot.
+
+Close negotiation must precede destructive cleanup. An app opts into negotiated
+close at readiness; ordinary apps retain immediate close behavior. A close request
+for an opted-in app enters a bounded awaiting-response state without starting the
+termination deadline. The app may accept, decline, or supply a confirmation. An
+accepted decision enters existing cooperative cleanup. Cancellation preserves the
+instance and view. Repeated close clicks reuse the pending request. A response
+timeout reports an unresponsive app and offers explicit force-stop; it is not
+permission to destroy work. Force-stop remains a separately authorized operation.
+
+Closing a view is currently stopping its app process. Test Status already owns
+its worker separately, so closing that view need not warn about cancelling a run
+that continues. Terminal needs an explicit policy: it does not yet have reliable
+foreground-job detection, and must not pretend it can distinguish an idle prompt
+from valuable native work. A conservative terminal close confirmation is a valid
+first implementation. Minimize and F12 never invoke close negotiation.
+
+Desktop shutdown must negotiate before tearing down children. Aggregate pending
+app decisions in a single shell-owned shutdown presentation, allow cancellation,
+and retain explicit force quit. Only accepted shutdown begins parallel cleanup.
+Apps cannot indefinitely trap the user. This must preserve responsive exit when
+there is no guarded work, rather than adding a fixed wait to every Ctrl+Q.
+
+Acceptance must exercise accept/cancel, duplicate close, app EXIT during a dialog,
+wrong sender/request, F12 with a pending question, typing/paste isolation from PTYs,
+small-screen layout, background requests, unresponsive apps, and cancelled versus
+confirmed desktop shutdown. A visual modal without these lifecycle checks does
+not implement safe closing. Permissions remain enforced by service owners; a
+positive dialog response is not a general capability grant.

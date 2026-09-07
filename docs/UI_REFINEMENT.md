@@ -108,8 +108,10 @@ application recovery; labels do not resurrect dead native PTYs.
 Source/pack acceptance covers two separately named terminals, modal input
 isolation, cancel/clear, accents, minimized restore and Settings cold recovery.
 A fixture also verifies that an app cannot submit a private personalization
-command directly to the workspace. Automatic app announcements and native OSC
-title forwarding below remain unimplemented.
+command directly to the workspace. Application title announcements are implemented
+through `bee.application:client.title`; native OSC forwarding remains future work.
+Test Status announces “Checks · started” and “Checks · complete” from journal
+replay; these describe recorded events, not proof of current worker liveness.
 
 Multiple terminals need distinguishable names. Keep the definition's launcher
 title, the application's announced instance title, and the user's title override

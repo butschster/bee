@@ -228,6 +228,17 @@ function M.display_title(window: Window): string
     return window.title
 end
 
+-- The broker supplies the current app title; a user label remains independent.
+function M.announce(scene: Scene, id: string, instance_id: string, title: string): Scene
+    local index = find_index(scene.windows, id)
+    if not index then return scene end
+    local current = scene.windows[index]
+    if current.instance_id ~= instance_id or current.title == title then return scene end
+    local windows = copy_windows(scene.windows)
+    windows[index].title = title
+    return commit(scene, scene.width, scene.height, scene.focus, windows)
+end
+
 function M.personalize(scene: Scene, id: string, user_title: string, accent: string): Scene
     local index = find_index(scene.windows, id)
     if index == nil then return scene end
