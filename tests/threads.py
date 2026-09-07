@@ -57,4 +57,4 @@ with tempfile.TemporaryDirectory(prefix="bee-thread-test-") as temporary:
         db.execute("UPDATE thread_demo_schema_migrations SET checksum='changed'")
     bad = run("project-a", "run-c", success=False)
     assert "checksum" in bad, bad
-print("Threads: real test events, sender/DB denial, conflicting retry, restart replay, multi-page catch-up, cursor validation/resume, per-thread isolation, migration integrity")
+print("Threads: native contract reader, actor/scope framing, bounded read capability, real test events, sender/DB denial, conflicting retry, restart replay, multi-page catch-up, cursor validation/resume, per-thread isolation, migration integrity")

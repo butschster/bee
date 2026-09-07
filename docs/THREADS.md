@@ -105,3 +105,11 @@ message was sent by the original PID. The fixed participant fixture still uses
 exact PID admission internally. Native definitions/bindings are the intended
 public operation boundary. Trait/tool metadata may describe adapters to those
 operations later but does not supply authority. W2 compatibility remains unproved.
+
+The fixture now exercises a native contract read adapter and a typed Lua reader.
+An owner-issued bearer capability authorizes read access to exactly one thread
+for that owner lifetime; a bound function returns through its own PID. It does
+not forward a claimed caller PID as authentication. These ephemeral capabilities
+are intentionally delegable and must not enter checkpoints. Public actor/resource
+membership and revocation are still proposals; this fixture does not implement
+them. Its subscriber uses the reader to catch up after private wake messages.

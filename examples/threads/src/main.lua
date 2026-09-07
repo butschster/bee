@@ -5,6 +5,7 @@ local security = require("security")
 local time = require("time")
 local io = require("io")
 local store = require("store")
+local uuid = require("uuid")
 local function main(thread: string?, run: string?, after_text: string?)
     thread, run = thread or "local-tests", run or "first-run"
     if #thread == 0 or #thread > 80 or thread:find("%c") or #run == 0 or #run > 80 or run:find("%c") then error("Invalid thread or run ID") end
@@ -22,7 +23,8 @@ local function main(thread: string?, run: string?, after_text: string?)
     if not binding_policy or not method_policy or not function_policy then error("Missing contract probe policy") end
     local scope = security.new_scope({participant, binding_policy, method_policy, function_policy})
     local owner = tostring(process.pid())
-    local reader = tostring(assert(process.with_options({}):with_scope(scope):spawn_monitored("bee.thread_demo:subscriber", "bee.thread_demo:workers", owner, thread, math.floor(after))))
+    local read_capability = uuid.v7()
+    local reader = tostring(assert(process.with_options({}):with_scope(scope):spawn_monitored("bee.thread_demo:subscriber", "bee.thread_demo:workers", owner, thread, math.floor(after), read_capability)))
     local writer = tostring(assert(process.with_options({}):with_scope(scope):spawn_monitored("bee.thread_demo:producer", "bee.thread_demo:workers", owner, thread, run)))
     local ticker = assert(time.ticker("100ms"))
     local ticks = ticker:channel()
@@ -55,7 +57,14 @@ local function main(thread: string?, run: string?, after_text: string?)
         else
             local sender = tostring(selected.value:from())
             local data: unknown = selected.value:payload():data()
-            if sender ~= reader and sender ~= writer then
+            if type(data) == "table" and data.version == 1 and data.capability == read_capability then
+                if data.op ~= "read" or data.thread ~= thread then reply(sender, 0, {}, "denied")
+                elseif type(data.after) ~= "number" or data.after ~= math.floor(data.after) or data.after < 0 or data.after > 10000 then reply(sender, 0, {}, "invalid")
+                else
+                    local rows, err = read(math.floor(data.after))
+                    reply(sender, 0, rows, err or "")
+                end
+            elseif sender ~= reader and sender ~= writer then
                 -- Unknown senders cannot cause reflection traffic or mutate state.
             elseif type(data) ~= "table" or data.version ~= 1 or data.thread ~= thread then
                 reply(sender, 0, {}, "denied")

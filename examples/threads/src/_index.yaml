@@ -5,7 +5,7 @@ entries:
   kind: process.lua
   source: file://main.lua
   method: main
-  modules: [process, channel, security, time, io]
+  modules: [process, channel, security, time, io, uuid]
   imports:
     store: bee.thread_demo.storage:store
   meta:
@@ -30,17 +30,33 @@ entries:
   modules: [process, sql, contract, security]
   imports:
     client: bee.thread_demo:client
-- name: identity_contract
+    reader: bee.thread_demo:reader
+- name: reader
+  kind: library.lua
+  source: file://reader.lua
+  modules: [contract]
+  imports:
+    client: bee.thread_demo:client
+- name: reader_contract
   kind: contract.definition
   methods:
   - name: inspect
     description: Inspect caller framing in the isolated contract proof
-- name: identity_binding
+  - name: read_after
+    description: Read committed events with an owner-issued read capability
+- name: reader_binding
   kind: contract.binding
   contracts:
-  - contract: bee.thread_demo:identity_contract
+  - contract: bee.thread_demo:reader_contract
     methods:
       inspect: bee.thread_demo:identity_probe
+      read_after: bee.thread_demo:read_after
+- name: read_after
+  kind: function.lua
+  source: file://read_after.lua
+  method: main
+  imports:
+    client: bee.thread_demo:client
 - name: identity_probe
   kind: function.lua
   source: file://identity_probe.lua
@@ -80,19 +96,19 @@ entries:
   kind: security.policy
   policy:
     actions: [contract.open]
-    resources: [bee.thread_demo:identity_binding]
+    resources: [bee.thread_demo:reader_binding]
     effect: allow
 - name: method_policy
   kind: security.policy
   policy:
     actions: [contract.call]
-    resources: [inspect]
+    resources: [inspect, read_after]
     effect: allow
 - name: function_policy
   kind: security.policy
   policy:
     actions: [funcs.call]
-    resources: [bee.thread_demo:identity_probe]
+    resources: [bee.thread_demo:identity_probe, bee.thread_demo:read_after]
     effect: allow
 - name: owner
   kind: security.policy
