@@ -9,6 +9,31 @@ informational, not a workspace switcher. The generic idle "Ready" label is gone.
 The runtime registry stores definitions/history separately from the workspace
 application store and journal; none of those storage paths is a UI workspace name.
 
+## Named supervisor endpoint
+
+Use the runtime's `process.registry.register(name, nil, scope)` and direct
+`process.send(name, topic, body)` addressing. The supervisor registers its own
+execution; successful spawn alone is not endpoint readiness. A startup response
+follows registration and initialization. Replies still authenticate the expected
+execution PID, correlation ID and workspace identity. Re-resolve after restart
+and establish a fresh attachment incarnation before accepting new control.
+
+The local fixture exercises LOCAL registration and sends broker operations through
+the name. Its catalog response gates the first named request. In the pinned runtime
+the local registration capability is `process.registry.register` on the exact
+name (not the `.local` spelling in the runtime spec). Wider scopes use their native
+scope-specific policies. LOCAL names alone are not cluster-wide discovery; the
+Hive profile must select an appropriate native scope and node-qualified identity.
+No separate Bee naming registry or mesh transport is required.
+
+Remote placement requests go to the destination supervisor or its workspace
+service. That owner authenticates the requesting peer/execution, resolves its
+admitted actor/resource mapping, establishes local security context and starts
+the admitted application. Payload actor IDs, display names and thread membership
+do not select privileged local identity. Existing actor messaging remains direct
+native routing; new execution and presence registration remain owner operations.
+The current fixture proves local named delivery only, not remote actor admission.
+
 ## Current coupling to remove
 
 `src/core/workspace/main.lua` starts the physical terminal before opening storage,

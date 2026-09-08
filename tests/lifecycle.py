@@ -157,6 +157,9 @@ def detached():
             shutil.copytree(ROOT / "tests/fixtures/attachments", project / "src/probe")
             broker = project / "src/core/applications/broker.lua"
             code = broker.read_text()
+            bootstrap = 'if bootstrap ~= owner or owner == "" then error("Untrusted broker bootstrap") end'
+            assert code.count(bootstrap) == 1
+            code = code.replace(bootstrap, bootstrap + '\n    assert(process.registry.register("bee.attachment_probe.host", nil, process.registry.LOCAL))')
             anchor = "local _, err = view:revoke(item.mount)"
             assert code.count(anchor) == 1
             code = code.replace(anchor, '''local function revoke(): (boolean?, string?)
@@ -185,7 +188,7 @@ def detached():
                 result = subprocess.run(args, cwd=folder if packed else project, capture_output=True, text=True, timeout=20,
                                         env={**os.environ, "BEE_WORKSPACE_DB": str(folder / f"workspace-{mode}.db"), "BEE_THREADS_DB": str(folder / "threads.db")})
                 assert result.returncode == 0, result.stdout + result.stderr
-    print("Detached broker source/pack: piped CLI with no physical TTY, checkpoint before attachment, readiness survives deadline, failed mount and reattach preserve producer", flush=True)
+    print("Detached broker source/pack: native named endpoint after readiness, no physical TTY, checkpoint before attachment, failed revoke retains controller, detach denies stale rights, reattach preserves producer", flush=True)
 
 
 if __name__ == "__main__":

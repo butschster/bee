@@ -84,6 +84,49 @@ accepted. This sequence is a plan, not permission to bypass publication checks.
 
 ## Code and organization critique
 
+### Legacy driver shapes to retain
+
+Reference-only review on 2026-09-07 inspected the external legacy tree:
+`driver-claude/src/driver.lua`, its `_index.yaml`,
+`_archive/poc/lineage/src/harness/{catalog,kit}.lua`, the Codex driver there,
+and `os-gateway/src/{hook,mcp}.lua`. None is a production dependency or evidence
+that its provider-specific flags still work in current harness versions.
+
+The useful shape is a registry-discovered native driver contract, independent
+window/session execution owners, and a gateway bound to the launched action.
+The legacy `prepare`, `command` and `parse` methods separate launch preparation
+from provider output parsing; hook observations and MCP calls meet in the thread.
+Keep that separation while replacing untyped values and shell-command strings
+with bounded typed launch data and literal argument vectors.
+
+The intended zero-setup path remains `bee codex [brief]` (likewise other admitted
+handlers). Its application handler selects an admitted driver binding. The run
+owner creates or joins the authorized thread, records the driver revision and
+harness session reference, prepares scoped hook/MCP configuration, then launches
+the native program. The gateway must be ready before the harness starts; failure
+must report an incomplete launch, not quietly run an apparently integrated agent
+without its tools. The visible terminal is one view of that execution.
+
+Keep `workspace_id`, `thread_id`, run identity, app/view identity and the harness's
+own conversation/session ID distinct. A driver declares interactive, resumed-turn
+and structured-output capabilities separately. Preserve original hook names and
+source event identity alongside normalized events; absent hooks are explicit.
+Interactive terminal input is not automatically a safe background message queue.
+
+MCP exposes the same authorized subsystem operations that local apps consume.
+The launch owner binds credentials to the admitted run and resource scope; a
+thread ID or URL parameter alone does not grant access. Driver configuration
+does not enable bypass flags or edit the user's global harness configuration by
+default. Harness configuration/authentication and resume behavior need acceptance
+against supported provider versions before this replaces today's Terminal aliases.
+Self-edit tools still route through the separately granted publication owner.
+
+The next implementation should retain the legacy contract shape, not its hardcoded
+home paths, fixed tool inventory or shell-specific command assembly. Native and
+remote launches use the same run contract; the destination owner establishes the
+actor and allowed execution scope after admission. This remains proposed driver
+work, sequenced after the local host/attachment boundary.
+
 The import graph, pure scene reducer, typed boundary decoders, independent apps,
 negative permission checks and source/pack acceptance provide a useful base.
 The workspace and broker still carry substantial orchestration in their entry

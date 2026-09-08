@@ -1,6 +1,12 @@
 version: '1.0'
 namespace: bee.attachment_probe
 entries:
+- name: naming_policy
+  kind: security.policy
+  policy:
+    actions: [process.registry.register, process.registry.unregister]
+    resources: [bee.attachment_probe.host]
+    effect: allow
 - name: owner
   kind: process.lua
   source: file://owner.lua
