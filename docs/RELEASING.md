@@ -15,6 +15,12 @@ The native module uses Go's nested-module tag convention. A major version of
 module releases do not release the desktop; application releases do not change
 the pinned native module automatically.
 
+Native Go pins must resolve from a retained main commit or a module release tag.
+After squash-merging a module change, pin its merged revision before deleting the
+feature branch; Go does not resolve short pseudo-version hashes through PR refs.
+Verify the pin with an empty module cache. The current pin uses the merged main
+revision and contains the same native source as the original development pin.
+
 ## Local release
 
 ```sh
@@ -37,6 +43,13 @@ conversations and an up-to-date branch. Stale approvals are dismissed. These
 rules include administrators. Force pushes and branch deletion are disabled;
 merge with squash or rebase.
 
+The validation job runs `make repository-check` before application assembly:
+actionlint checks workflows, and Gitleaks scans history and current files with
+redacted output and a Wippy Hub token rule. Native-module tags run the same checks.
+Dependabot groups weekly Actions and native Go dependency updates to limit PR runs.
+Actions default to read-only permissions and require full commit pins. Checkout
+steps do not retain credentials in Git configuration.
+
 PR and main checks run Linux amd64 with the full foundation suite. Release tags
 and manual runs assemble and exercise Linux and macOS, each on amd64 and arm64.
 Linux amd64 also dry-runs the Hub publication packer without upload credentials.
@@ -45,7 +58,8 @@ module checks run on every Bee target, with a separate Linux module gate.
 Windows desktop support requires replacing the current Bash/POSIX terminal
 assumptions; it is outside this release matrix. Builder has Windows CLI builds.
 
-After merging, select a version and create its tag on the reviewed main commit.
+After merging, an administrator selects a version and creates its tag on the
+reviewed main commit.
 The workflow verifies ancestry. Tag updates and deletions are blocked. Passing
 checks produce a **draft** GitHub release with checksummed assets. Review the
 assets, dependency notices and release notes before publishing. Module tags
@@ -107,7 +121,12 @@ Manual dispatch retries an existing published application release through the
 same checks. Failure stays visible; the workflow never substitutes a mutable label
 or increments the version automatically.
 
-Configure repository secret `WIPPY_HUB_TOKEN` with permission to publish `bee/bee`.
+Configure `WIPPY_HUB_TOKEN` in the GitHub `hub` environment with permission to
+publish `bee/bee`. Limit that environment to the `main` branch and `v*` tags;
+release-tag creation is restricted to administrators. Keep the token out of
+repository-wide secrets, which same-repository PR workflows can access.
+After replacing the token, run the **Hub credential check** workflow on main.
+It validates authentication and publish authorization without creating an upload.
 Pre-create the module in the Hub `bee` organization, or grant module-creation
 permission for its first publication.
 The runtime receives it as `WIPPY_TOKEN` only for publication. Set repository
@@ -121,8 +140,19 @@ Bee carries the checksummed runtime fix from
 [PR #684](https://github.com/wippyai/runtime/pull/684), so pack-only publication
 validation does not request credentials. Linux CI runs this preflight before
 the foundation suite. Actual publication retains its authentication requirement.
-No Hub version has been uploaded, and authenticated
-publication plus a real Bee Hub update remain unverified. The local executable
-continues to start from its embedded pack. Authentication alone does not establish
-permission to publish `bee/bee`; verify organization access and token scope before
-publishing the first release.
+The deployment token passed the live Hub publish authorization checks for
+`bee/bee` on 2026-09-08, and Hub reported organization role `owner`. Those probes
+omitted the version and upload payload, so they created no publication. A completed
+upload and a real Bee update remain acceptance gates for the first release.
+
+## Distribution access
+
+Both repositories are currently private. GitHub releases inherit repository
+visibility: anonymous downloads and the documented public installer command
+require a public Bee repository. Builder action sharing is enabled for the Wippy
+organization. Decide public visibility before announcing an OSS release.
+
+The repository uses the organization code of conduct, local contribution and
+security policies, issue forms, and CODEOWNERS. The documentation lives in `docs/`;
+there is no separate GitHub Pages site. See [repository setup](GITHUB.md) for
+settings and credential boundaries.
