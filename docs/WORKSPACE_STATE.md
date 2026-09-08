@@ -24,7 +24,9 @@ ownership and integrity checks. The envelope is bounded to 2 MiB.
 App state is a JSON string bounded to 64 KiB. There are no persisted per-app
 checkpoint sequence numbers or pinned definition versions in this envelope.
 The workspace ID is stored separately and supplied in application launch values.
-Client presentation and attachment protocols do not carry it yet. Runtime launch values include revision information, but recovery
+New desktop windows and broker replies carry it too. Old local windows without
+the field remain readable and are rebound to their owner on reopen. Remote
+attachment and cross-workspace request routing remain unimplemented. Runtime launch values include revision information, but recovery
 resolves the admitted definition available at boot and checks its declared
 resume schema. An installer must not mistake this for version pinning.
 
@@ -78,4 +80,5 @@ grant cross-owner SQL access or provide synchronization between machines.
 [Workspace attachments](WORKSPACE_ATTACHMENTS.md) specifies the proposed identity
 and client layout split for future mixed-workspace tabs. The storage identity
 exists and the app SDK exposes workspace-qualified logical view references.
+Desktop snapshots preserve workspace identity for newly opened windows.
 Client layout separation, remote routing and attachment remain unimplemented.

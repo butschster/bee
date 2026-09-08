@@ -2,8 +2,9 @@
 
 Status: attachment design, not a callable API. The primary store now persists an
 opaque workspace ID through migration 2. Application launches carry it and the
-app SDK exposes a logical view reference. Production still has one local workspace
-owner and one desktop session. [Workspace state](WORKSPACE_STATE.md) documents
+app SDK exposes a logical view reference. Broker replies and desktop windows now
+retain it too. Production still has one local workspace owner and one desktop
+session. [Workspace state](WORKSPACE_STATE.md) documents
 the implemented envelope. This design leaves cluster transport and naming to the
 runtime work; no remote discovery or network listener is enabled by it.
 
@@ -132,9 +133,9 @@ handoff. Runtime capability semantics must be verified before implementing this.
 
 Workspace storage identity is implemented through immutable migration 2,
 preserving existing desktop and application records. It appears in app launch
-values and logical view references, but not client presentation messages. Separate client layout from workspace
-domain
-state when adding multiple clients; existing desktop state becomes the initial
+values, logical view references, broker replies and desktop windows. Live reply
+consumers reject a missing or mismatched workspace identity. Separate client
+layout from workspace domain state when adding multiple clients; existing desktop state becomes the initial
 local client's projection. Copying a database for a backup retains identity;
 creating an independent workspace from it needs an explicit fork operation with
 a new identity. Two writable clones must not silently claim one workspace.
@@ -204,8 +205,9 @@ authority. Hosted execution and billing are outside this foundation.
 
 1. Finish the local run/view separation using the test-status application. A
    closed view must not cancel its run; reopening replays committed events.
-2. Storage and app-launch identity are implemented. Carry it through client
-   snapshot, checkpoint routing and UI values. Test restore, rename, invalid identities and mismatched replies.
+2. Storage, app-launch and window identity are implemented, with reply and
+   checkpoint workspace checks. Finish cross-workspace request routing and labels.
+   Test restore, rename, invalid identities and mismatched replies.
 3. Introduce explicit client layout ownership and local attachment lifecycle.
    Test independent layouts and denied/stale control changes before networking.
 4. Bind the same contract to verified runtime mesh capabilities behind the Hive

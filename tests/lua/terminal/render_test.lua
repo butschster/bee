@@ -21,9 +21,9 @@ local function define_tests()
                     for _, row in ipairs(rows) do test.eq(tty.text.width(row), width) end
                     if width >= 24 and height >= 14 then
                         test.is_true(table.concat(rows):find("╰──╲ ╱──╯", 1, true) ~= nil)
-                    elseif width >= 3 then
-                        test.is_true(table.concat(rows):find("bee", 1, true) ~= nil)
                     end
+                    test.is_true(table.concat(rows):find("bee", 1, true) == nil)
+                    test.is_true(table.concat(rows):find("b e e", 1, true) == nil)
                 end
             end
         end)

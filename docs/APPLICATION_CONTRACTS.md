@@ -62,6 +62,13 @@ copied `{workspace_id, instance_id, view_id}` logical reference. It contains no
 execution PID, mount, token or permission. Reopening an application in the same
 workspace retains the workspace ID even when execution changes.
 
+Broker replies carry `workspace_id`; the workspace and presenter require it
+to match their trusted bootstrap identity before acting on a reply. The workspace
+also checks it on checkpoint delivery. New session windows retain that ID through
+geometry changes, snapshots and persistence. Legacy local saved windows without
+the field remain readable and receive the current owner's identity on reopen.
+Identity still does not replace sender authentication or capability checks.
+
 The stored recovery record remains local to its owning database. This reference
 helper does not add remote routing or turn local open/close APIs into
 cross-workspace operations. Sender, instance and capability checks remain the

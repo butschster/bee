@@ -84,7 +84,7 @@ local function main(initial_application: string?, secondary_application: string?
     if private_core_error then error(tostring(private_core_error)) end
     local broker_scope = security.new_scope({broker_policy, private_core})
     local presenter_scope = security.new_scope({presenter_policy})
-    local session = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner}):with_scope(session_scope)
+    local session = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner, ["bee.workspace_id"] = workspace_id}):with_scope(session_scope)
         :spawn_monitored("bee.session:main", "bee:workers", owner, width, height, preferences)))
     local broker = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner, ["bee.workspace_id"] = workspace_id}):with_scope(broker_scope)
         :spawn_monitored("bee.applications:broker", "bee:workers", owner, preferences)))
@@ -129,7 +129,7 @@ local function main(initial_application: string?, secondary_application: string?
         local sent, err = process.send(broker, "bee.app.request", value)
         if not sent then
             local reply = contract.reply(request.request_id, request.op, "delivery_failed", tostring(err))
-            reply.id = request.id
+            reply.id, reply.workspace_id = request.id, workspace_id
             process.send(presenter, "bee.app.reply", reply)
         end
         return sent == true
@@ -137,7 +137,9 @@ local function main(initial_application: string?, secondary_application: string?
     local function prepare_quit()
         local sent, err = process.send(broker, "bee.application.shutdown", {version = 1, op = "prepare"})
         if not sent then
-            process.send(presenter, "bee.app.reply", contract.reply("", "quit", "delivery_failed", tostring(err)))
+            local reply = contract.reply("", "quit", "delivery_failed", tostring(err))
+            reply.workspace_id = workspace_id
+            process.send(presenter, "bee.app.reply", reply)
         end
     end
 
@@ -225,7 +227,7 @@ local function main(initial_application: string?, secondary_application: string?
     end
     local function spawn_presenter()
         local grant = assert(display:grant())
-        presenter = tostring(assert(process.with_options({terminal = grant}):with_context({["bee.workspace_owner"] = owner}):with_scope(presenter_scope)
+        presenter = tostring(assert(process.with_options({terminal = grant}):with_context({["bee.workspace_owner"] = owner, ["bee.workspace_id"] = workspace_id}):with_scope(presenter_scope)
             :spawn_monitored("bee.terminal:main", "bee:workers", owner, initial_application, secondary_application)))
         active, presenter_ready = false, false
         paused = false
@@ -370,7 +372,7 @@ local function main(initial_application: string?, secondary_application: string?
         elseif selected.channel == replies then
             if selected.value:from() == broker then
                 local reply = decode.reply(selected.value:payload():data())
-                if reply then
+                if reply and decode.belongs(reply, workspace_id) then
                     if reply.op == "quit" and reply.error == "" and shutdown_request == "" then
                         -- Keep the store and event loop alive through cooperative app cleanup.
                         shutdown_request = broker_request("shutdown", "", "", "")
@@ -395,7 +397,7 @@ local function main(initial_application: string?, secondary_application: string?
                     elseif reply.op == "page" then send_scene()
                     elseif reply.op == "open" and reply.error == "" then
                         send_control(session, "bee.desktop.command", {version = 1, op = "add", id = reply.id,
-                            instance_id = reply.instance_id, title = reply.title, icon = reply.icon})
+                            instance_id = reply.instance_id, workspace_id = workspace_id, title = reply.title, icon = reply.icon})
                         local record = records[reply.id]
                         if record then restore_window(record) end
                     elseif reply.op == "focus" and reply.error == "" then
@@ -415,6 +417,7 @@ local function main(initial_application: string?, secondary_application: string?
         elseif selected.channel == checkpoints and selected.value:from() == broker then
             local data: unknown = selected.value:payload():data()
             local record = recovery.record(data)
+            if type(data) ~= "table" or data.workspace_id ~= workspace_id then record = nil end
             if type(data) == "table" and data.version == 1 and type(data.request_id) == "string" then
                 local ok, err = false, "Invalid checkpoint"
                 if record then

@@ -2,13 +2,17 @@
 local arguments = require("arguments")
 local M = {}
 type ReplyOp = "open" | "close" | "closed" | "focus" | "attached" | "bind" | "page" | "title" | "closing" | "quit" | "shutdown"
-type Reply = {version: integer, request_id: string, op: ReplyOp, id: string, instance_id: string,
+type Reply = {version: integer, request_id: string, op: ReplyOp, id: string, instance_id: string, workspace_id: string?,
     title: string, icon: string?, mount: string, definition_id: string, resume_schema: string, restart_policy: string, resume_state: string, error: string, error_code: string}
 type RequestOp = "open" | "close" | "bind" | "shutdown"
 type Request = {version: integer, request_id: string, op: RequestOp, id: string, definition_id: string, recipient: string, restore_instance_id: string, restore_view_id: string, resume_schema: string, resume_state: string, arguments: {string}}
 type Descriptor = {definition_id: string, definition_revision: string, title: string, icon: string,
     group: string, role: string, singleton: boolean, resume_schema: string, restart_policy: string}
 type Binding = {definition_id: string, policies: {string}, appearance_write: boolean, application_stop: boolean}
+function M.workspace_id(value: unknown): string?
+    if type(value) == "string" and #value == 32 and not value:find("[^0-9a-f]") then return value end
+    return nil
+end
 function M.text(value: unknown, limit: integer): string?
     if type(value) ~= "string" or #value > limit or value:find("%c") then return nil end
     return value

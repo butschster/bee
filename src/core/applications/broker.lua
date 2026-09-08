@@ -23,8 +23,8 @@ local function now(): number return time.now():unix_nano() / 1000000000 end
 local function main(owner: string, initial_preferences: unknown)
     local bootstrap: unknown = ctx.get("bee.workspace_owner")
     if bootstrap ~= owner or owner == "" then error("Untrusted broker bootstrap") end
-    local workspace_id = contract.text(ctx.get("bee.workspace_id"), 32)
-    if not workspace_id or #workspace_id ~= 32 or workspace_id:find("[^0-9a-f]") then
+    local workspace_id = contract.workspace_id(ctx.get("bee.workspace_id"))
+    if not workspace_id then
         error("Invalid workspace identity bootstrap")
     end
     local requests = assert(process.listen("bee.app.request", {message = true}))
@@ -85,6 +85,7 @@ local function main(owner: string, initial_preferences: unknown)
         scope_cache[binding.definition_id] = security.new_scope(policies)
     end
     local function emit(reply: contract.Reply, remember: boolean?)
+        reply.workspace_id = workspace_id
         if remember and reply.request_id ~= "" then
             pending[reply.request_id] = nil
             if not completed[reply.request_id] then completed_order[#completed_order + 1] = reply.request_id end
@@ -98,6 +99,7 @@ local function main(owner: string, initial_preferences: unknown)
     end
     local function identified(item: Instance, op: contract.ReplyOp, request_id: string, code: string?, message: string?): contract.Reply
         local reply = contract.reply(request_id, op, code, message)
+        reply.workspace_id = workspace_id
         reply.id, reply.instance_id, reply.title, reply.mount = item.view_id, item.instance_id, item.announced_title or item.descriptor.title, item.mount
         reply.icon = item.descriptor.icon
         reply.definition_id, reply.resume_schema = item.descriptor.definition_id, item.descriptor.resume_schema
