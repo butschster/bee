@@ -93,22 +93,20 @@ bind or shutdown operations.
 This is a launch-only boundary: focusing an existing singleton does not deliver
 new arguments or restart it. Arguments are not automatically persisted; an app
 must checkpoint the domain identifiers it needs for recovery. Start opens with an
-empty list. `./run.sh --app definition-id [arguments...]` uses the native `bee-app`
+empty list. `bee --command bee-app run definition-id [arguments...]` uses the native `bee-app`
 command to launch an application with explicit arguments. Nonempty explicit
 arguments take precedence over a saved checkpoint for that initial launch.
 
 ### Registered CLI handlers
 
-`dist/bee claude [arguments...]`, `dist/bee codex [arguments...]` and
-`dist/bee agy [arguments...]` open the native Terminal fullscreen. Installed as
-`bee` on PATH, the same commands use `bee` directly. The executables must already
+`bee claude [arguments...]`, `bee codex [arguments...]` and
+`bee agy [arguments...]` open the native Terminal fullscreen. The executables must already
 be on the caller's PATH. These are native program launches, not agent drivers or
-MCP integrations. `./run.sh codex` provides the source-development equivalent.
-The standalone binary preserves the caller's working directory; `run.sh` uses
-the Bee source directory. Native options such as `--state-dir` precede the alias;
+MCP integrations. The standalone binary preserves the caller's working directory.
+Native options such as `--state-dir` precede the alias;
 arguments after the alias belong to the application.
 If an existing native state directory still selects an older installed pack,
-use `dist/bee --base codex` to run the rebuilt embedded application. This selects
+use `bee --base codex` to run the rebuilt embedded application. This selects
 base code without deleting workspace databases; it does not upgrade the installed
 Hub selection.
 

@@ -25,7 +25,8 @@ binaries, registry stores, credentials or legacy source to the pack. Do not edit
 registry database tables directly to work around a source-loading problem.
 
 F12 replaces only the presenter. If workspace, broker or session logic changed,
-exit with Ctrl+Q and run `./run.sh` again. Preferences and opt-in application
+exit with Ctrl+Q and run `bee` again. For editable-source development, use
+`make run` as described in the development guide. Preferences and opt-in application
 checkpoints persist in the workspace database. Settings opts in; Terminal does
 not restore a dead PTY. See `APPLICATION_CONTRACTS.md` for the actual version-1
 protocol; native process stacks are not portable checkpoints.
