@@ -156,8 +156,61 @@ def routine(packed):
     print(f"Command delivery {'pack' if packed else 'source'}: failed open/close/quit preserve apps, correlated failure clears pending state, explicit retry works")
 
 
+def targeting(packed):
+    for boundary in ("workspace", "broker"):
+        for operation in ("open", "close"):
+            with tempfile.TemporaryDirectory(prefix="bee-workspace-target-") as directory:
+                folder = Path(directory)
+                project = folder / "project"
+                shutil.copytree(ROOT / "src", project / "src")
+                for name in (".wippy.yaml", "wippy.lock"):
+                    shutil.copy2(ROOT / name, project / name)
+                actor = project / "src/core/workspace/main.lua"
+                source = actor.read_text().replace("    local function application_request", "    local reject_target = true\n    local function application_request")
+                anchor = ('        local request = contract.request(value)' if boundary == "workspace"
+                          else '        local sent, err = process.send(broker, "bee.app.request", value)')
+                assert source.count(anchor) == 1
+                # Corrupt one authenticated request. Exercise a missing target
+                # for open and a foreign target for close; the next retry is valid.
+                target = 'nil' if operation == "open" else '(workspace_id == string.rep("f", 32) and string.rep("0", 32) or string.rep("f", 32))'
+                condition = f'type(value) == "table" and value.op == "{operation}"'
+                if operation == "open":
+                    condition += ' and value.definition_id == "bee.processes:app"'
+                injection = f'''        if reject_target and {condition} then
+            reject_target = false
+            value.workspace_id = {target}
+        end
+'''
+                actor.write_text(source.replace(anchor, injection + anchor))
+                subprocess.run([str(RUNTIME), "lint"], cwd=project, check=True)
+                pack = folder / "target.wapp"
+                if packed:
+                    subprocess.run([str(RUNTIME), "pack", str(pack)], cwd=project, check=True)
+                ui = Desktop(folder, packed, project=project, pack_file=pack, apps=("bee.settings:app",))
+                try:
+                    ui.wait("BEE SETTINGS")
+                    if operation == "open":
+                        ui.open_start(); ui.choose("Process Manager")
+                    else:
+                        ui.key(b"\x17")
+                    ui.wait("Request targets another workspace")
+                    assert ui.process.poll() is None
+                    assert "BEE SETTINGS" in ui.text()
+                    assert "Heap" not in ui.text()
+                    if operation == "open":
+                        ui.open_start(); ui.choose("Process Manager"); ui.wait("Heap")
+                    else:
+                        ui.key(b"\x17"); ui.wait("No applications open")
+                    ui.quit()
+                finally:
+                    ui.close()
+    print(f"Workspace targeting {'pack' if packed else 'source'}: both receivers reject missing/foreign targets, preserve apps and accept explicit retry")
+
+
 if __name__ == "__main__":
     run(False)
     run(True)
     routine(False)
     routine(True)
+    targeting(False)
+    targeting(True)

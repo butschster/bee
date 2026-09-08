@@ -126,6 +126,12 @@ local function main(initial_application: string?, secondary_application: string?
     local function application_request(value: unknown): boolean
         local request = contract.request(value)
         if not request then return false end
+        if request.workspace_id ~= workspace_id then
+            local reply = contract.reply(request.request_id, request.op, "workspace_mismatch", "Request targets another workspace")
+            reply.id, reply.workspace_id = request.id, workspace_id
+            process.send(presenter, "bee.app.reply", reply)
+            return false
+        end
         local sent, err = process.send(broker, "bee.app.request", value)
         if not sent then
             local reply = contract.reply(request.request_id, request.op, "delivery_failed", tostring(err))
@@ -156,7 +162,7 @@ local function main(initial_application: string?, secondary_application: string?
                 end
             end
         end
-        local request = {version = 1, request_id = request_id, op = op,
+        local request = {version = 1, request_id = request_id, op = op, workspace_id = workspace_id,
             definition_id = definition_id, id = id, recipient = recipient,
             restore_instance_id = restored and restored.instance_id or "", restore_view_id = restored and restored.id or "",
             resume_schema = restored and restored.resume_schema or "", resume_state = restored and restored.resume_state or "",
@@ -186,7 +192,7 @@ local function main(initial_application: string?, secondary_application: string?
         local record = table.remove(restore_queue, 1)
         if record then
             restore_request = uuid.v7()
-            send_control(broker, "bee.app.request", {version = 1, request_id = restore_request, op = "open",
+            send_control(broker, "bee.app.request", {version = 1, request_id = restore_request, op = "open", workspace_id = workspace_id,
                 definition_id = record.definition_id, restore_instance_id = record.instance_id, restore_view_id = record.id,
                 resume_schema = record.resume_schema, resume_state = record.resume_state})
         else

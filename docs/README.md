@@ -22,6 +22,7 @@ Historical and design references:
 - [Foundation review](FOUNDATION_REVIEW.md): critique of baseline `ddf6ba8`, before the foundation sweep.
 - [UI refinement](UI_REFINEMENT.md): UI design intent; current acceptance tests establish verified behavior.
 - [Workspace attachments](WORKSPACE_ATTACHMENTS.md): proposed workspace identity, client layout ownership and local/remote view boundaries.
+- [Portable harnesses](PORTABLE_HARNESSES.md): proposed repository-folder and pack execution, headless CI results and selective export.
 
 When these disagree, implemented contracts and their source/tests take precedence
 over roadmap prose. Fix the disagreement rather than adding another design page

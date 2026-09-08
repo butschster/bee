@@ -97,7 +97,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
             closing[id] = true
             routing_scene = model.remove(routing_scene, id)
         end
-        local sent, err = process.send(owner, "bee.app.request", {version = 1, request_id = uuid.v7(), op = op, definition_id = definition_id, id = id})
+        local sent, err = process.send(owner, "bee.app.request", {version = 1, request_id = uuid.v7(), op = op, workspace_id = workspace_id, definition_id = definition_id, id = id})
         if not sent then closing[id] = nil; adopt_routing(); status = tostring(err) end
     end
     local function rectangle(win: model.Window): model.Rect

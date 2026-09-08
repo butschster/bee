@@ -100,7 +100,10 @@ def run():
         # Retry the same operation identity. First launch is root-generated;
         # every later presenter open uses one fixed request ID in this fixture.
         presenter = project / "src/core/terminal/main.lua"
-        text = presenter.read_text().replace('request_id = uuid.v7(), op = op, definition_id', 'request_id = op == "open" and "duplicate-probe" or uuid.v7(), op = op, definition_id')
+        text = presenter.read_text()
+        anchor = 'request_id = uuid.v7(), op = op, workspace_id = workspace_id, definition_id'
+        assert text.count(anchor) == 1, "Presenter retry injection point changed"
+        text = text.replace(anchor, 'request_id = op == "open" and "duplicate-probe" or uuid.v7(), op = op, workspace_id = workspace_id, definition_id')
         presenter.write_text(text)
         with tempfile.TemporaryDirectory(prefix="bee-dedup-") as directory:
             ui = Desktop(directory, project=project, apps=("probe:stubborn",))

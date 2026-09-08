@@ -4,6 +4,18 @@ local client = require("client")
 local arguments = require("arguments")
 local function define_tests()
     test.describe("Application launch arguments", function()
+        test.it("preserves request workspace identity and rejects malformed routing values", function()
+            local identity = "0123456789abcdef0123456789abcdef"
+            local value = {version = 1, request_id = "route", op = "open", definition_id = "test:app", workspace_id = identity}
+            local request = assert(contract.request(value))
+            test.eq(request.workspace_id, identity)
+            value.workspace_id = "ffffffffffffffffffffffffffffffff"
+            test.eq(request.workspace_id, identity)
+            for _, invalid in ipairs({"", "workspace", "0123456789ABCDEF0123456789ABCDEF", identity .. "0"}) do
+                value.workspace_id = invalid
+                test.is_nil(contract.request(value))
+            end
+        end)
         test.it("copies explicit arguments across both boundary decoders", function()
             local source = {"project-a", "run-a", ""}
             local request = assert(contract.request({version = 1, request_id = "r", op = "open",

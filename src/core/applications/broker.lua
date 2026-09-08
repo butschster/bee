@@ -476,7 +476,7 @@ local function main(owner: string, initial_preferences: unknown)
                     preferences, appearance_revision = prefs, math.floor(data.revision)
                     local theme = appearance.theme(preferences.theme)
                     for _, item in pairs(instances) do
-                        local _, err = item.view:set_page({foreground = theme.text, background = theme.surface})
+                        local _, err = item.view:set_page(appearance.page(theme, item.descriptor.role == "terminal"))
                         appearance_state(item, nil, err and "page_failed" or "", err and tostring(err) or "")
                     end
                 end
@@ -535,7 +535,11 @@ local function main(owner: string, initial_preferences: unknown)
             end
         elseif selected.channel == requests and selected.value:from() == owner then
             local req = contract.request(selected.value:payload():data())
-            if req then
+            if req and req.workspace_id ~= workspace_id then
+                local reply = contract.reply(req.request_id, req.op, "workspace_mismatch", "Request targets another workspace")
+                reply.id = req.id
+                emit(reply)
+            elseif req then
                 local fingerprint = req.op .. "\0" .. req.id .. "\0" .. req.definition_id .. "\0" .. req.recipient .. "\0" .. req.restore_instance_id .. "\0" .. req.restore_view_id .. "\0" .. req.resume_schema .. "\0" .. tostring(#req.resume_state) .. ":" .. req.resume_state .. contract.argument_fingerprint(req.arguments)
                 local cached = completed[req.request_id]
                 if fingerprints[req.request_id] and fingerprints[req.request_id] ~= fingerprint then
@@ -610,7 +614,7 @@ local function main(owner: string, initial_preferences: unknown)
                             local instance_id = req.restore_instance_id ~= "" and req.restore_instance_id or uuid.v7()
                             local token = uuid.v7()
                             local theme = appearance.theme(preferences.theme)
-                            local view, err = tty.viewport({width = 60, height = 16, page = {foreground = theme.text, background = theme.surface}})
+                            local view, err = tty.viewport({width = 60, height = 16, page = appearance.page(theme, descriptor.role == "terminal")})
                             if not view then emit(contract.reply(req.request_id, "open", "viewport_failed", tostring(err)), true)
                             else
                                 local grant, grant_err = view:grant()

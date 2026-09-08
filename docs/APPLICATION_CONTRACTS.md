@@ -69,6 +69,13 @@ geometry changes, snapshots and persistence. Legacy local saved windows without
 the field remain readable and receive the current owner's identity on reopen.
 Identity still does not replace sender authentication or capability checks.
 
+Private desktop application requests also carry `workspace_id`. The workspace
+and broker both require their own identity before open, close, bind or shutdown
+can reach execution. Missing or foreign targets receive `workspace_mismatch`;
+they cannot silently fall back to the local workspace. The shell clears pending
+close state on that error and allows explicit retry. These checks qualify local
+routing; they do not implement remote dispatch or multi-workspace clients.
+
 The stored recovery record remains local to its owning database. This reference
 helper does not add remote routing or turn local open/close APIs into
 cross-workspace operations. Sender, instance and capability checks remain the
@@ -114,6 +121,12 @@ Appearance uses `bee.appearance.request` (`state|set`) and
 `bee.appearance.state`, with version 1 and a request ID. All apps can read; writes
 require the protected grant. The session commits preferences and its projection
 revision. Broker-originated updates are checked before apps adopt them.
+
+The broker resolves viewport default colors from the theme and presentation role
+at creation and on appearance changes. Windows Classic uses a black console with
+light text for the `terminal` role while ordinary application panels remain
+silver. Explicit program colors remain intact. The role selects presentation,
+not additional permissions.
 
 Runtime process control uses `bee.application.control` (`stop|force_stop`,
 `execution_pid`) and `bee.application.result`, with version 1, request ID and

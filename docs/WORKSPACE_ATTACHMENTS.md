@@ -3,7 +3,9 @@
 Status: attachment design, not a callable API. The primary store now persists an
 opaque workspace ID through migration 2. Application launches carry it and the
 app SDK exposes a logical view reference. Broker replies and desktop windows now
-retain it too. Production still has one local workspace owner and one desktop
+retain it too. Local application requests carry an explicit target checked by
+the workspace and broker; missing or foreign targets are rejected. Production
+still has one local workspace owner and one desktop
 session. [Workspace state](WORKSPACE_STATE.md) documents
 the implemented envelope. This design leaves cluster transport and naming to the
 runtime work; no remote discovery or network listener is enabled by it.
@@ -29,6 +31,25 @@ at their hosts. Hive discovery must identify candidate nodes and workspaces;
 authentication and explicit attachment policy still decide access. Being on the
 same home network does not grant control. Runtime cluster/naming changes remain
 separate work; Bee should consume the native mesh and capability contracts.
+
+An infrastructure application may expose an authorized provisioning contract from
+one workspace, for example a Proxmox service. Its host owns credentials and
+resource limits. Other nodes discover its public operations, then authenticate
+and request permission; membership alone does not grant provisioning authority.
+A durable request/run identity correlates allocation results with the requesting
+workflow. Provisioned machines enroll explicitly before exposing services to the
+Hive. A retried request must resolve the original allocation or report an unknown
+outcome instead of blindly creating another machine. This is an example consumer
+of the proposed service boundary, not an implemented Proxmox integration.
+
+Use a typed consumer library over native mesh actor messages and service
+resolution, not an additional Bee network protocol. Authorization is checked at
+the service owner; a library check alone is insufficient. A synchronized component
+or overlay can supply the client contract and code on another node, allowing its
+client process to run there. Definition availability does not transfer credentials,
+database ownership, live grants or placement policy. Destination admission and
+resource bindings still govern spawn and use. Cross-node definition activation
+and client placement require acceptance before they become supported operations.
 
 ## Host and client composition
 
@@ -206,7 +227,8 @@ authority. Hosted execution and billing are outside this foundation.
 1. Finish the local run/view separation using the test-status application. A
    closed view must not cancel its run; reopening replays committed events.
 2. Storage, app-launch and window identity are implemented, with reply and
-   checkpoint workspace checks. Finish cross-workspace request routing and labels.
+   checkpoint workspace checks. Local request targets are enforced at both receivers.
+   Finish cross-workspace dispatch and labels.
    Test restore, rename, invalid identities and mismatched replies.
 3. Introduce explicit client layout ownership and local attachment lifecycle.
    Test independent layouts and denied/stale control changes before networking.

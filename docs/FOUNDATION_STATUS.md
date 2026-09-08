@@ -10,6 +10,9 @@ implemented boundary. Older design documents are proposals where they differ.
 Settings provides 16 themes, 11 backgrounds and a Labels/Icons taskbar choice.
 These preferences persist with the workspace. Compact tabs retain admitted app
 icons, minimize/restore actions and the normal focus/overflow behavior.
+Windows Classic keeps its silver application panels and uses a black console
+with light default text for Terminal. Start and context menus align shortcuts
+and submenu indicators; the BEE arrow reflects only the Start menu state.
 Title/tab context menus also support user labels and named accents. The session
 owns these values independently of application identity; supported recovery
 restores them. Apps can announce their own bounded titles through the authenticated
@@ -101,8 +104,12 @@ newer or altered migrations fail closed. Generation checks reject stale writers.
 Migration 2 assigns a stable opaque workspace identity without changing the
 existing envelope or migration 1. The ID survives reopen and database relocation.
 The workspace supplies this ID through trusted broker bootstrap and application
-launch values. The app SDK exposes a copied logical view reference. Client
-attachments and mixed-workspace presentation do not carry it yet.
+launch values. The app SDK exposes a copied logical view reference. Broker
+replies and desktop windows retain the workspace ID; workspace/presenter replies
+for a different workspace are rejected. Local application requests carry an
+explicit target checked by both the workspace and broker. Missing or foreign
+targets return an error without executing locally. Mixed-workspace composition and remote
+attachment are not implemented.
 Apps checkpoint through their broker; a successful receipt follows database commit.
 See [storage](STORAGE.md) and [application contracts](APPLICATION_CONTRACTS.md).
 
