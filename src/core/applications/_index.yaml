@@ -19,6 +19,13 @@ entries:
 - name: lifecycle
   kind: library.lua
   source: file://lifecycle.lua
+- name: command
+  kind: library.lua
+  source: file://command.lua
+  modules: [registry]
+  imports:
+    catalog: bee.applications:catalog
+    arguments: bee.application:arguments
 - name: catalog
   kind: library.lua
   source: file://catalog.lua

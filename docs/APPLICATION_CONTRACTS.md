@@ -96,6 +96,36 @@ must checkpoint the domain identifiers it needs for recovery. Start opens with a
 empty list. `./run.sh --app definition-id [arguments...]` uses the native `bee-app`
 command to launch an application with explicit arguments. Nonempty explicit
 arguments take precedence over a saved checkpoint for that initial launch.
+
+### Registered CLI handlers
+
+`dist/bee claude [arguments...]`, `dist/bee codex [arguments...]` and
+`dist/bee agy [arguments...]` open the native Terminal fullscreen. Installed as
+`bee` on PATH, the same commands use `bee` directly. The executables must already
+be on the caller's PATH. These are native program launches, not agent drivers or
+MCP integrations. `./run.sh codex` provides the source-development equivalent.
+The standalone binary preserves the caller's working directory; `run.sh` uses
+the Bee source directory. Native options such as `--state-dir` precede the alias;
+arguments after the alias belong to the application.
+If an existing native state directory still selects an older installed pack,
+use `dist/bee --base codex` to run the rebuilt embedded application. This selects
+base code without deleting workspace databases; it does not upgrade the installed
+Hub selection.
+
+Admitted application metadata can declare `application.commands`, a dense list
+of up to 16 `{name, arguments?, fullscreen?}` records. Names are lowercase ASCII
+identifiers, at most 40 characters, with digits, underscores and hyphens after
+the first letter. `run`, `runtime` and `update` are reserved by the native host.
+Duplicate matches fail rather than choosing an arbitrary application. Discovery
+considers only host-admitted applications; metadata grants no execution authority.
+Prefix arguments and caller arguments share the existing bounded argument decoder.
+Fullscreen is an idempotent initial presentation request after successful open.
+
+Terminal declares `terminal`, `claude`, `codex` and `agy` handlers. Its named
+executor can run explicit native argument vectors with OS-user authority; empty
+arguments start `/bin/bash -i`. Quoting preserves empty strings, whitespace and
+shell metacharacters without shell evaluation. Other applications gain no native
+execution permissions from declaring a handler.
 Test Status accepts a thread ID and optional run ID; its checkpoint saves only
 the thread, so restoration never requests a new run automatically.
 

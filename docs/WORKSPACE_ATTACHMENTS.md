@@ -10,6 +10,18 @@ session. [Workspace state](WORKSPACE_STATE.md) documents
 the implemented envelope. This design leaves cluster transport and naming to the
 runtime work; no remote discovery or network listener is enabled by it.
 
+## Workspace selection and Hive
+
+The workspace subsystem owns durable identity, state and application membership
+without requiring Hive. Hive provides authorized discovery and routing between
+nodes. A future standalone Workspace Manager application presents local and
+remote workspaces, their applications and optional node topology. A compact shell
+switcher selects the target for new opens; existing tabs retain their original
+workspace ownership. The client's layout can mix tabs from several workspaces.
+Neither the manager nor a shell selection transfers ownership or authorization.
+These UI and remote operations remain proposals until their contracts and
+acceptance checks exist.
+
 ## Required headless profile
 
 Headless Hive support is a requested built-in Bee profile, not an optional
