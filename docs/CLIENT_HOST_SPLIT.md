@@ -4,6 +4,10 @@ Status: extraction plan; the broker readiness step below is now implemented.
 The required behavior and native mesh boundary are in
 [workspace attachments](WORKSPACE_ATTACHMENTS.md). Local Bee still combines the
 physical terminal owner and workspace host. No headless profile exists yet.
+The current wide-terminal header shows the workspace's short durable ID; it is
+informational, not a workspace switcher. The generic idle "Ready" label is gone.
+The runtime registry stores definitions/history separately from the workspace
+application store and journal; none of those storage paths is a UI workspace name.
 
 ## Current coupling to remove
 
@@ -76,6 +80,13 @@ must be checked independently of the visual shell implementation.
    persistence before attachment, survival past the startup deadline, failed
    initial and later mounts, and reattachment to the same producer. Startup
    timeout and observed EXIT handling remain intact.
+   The fixture also keeps an old handle open across detach and proves that
+   observation, input, resize and reattachment are denied after revocation.
+   An injected revoke failure returns no replacement mount and preserves the
+   previous grant for a later retry. The pinned foundation patch makes revocation
+   idempotent after recipient cleanup, so an already removed grant is not a
+   handoff failure. Binding several applications is still a per-app operation,
+   not an atomic transfer of the entire desktop.
 2. Introduce owner-held attachment records for exact view references and actual
    recipient PIDs. Separate observe from input/resize grants. Keep one controller
    for each PTY; observers do not resize it to fit their own windows.

@@ -155,6 +155,17 @@ def detached():
             project = folder / "project"
             shutil.copytree(ROOT / "src", project / "src")
             shutil.copytree(ROOT / "tests/fixtures/attachments", project / "src/probe")
+            broker = project / "src/core/applications/broker.lua"
+            code = broker.read_text()
+            anchor = "local _, err = view:revoke(item.mount)"
+            assert code.count(anchor) == 1
+            code = code.replace(anchor, '''local function revoke(): (boolean?, string?)
+                                    if req.request_id == "refused" then return nil, "Injected revocation failure" end
+                                    local ok, failure = view:revoke(item.mount)
+                                    return ok, failure and tostring(failure) or nil
+                                end
+                                local _, err = revoke()''')
+            broker.write_text(code)
             for name in (".wippy.yaml", "wippy.lock"):
                 shutil.copy2(ROOT / name, project / name)
             index = project / "src/_index.yaml"

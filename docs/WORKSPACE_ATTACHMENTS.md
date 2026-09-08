@@ -10,6 +10,43 @@ session. [Workspace state](WORKSPACE_STATE.md) documents
 the implemented envelope. This design leaves cluster transport and naming to the
 runtime work; no remote discovery or network listener is enabled by it.
 
+## Registry environment and portable application content
+
+A workspace is a logical identity with an owning host, an application environment
+and resource bindings. Its identity is not a database filename or the caller's
+current directory. The registry owns definitions, configuration and registry
+history. The application-level workspace store owns desktop state and supported
+app checkpoints; the journal owns its events. Do not mirror registry definitions
+into workspace tables and build a second registry reconciler there.
+
+The planned portable export separates declarative content from execution state:
+
+- Application definitions, pinned dependencies and explicit configuration form a
+  versioned manifest using canonical registry/package representations. Selective
+  export includes the dependency closure or names the external requirements.
+- Supported overlay contributions retain their base revision, source and intended
+  changes. Ephemeral overlay owner IDs and generations are local activation data,
+  not portable authority. Export preserves authored content; destination admission
+  decides whether and how to publish it through native registry operations.
+- An application may separately export versioned saved state through its own
+  contract. A checkpoint is not automatically a portable dataset: large stores,
+  filesystem content and journal history need explicit owned export semantics.
+- Credentials, live PIDs, TTY mounts, active database handles and source-machine
+  policy grants are excluded. Resource references require destination bindings.
+
+Import stages content, resolves dependencies, checks supported schema/runtime
+requirements and presents conflicts and requested permissions before activation.
+Retain definition IDs where possible; explicit conflicts must not silently replace
+an unrelated installed application. Registry history records destination changes;
+copying a source registry SQLite file is not the application transfer protocol.
+Cross-store activation and application-data migration need recoverable receipts,
+not an assumed transaction spanning unrelated owners.
+
+The workspace catalog will reference the selected application environment and
+its revision. Registry publication remains the authority boundary, whether its
+input is a package, a reviewed file change or a supported overlay. This is a
+design constraint for future transfer/self-edit work, not an implemented exporter.
+
 ## Workspace selection and Hive
 
 The workspace subsystem owns durable identity, state and application membership
@@ -269,7 +306,30 @@ client loss and workspace identity visible throughout. Live migration, automatic
 failover of arbitrary native processes, shared writable workspace replication
 and a 100-node deployment remain outside this local foundation milestone.
 
-A future standalone Cluster application under **Start → Tools → Cluster** can expose node health, connectivity and
-workspace placement through native runtime contracts. Authorized controls belong
-to that application/subsystem, not the desktop presenter. Installing or opening
-its UI must not silently enable cluster mode in the local profile.
+A future standalone **Hive Manager** under **Start → Tools → Hive Manager** exposes
+reachable nodes, connection health and hosted workspaces through native contracts.
+Bee remains the client entry point: selecting a remote workspace attaches it to
+the current client, rather than requiring a separate SSH terminal or a second
+desktop. The compact workspace switcher uses the same workspace catalog and
+attachment operations; it does not own a separate connection implementation.
+Local workspace management owns names and environment/resource references;
+Hive Manager adds discovery and remote placement without becoming their owner.
+
+The required operation sequence is discover, inspect authorized workspaces,
+request attachment, receive a current projection, then open/focus the selected
+application using its full workspace reference. Detach, reconnect, unavailable
+hosts and explicit controller transfer need first-class outcomes. A timeout is
+not evidence that a remote application failed to start. Retry uses the original
+request identity and resolves its outcome before spawning again.
+
+Authorized controls belong to the relevant subsystem, not the presenter.
+Installing or opening the manager must not silently enable cluster mode in the
+local profile. When Hive is disabled, show its disabled state and the explicit
+profile requirement; do not fabricate nodes or connection status.
+
+TTY-specific runtime gaps belong in the scoped viewport PR (#653); cluster
+membership and Raft remain separately owned. Before requesting an extension,
+check the actual PR revision and reproduce the missing behavior through native
+contracts. Required end-to-end evidence remains two Bee runtimes with remote
+input/resize, recipient denial, safe controller handoff, disconnect/reconnect
+and tab identity preserved. Current local broker tests do not satisfy that gate.

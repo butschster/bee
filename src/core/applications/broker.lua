@@ -568,7 +568,15 @@ local function main(owner: string, initial_preferences: unknown)
                             local view = item.view
                             if item.mount ~= "" then
                                 local _, err = view:revoke(item.mount)
-                                if err then reply.error_code, reply.error = "revoke_failed", tostring(err) end
+                                if err then
+                                    reply.error_code, reply.error = "revoke_failed", tostring(err)
+                                    local failed = identified(item, "attached", req.request_id, "revoke_failed", tostring(err))
+                                    failed.mount = ""
+                                    emit(failed)
+                                    -- Retain the previous grant for retry. Issuing a new
+                                    -- controller before revocation is known would overlap authority.
+                                    return
+                                end
                                 item.mount = ""
                             end
                             if recipient ~= "" and item.opened then

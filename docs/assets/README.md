@@ -4,7 +4,7 @@
 The bee mark preserves the desktop's existing terminal artwork.
 
 `desktop.gif` was captured on 2026-09-07 from the standalone Linux Bee binary
-built with the fullscreen-handler implementation (`dfdd555`). It contains 14
+built with the fullscreen handlers and subsequent workspace-header cleanup. It contains 14
 terminal frames rendered from actual PTY output in a disposable workspace:
 Start, Settings, Ocean theme, native Terminal, a shell command, maximize, F12,
 and Process Manager. Frame holds are edited for readability. The terminal prompt
