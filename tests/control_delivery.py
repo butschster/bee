@@ -1,6 +1,7 @@
 """A rejected core send must exit visibly, retaining acknowledged recovery."""
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import tempfile
 import time
@@ -18,6 +19,11 @@ CASES = {
 }
 
 
+def workspace_identity(folder):
+    with sqlite3.connect(folder / "workspace.db") as db:
+        return db.execute("SELECT workspace_id FROM workspace_identity WHERE singleton=1").fetchone()[0]
+
+
 def run(packed):
     for case, condition in CASES.items():
         with tempfile.TemporaryDirectory(prefix="bee-delivery-") as directory:
@@ -29,6 +35,7 @@ def run(packed):
                 ui.quit()
             finally:
                 ui.close()
+            baseline_id = workspace_identity(folder)
             baseline = stored(folder)
             before = baseline["applications"]
             assert before, "Settings did not establish recovery state"
@@ -68,6 +75,7 @@ def run(packed):
                 assert b"Injected core delivery failure" in ui.raw, bytes(ui.raw[-2000:])
                 if case in ("shutdown",):
                     assert time.monotonic() - started < 1.5, f"{case}: rejected quit waited"
+                assert workspace_identity(folder) == baseline_id, f"{case}: failed delivery changed workspace identity"
                 recovered = stored(folder)
                 after = recovered["applications"]
                 if case in ("bind", "restore", "scene"):
@@ -81,6 +89,7 @@ def run(packed):
             ui = Desktop(folder)
             try:
                 ui.wait("BEE SETTINGS")
+                assert workspace_identity(folder) == baseline_id, f"{case}: recovery changed workspace identity"
                 ui.quit()
             finally:
                 ui.close()
