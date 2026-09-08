@@ -416,7 +416,9 @@ local function main(initial_application: string?, secondary_application: string?
                     end
                     if reply.request_id == restore_request and reply.op == "open" and not quitting then restore_next() end
                     if reply.op == "attached" then
-                        if reply.request_id == binding then process.send(presenter, "bee.app.reply", reply) end
+                        if reply.request_id == binding or (active and reply.error_code == "attachment_failed") then
+                            process.send(presenter, "bee.app.reply", reply)
+                        end
                     elseif reply.op ~= "bind" and active then process.send(presenter, "bee.app.reply", reply) end
                 end
             end

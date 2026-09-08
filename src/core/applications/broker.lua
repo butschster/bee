@@ -18,7 +18,7 @@ type Waiter = {request_id: string, recipient: string, control: boolean}
 type Checkpoint = {request_id: string, pid: string, deadline: number}
 type Instance = {view_id: string, instance_id: string, execution_pid: string, view: tty.Viewport,
     descriptor: contract.Descriptor, binding: contract.Binding, mount: string, launch_token: string,
-    negotiate_close: boolean?, close_request_id: string?, announced_title: string?, title_dirty: boolean?, state: lifecycle.State, open_request: string, opened: boolean, ready_received: boolean, resume_state: string, waiters: {Waiter}, attempts: integer}
+    negotiate_close: boolean?, close_request_id: string?, announced_title: string?, title_dirty: boolean?, state: lifecycle.State, open_request: string, opened: boolean, resume_state: string, waiters: {Waiter}, attempts: integer}
 local function now(): number return time.now():unix_nano() / 1000000000 end
 local function main(owner: string, initial_preferences: unknown)
     local bootstrap: unknown = ctx.get("bee.workspace_owner")
@@ -188,21 +188,18 @@ local function main(owner: string, initial_preferences: unknown)
         if interactions.add(dialogs, spec, item.close_request_id or "", item.execution_pid, true) then publish_dialogs() end
     end
     local function transition(item: Instance, event: lifecycle.Event)
-        if event == "ready" then
-            item.ready_received = true
-            if recipient == "" then return end
-        end
         local next_state, effect = lifecycle.reduce(item.state, event, now())
         item.state = next_state
         if effect == "opened" then
-            local err = mount(item)
-            if err then
-                item.state = {phase = "terminating", deadline = now() + 1, failure = "attachment_failed"}
-                process.terminate(item.execution_pid)
-            else
-                item.opened = true
-                emit(identified(item, "open", item.open_request), true)
-                appearance_state(item)
+            -- Readiness belongs to the producer. A missing or failed consumer
+            -- attachment must not turn a ready application into a startup failure.
+            item.opened = true
+            local attachment_error: string? = nil
+            if recipient ~= "" then attachment_error = mount(item) end
+            emit(identified(item, "open", item.open_request), true)
+            appearance_state(item)
+            if attachment_error then
+                emit(identified(item, "attached", item.open_request, "attachment_failed", attachment_error))
             end
         elseif effect == "query_close" then
             discard_dialog(item)
@@ -297,7 +294,7 @@ local function main(owner: string, initial_preferences: unknown)
         refresh_shutdown()
     end
     local function accept_readiness(item: Instance, negotiate: boolean)
-        if item.state.phase == "starting" and not item.ready_received then item.negotiate_close = negotiate end
+        if item.state.phase == "starting" then item.negotiate_close = negotiate end
         transition(item, "ready")
     end
     local function tick_instance(item: Instance)
@@ -574,8 +571,7 @@ local function main(owner: string, initial_preferences: unknown)
                                 if err then reply.error_code, reply.error = "revoke_failed", tostring(err) end
                                 item.mount = ""
                             end
-                            if recipient ~= "" and not item.opened and item.ready_received then transition(item, "ready")
-                            elseif recipient ~= "" and item.opened then
+                            if recipient ~= "" and item.opened then
                                 local err = mount(item)
                                 if err then reply.error_code, reply.error = "attachment_failed", err end
                                 emit(identified(item, "attached", req.request_id, err and "attachment_failed" or "", err))
@@ -607,7 +603,6 @@ local function main(owner: string, initial_preferences: unknown)
                             emit(contract.reply(req.request_id, "open", "incompatible_checkpoint", "Application checkpoint schema is incompatible"), true)
                         elseif req.restore_view_id ~= "" and instances[req.restore_view_id] then
                             emit(contract.reply(req.request_id, "open", "identity_conflict", "View identity is already active"), true)
-                        elseif recipient == "" then emit(contract.reply(req.request_id, "open", "not_attached", "Desktop is not attached"), true)
                         elseif count >= 16 then emit(contract.reply(req.request_id, "open", "instance_limit", "Desktop instance limit reached"), true)
                         else
                             local view_id = req.restore_view_id ~= "" and req.restore_view_id or uuid.v7()
@@ -629,7 +624,7 @@ local function main(owner: string, initial_preferences: unknown)
                                     else
                                         instances[view_id] = {view_id = view_id, instance_id = instance_id, execution_pid = tostring(pid), view = view,
                                             descriptor = descriptor, binding = binding, mount = "", launch_token = token,
-                                            state = lifecycle.start(now()), open_request = req.request_id, opened = false, ready_received = false, resume_state = req.resume_state, waiters = {}, attempts = 0}
+                                            state = lifecycle.start(now()), open_request = req.request_id, opened = false, resume_state = req.resume_state, waiters = {}, attempts = 0}
                                     end
                                 end
                             end

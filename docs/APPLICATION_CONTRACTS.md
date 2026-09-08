@@ -104,6 +104,14 @@ The broker checks the actual sender PID, instance/view identities and launch tok
 UI apps signal after their initial frame; Terminal signals after PTY attachment.
 The native program can still fail after attachment; EXIT remains authoritative.
 
+Producer readiness is independent of a desktop consumer. The broker accepts an
+admitted open without a bound presenter, acknowledges readiness and checkpoints,
+and retains its viewport for later attachment. An `open` success may carry an
+empty mount. If mounting to a bound recipient fails, readiness still succeeds;
+a separate `attached` error reports `attachment_failed` without terminating the
+app. A later bind can attach to the same producer. The local workspace launcher
+still requires a physical desktop; this broker capability is not a headless profile.
+
 Broker owner requests use `bee.app.request`: `version: 1`, nonempty `request_id`,
 `op: open|close|bind|shutdown`, with the operation's definition/view/recipient.
 Replies use `bee.app.reply`, version 1, correlated request ID, operation, view ID

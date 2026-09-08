@@ -220,7 +220,7 @@ local function main(owner: string, initial_application: string?, secondary_appli
                         status = reply.error
                         if reply.op == "close" then closing[reply.id] = nil; if not pending_request then adopt_routing() end end
                     end
-                    if (reply.op == "open" or reply.op == "attached") and reply.error == "" then
+                    if (reply.op == "open" or reply.op == "attached") and reply.error == "" and reply.mount ~= "" then
                         local view, err = tty.attach(reply.mount)
                         if view then
                             attachments[reply.id] = {view = view, width = 0, height = 0, revision = -1}

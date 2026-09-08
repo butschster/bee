@@ -1,6 +1,6 @@
 # Workspace host and desktop client extraction
 
-Status: implementation plan reviewed against `6871c5d`, not callable APIs.
+Status: extraction plan; the broker readiness step below is now implemented.
 The required behavior and native mesh boundary are in
 [workspace attachments](WORKSPACE_ATTACHMENTS.md). Local Bee still combines the
 physical terminal owner and workspace host. No headless profile exists yet.
@@ -11,8 +11,8 @@ physical terminal owner and workspace host. No headless profile exists yet.
 spawns the session and broker, mounts the presenter, routes input and commits
 application checkpoints. `src/core/session/main.lua` accepts windows only for
 the single bootstrapped workspace. `src/core/applications/broker.lua` keeps one
-recipient and one mount per application; open requires that recipient and ready
-waits for attachment. The recovery envelope combines client layout with application
+recipient and one mount per application. Broker open/readiness now work without
+that recipient, and mount failures retain ready producers. The recovery envelope combines client layout with application
 state. These are explicit local assumptions, not reusable multi-client contracts.
 
 ## Owners after extraction
@@ -48,12 +48,34 @@ operation changes both from one preference value. Preserve that local experience
 during migration, then make the scope explicit when multiple clients are enabled.
 The Classic terminal palette belongs to producer appearance, not client chrome.
 
+## Replaceable shell inbox
+
+The client may own a separate inbox actor that receives authorized, typed UI
+requests and exposes pending items to its shell. Keep it under the stable client
+owner rather than the replaceable presenter, so swapping shells does not destroy
+delivery state. Different shell implementations may render those items as modals,
+notifications or an inbox through the same contract.
+
+The originating workspace/app owns the request and decides whether a response is
+still valid. The client inbox owns delivery, dismissal and presentation state;
+the shell owns rendering and input. Correlate responses with the exact workspace,
+instance, request and attachment incarnation. With several clients, the origin
+accepts one valid answer and retires the pending request everywhere. Dismissal,
+client disconnection and replacement are not consent. Preserve the current
+broker-owned questions across F12 while extracting this delivery layer.
+
+This inbox is a proposed client process boundary, not a new globally trusted
+mailbox. Its limits, sender admission, allowed response shapes and replay rules
+must be checked independently of the visual shell implementation.
+
 ## Local attachment proof first
 
-1. Separate app readiness from presentation in the broker. A headless admitted
-   app can reach ready and checkpoint before any view is attached. A view mount
-   error is an attachment result, not an app startup failure. Keep startup
-   timeout and observed EXIT handling intact.
+1. Implemented at the broker: an admitted app can reach ready and checkpoint
+   before any view is attached. A mount error is an attachment result, not an app
+   startup failure. The Lua fixture in `tests/fixtures/attachments` verifies
+   persistence before attachment, survival past the startup deadline, failed
+   initial and later mounts, and reattachment to the same producer. Startup
+   timeout and observed EXIT handling remain intact.
 2. Introduce owner-held attachment records for exact view references and actual
    recipient PIDs. Separate observe from input/resize grants. Keep one controller
    for each PTY; observers do not resize it to fit their own windows.
@@ -71,6 +93,14 @@ These steps are one extraction milestone. Merely adding a `headless` branch to
 the existing terminal loop does not establish the required owner separation.
 Keep the current local launch usable throughout; do not publish the profile until
 its lifecycle and recovery gates pass.
+
+The pinned source CLI can execute this fixture on `--host bee:workers` with no
+terminal host entry. Its pack launcher currently calls `launchExecProcess` with
+an empty host ID (`cmd/wippy/cmd/run_pack.go`), ignoring the explicit selection;
+it still needs a passive terminal host entry even with piped input/output and no
+physical TTY. Preserve host selection in pack execution before claiming a
+source/pack no-terminal-host profile. The source and pack fixture checks expose
+this distinction rather than treating their boot paths as equivalent.
 
 ## Protocol and authorization
 

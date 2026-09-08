@@ -42,7 +42,12 @@ and presentation roles; core code contains no bundled-app IDs. Shared UI helpers
 are optional; the Terminal uses Wippy's native PTY proxy directly.
 
 Applications receive identities before spawn and acknowledge readiness. A spawn
-alone is not an opened application. Readiness has a three-second deadline. Unguarded close
+alone is not an opened application. Readiness has a three-second deadline and
+does not require a presenter attachment. The broker can retain a ready producer
+and accept its checkpoints while detached; a mount failure reports attachment
+failure without killing the app. Source/pack Lua acceptance checks this through
+piped execution. A complete headless workspace profile remains unimplemented.
+Unguarded close
 sends the producer a cooperative close event, then requests termination after
 250ms. Guarded apps enter this cleanup only after an accepted decision. Records remain owned until EXIT; unsuccessful termination reports
 uncertainty rather than claiming the process stopped. Workspace exit starts all

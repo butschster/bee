@@ -51,6 +51,14 @@ database ownership, live grants or placement policy. Destination admission and
 resource bindings still govern spawn and use. Cross-node definition activation
 and client placement require acceptance before they become supported operations.
 
+Components may also declare filesystem resources and local overlays intended for
+sharing. Keep their definitions, immutable packaged files, writable working files
+and materialized overlays distinct. Destination bindings resolve access to local,
+mounted or synchronized filesystems; component availability alone is not a
+filesystem grant. A component may own explicit file synchronization and its
+conflict/retry contract. Syncing its overlay does not implicitly replicate every
+writable file or database it uses.
+
 ## Host and client composition
 
 The built-in profiles should compose the same owners:
