@@ -32,6 +32,11 @@ See [threads](docs/THREADS.md) for the local journal's API and scheduling limits
 | Ctrl+W / Ctrl+Q | Close application / exit Bee |
 | F12 | Replace the presenter, retaining live apps and desktop state |
 
+Terminal asks before closing its shell and running commands. When quitting Bee,
+guarded applications share one confirmation; Cancel leaves them running. Typing
+`exit` inside Terminal exits that shell directly. Apps may also request shell-owned
+confirmation or text dialogs; see [application contracts](docs/APPLICATION_CONTRACTS.md).
+
 Start supports nested groups, hover selection and keyboard navigation. No app is
 autostarted in a new workspace. There is one application/status bar and no reserved desktop footer.
 

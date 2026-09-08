@@ -148,55 +148,79 @@ workspace file, not an encrypted secret store. Future overlay/Hub activation mus
 validate migration compatibility before activation and keep a tested recovery path;
 these install/activation transactions are not implemented by this store.
 
-## Proposed shell interactions and close negotiation
+## Shell queries and close negotiation
 
-This section is a design boundary, not a callable API. Current close still sends
-an app close event and begins the 250ms termination deadline; apps cannot veto it.
-Do not attempt to protect unsaved work by opening a dialog on that event.
+Shell questions are implemented through `bee.application:client.query(launch,
+options)`. Options contain `kind: "confirm" | "text"`, `title`, and optional
+`message`, `accept` and `initial` strings. Limits are 80 bytes for the title,
+512 for the message, 24 for the accept label and 256 for input, without controls.
+The return is a request ID or an error; successful send means queued.
 
-The shell owns presentation, focus isolation and user responses. The application
-owns the question, the meaning of each action and whether its work may close.
-Use the existing broker boundary rather than introducing another service:
+Register `process.listen("bee.application.query.result", {message = true})` before
+sending. Decode received messages with `client.query_result(launch,
+tostring(message:from()), message:payload():data())`, then match the returned
+request ID. This validates the broker sender and app identity. Results contain
+`action: "accept" | "cancel"`, `value`, and `error` (empty or `busy`). A second
+pending question for the same view returns busy. Questions requested during
+startup remain pending until the view appears.
 
-- An authenticated instance may have one outstanding interaction, identified by
-  an opaque request ID. Bound text, action count and any input value. Permit
-  confirmation and single-field text queries first, with explicit cancellation.
-- The broker owns pending requests independently of the replaceable presenter.
-  Session projections expose the dialog belonging to each view. Switching apps
-  leaves the request pending; an app cannot steal global focus by asking.
-- The presenter renders the focused app's dialog and consumes all app input while
-  it is visible. Escape cancels; keyboard and mouse select the same actions.
-  Other app tabs remain usable. Small screens clip safely and retain buttons.
-- Responses pass through the workspace and broker, authenticated against the
-  current presenter and the matching request/instance. Resolve once; reject stale
-  responses. App EXIT removes its request. F12 reconstructs pending presentation.
-  Dialog requests are transient and are not restored as permissions after reboot.
+The broker owns pending questions and generates fresh presentation IDs, distinct
+from app request IDs. Replies from stale presenters or unrelated actors do not
+resolve them. F12 preserves the question, but resets transient text edits and
+button focus. App exit removes its question. Questions are not persisted across
+cold starts. Confirmations default to Cancel; text queries start in the field.
+Escape cancels. Tab, arrows, Enter and mouse operate controls; app input is
+isolated. Existing tabs and Alt+Tab switch applications without cancelling a
+question. Queries are plain text, not secret/password fields.
 
-Close negotiation must precede destructive cleanup. An app opts into negotiated
-close at readiness; ordinary apps retain immediate close behavior. A close request
-for an opted-in app enters a bounded awaiting-response state without starting the
-termination deadline. The app may accept, decline, or supply a confirmation. An
-accepted decision enters existing cooperative cleanup. Cancellation preserves the
-instance and view. Repeated close clicks reuse the pending request. A response
-timeout reports an unresponsive app and offers explicit force-stop; it is not
-permission to destroy work. Force-stop remains a separately authorized operation.
+Apps can opt into negotiated close with `client.ready(launch,
+{negotiate_close = true})`. Register `bee.application.close` before readiness,
+then decode requests with `client.close_request(launch, sender, payload)` and
+reply with `client.close_reply(launch, request.request_id, decision)`. A decision
+has `action: "accept" | "cancel" | "confirm"`; confirmation also accepts bounded
+`title`, `message` and `accept` strings. Close policy is fixed by the first valid
+readiness acknowledgement. Apps without opt-in retain the fast close path.
 
-Closing a view is currently stopping its app process. Test Status already owns
-its worker separately, so closing that view need not warn about cancelling a run
-that continues. Terminal needs an explicit policy: it does not yet have reliable
-foreground-job detection, and must not pretend it can distinguish an idle prompt
-from valuable native work. A conservative terminal close confirmation is a valid
-first implementation. Minimize and F12 never invoke close negotiation.
+The broker waits two seconds for the app's answer without starting termination.
+A confirmation then waits for the user without a kill deadline. Silence produces
+an explicit Force stop/Cancel dialog. Cancellation reports `cancelled` to close
+callers and sends `bee.application.close.result` to the app with its original
+request ID and `action: "cancel"`. Apps that pause work during negotiation must
+resume on this authenticated result, decoded with
+`client.close_result(launch, sender, payload)` and matched to their pending request. Acceptance begins the existing 250ms
+cooperative cleanup, followed by termination if necessary. Repeated close clicks
+share one negotiation; stale IDs and forged senders/tokens cannot accept it.
+A pending ordinary query is cancelled when close negotiation begins. New queries
+during negotiation receive `busy`; title announcements remain accepted.
 
-Desktop shutdown must negotiate before tearing down children. Aggregate pending
-app decisions in a single shell-owned shutdown presentation, allow cancellation,
-and retain explicit force quit. Only accepted shutdown begins parallel cleanup.
-Apps cannot indefinitely trap the user. This must preserve responsive exit when
-there is no guarded work, rather than adding a fixed wait to every Ctrl+Q.
+Source/pack acceptance uses an opted-in native Terminal fixture and verifies a
+live PTY through cancellation, input recovery, F12, invalid-token rejection and
+explicit close. An unresponsive fixture verifies that timeout does not kill work.
+The bundled Terminal opts in and always asks before closing its PTY. It cannot
+reliably distinguish an idle prompt from a valuable foreground job. Typing `exit`
+inside the native shell remains a direct application exit. For opted-in apps, normal desktop quit
+now gathers decisions into one confirmation. No app closes while another decision
+is pending; cancellation keeps them alive. Acceptance starts parallel cooperative cleanup while the workspace continues
+servicing checkpoint writes. Recovery records survive workspace shutdown; an
+individual app close still removes its record. Completion waits for observed app
+exits and known persistence requests, with a bounded failure path that reports
+unacknowledged cleanup. Only a successful checkpoint receipt guarantees a committed
+save. Apps requiring a save before consent must await that receipt before accepting;
+a queued send is insufficient, and final cleanup has only a 250ms grace period. Launching new apps is rejected
+while quit is pending. Apps that accept without a question do not add a prompt.
 
-Acceptance must exercise accept/cancel, duplicate close, app EXIT during a dialog,
-wrong sender/request, F12 with a pending question, typing/paste isolation from PTYs,
-small-screen layout, background requests, unresponsive apps, and cancelled versus
-confirmed desktop shutdown. A visual modal without these lifecycle checks does
-not implement safe closing. Permissions remain enforced by service owners; a
-positive dialog response is not a general capability grant.
+The failed-presenter recovery screen retains Ctrl+Q as an emergency exit that
+bypasses negotiation. Physical terminal loss, process cancellation and fatal core
+failure can likewise end the workspace without a usable confirmation UI. These
+are not graceful-close guarantees.
+
+Ownership stays narrow: applications define questions; the broker owns pending
+requests and close decisions; the workspace forwards only authenticated presenter
+responses; the presenter owns drawing and input focus. Pure `interactions`,
+`lifecycle` and `shutdown` modules manage values without process or storage access.
+A positive dialog response is not a general capability grant.
+
+Closing a view still stops its app process. Test Status's independent worker
+continues when its view closes, so that app does not opt into a cancellation
+warning. Minimize and F12 never request close. Future independent application
+lifetimes and headless clients must distinguish detach from stop explicitly.

@@ -7,7 +7,7 @@ function M.reply(value: unknown): Reply?
     if type(value) ~= "table" or value.version ~= 1 then return nil end
     local op = value.op
     if op ~= "open" and op ~= "close" and op ~= "closed" and op ~= "focus" and op ~= "attached"
-        and op ~= "bind" and op ~= "page" and op ~= "title" and op ~= "shutdown" then return nil end
+        and op ~= "bind" and op ~= "page" and op ~= "title" and op ~= "closing" and op ~= "quit" and op ~= "shutdown" then return nil end
     local request_id, id = contract.text(value.request_id, 80), contract.text(value.id, 80)
     local instance, title = contract.text(value.instance_id, 80), contract.text(value.title, 80)
     local mount, code = contract.text(value.mount, 1024), contract.text(value.error_code, 80)

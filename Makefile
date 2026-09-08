@@ -22,6 +22,8 @@ check: lint test threads pack
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/taskbar.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/personalization.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/announcements.py
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/interactions.py
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/close_confirmation.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/drag_failure.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/console.py
 	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/navigation.py

@@ -120,7 +120,12 @@ def exercise(packed):
             for y in range(top, bottom-1):
                 for x in range(left, right-1):
                     assert ui.screen.buffer[y][x].bg == background
-            elapsed = ui.quit()
+            ui.key(b"\x17")
+            ui.wait("Close terminal?")
+            ui.key(b"\x1b")
+            ui.key(b"printf 'CANCEL_%s\\n' $bee_marker\r")
+            ui.wait("CANCEL_keep")
+            elapsed = ui.quit(confirm=True)
             deadline = time.monotonic() + 1
             while Path(f"/proc/{native_pid}").exists() and time.monotonic() < deadline:
                 time.sleep(.02)

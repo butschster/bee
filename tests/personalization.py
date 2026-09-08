@@ -107,7 +107,7 @@ def terminals(packed):
             ui.wait("SECOND_CLEAN")
             assert "Build" in ui.screen.display[0] and "Review" in ui.screen.display[0], ui.text()
             assert "command not found" not in ui.text(), ui.text()
-            ui.quit()
+            ui.quit(confirm=True)
         finally:
             ui.close()
     print(f'Terminal labels {"pack" if packed else "source"}: independent names and modal input isolation')

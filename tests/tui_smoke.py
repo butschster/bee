@@ -148,9 +148,13 @@ class Desktop:
                         right + (dx if "r" in edge else 0), bottom + (dy if "b" in edge else 0))
             assert got == expected, (edge, got, expected, self.text())
 
-    def quit(self):
+    def quit(self, confirm=False):
         start = time.monotonic()
         os.write(self.master, b"\x11")
+        if confirm:
+            self.wait("Quit Bee?")
+            start = time.monotonic()
+            os.write(self.master, b"\t\r")
         while self.process.poll() is None and time.monotonic() - start < 2:
             self.pump(.02)
         assert self.process.poll() == 0, self.text()
