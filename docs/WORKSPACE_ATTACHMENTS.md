@@ -59,6 +59,34 @@ Neither the manager nor a shell selection transfers ownership or authorization.
 These UI and remote operations remain proposals until their contracts and
 acceptance checks exist.
 
+## Setup without repeated keys
+
+Pairing is a proposed Bee convenience layer over native configuration. The pinned
+runtime example (`boot/components/system/cluster.example.yaml`) provides seed
+addresses, stable unique node names, membership secret configuration and server/
+client roles. It does not establish the proposed one-time invitation protocol.
+Do not advertise `bee hive init/invite/join` as implemented commands yet.
+
+An explicit first setup should persist the selected profile, native node identity,
+seed addresses and protected credential references. Subsequent `bee` launches
+can reuse that choice without asking for a long key or profile flags. Fresh
+installations remain local-only. Several clients on one computer should reuse
+their selected local host; several actual nodes require separate identities,
+ports and runtime-state directories. A workspace catalog reference selects the
+workspace independently of those node boot settings.
+
+A future invitation needs expiration, single-use redemption, authenticated
+destination binding and revocation semantics. Nearby discovery only finds a
+candidate. Membership credentials establish the transport boundary; application
+placement and workspace access still require owner admission. Keep credentials
+out of exported application definitions and ordinary registry metadata.
+
+The 2026-09-07 local native mesh proof used a clean archive of runtime `055505ef`:
+two runtimes, mutual TLS, one scheduler worker each and 20 cross-node PTY commands
+per runtime passed. This is a runtime primitive proof, not two Bee desktops or a
+LAN result. The authorized second-host attempt could not allocate temporary
+storage because its filesystems were full; no remote process was launched.
+
 ## Required headless profile
 
 Headless Hive support is a requested built-in Bee profile, not an optional

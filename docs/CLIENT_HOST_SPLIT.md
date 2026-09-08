@@ -39,8 +39,10 @@ The current fixture proves local named delivery only, not remote actor admission
 `src/core/workspace/main.lua` starts the physical terminal before opening storage,
 spawns the session and broker, mounts the presenter, routes input and commits
 application checkpoints. `src/core/session/main.lua` accepts windows only for
-the single bootstrapped workspace. `src/core/applications/broker.lua` keeps one
-recipient and one mount per application. Broker open/readiness now work without
+the single bootstrapped workspace. `src/core/applications/broker.lua` still selects
+one desktop recipient. Its private `attachment.lua` module owns the recipient-and-grant
+record held by each application instance and revokes before replacement.
+Broker open/readiness work without
 that recipient, and mount failures retain ready producers. The recovery envelope combines client layout with application
 state. These are explicit local assumptions, not reusable multi-client contracts.
 
