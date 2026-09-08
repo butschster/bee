@@ -107,7 +107,10 @@ or capability values, never durable identity or proof of user authority.
 
 A workspace owns instance admission, application state and resource references.
 The application/subsystem owns run state and durable event history. The client
-owns tab ordering, placement, focus and appearance. A client can show several
+owns tab ordering, placement, focus and desktop chrome appearance. Producer page
+defaults and application appearance remain workspace/application-owned, so clients
+with different desktop themes cannot race to recolor one shared viewport.
+A client can show several
 workspaces; several clients can show one workspace with independent layouts.
 Closing a tab detaches a view. Stopping an application or cancelling a run is a
 separate authorized operation. Existing view-owned apps retain close-to-stop
@@ -200,6 +203,9 @@ handoff, workspace authorization or two-client Bee behavior. Those remain Bee
 integration/acceptance work. Mesh connectivity does not replicate SQLite state.
 
 ## Implementation sequence and acceptance
+
+The [client/host extraction plan](CLIENT_HOST_SPLIT.md) maps these requirements to
+the current actor owners, appearance scopes, storage transition and local gates.
 
 ### Headless nodes and composed applications
 
