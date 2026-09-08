@@ -25,7 +25,10 @@ this envelope. Runtime launch values include revision information, but recovery
 resolves the admitted definition available at boot and checks its declared
 resume schema. An installer must not mistake this for version pinning.
 
-The workspace stores committed scene changes, not each drag preview. It retains
+The workspace stores committed scene changes, not each drag preview. During
+bootstrap and sequential restoration, persistence retains the saved desktop
+projection until restoration finishes. A rejected bind or restore send therefore
+cannot overwrite the previous layout with an incomplete boot screen. It retains
 resume records for failed or incompatible restores. Runtime PIDs, launch tokens,
 TTY mounts and native resources are recreated, never stored as authority.
 PID strings may repeat across runtime boots.

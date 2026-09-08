@@ -53,6 +53,12 @@ F12 retires only the presenter. The broker revokes old mounts and binds new ones
 to the fresh PID. App processes, PTYs, viewport content, geometry, tab order and
 preferences survive. Retry exhaustion preserves the last physical frame and
 allows F12 retry or Ctrl+Q exit. Failure of the session or broker ends the workspace.
+Rejected structural workspace-to-broker/session sends end the local workspace
+with a visible error through its save path. Bind, restore, accepted shutdown and
+checkpoint-receipt failure tests verify recovery survives and healthy reboot
+works. Rejected ordinary open/close and quit preparation preserve running apps,
+report failure and permit explicit retry.
+Presenter snapshots remain reconstructible; this is not remote reconnection.
 Workspace preferences and opt-in app checkpoints survive cold starts in the primary
 workspace database. Settings demonstrates the resume contract. Terminal does not
 claim to resurrect native processes after runtime shutdown.

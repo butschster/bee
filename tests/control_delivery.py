@@ -1,0 +1,154 @@
+"""A rejected core send must exit visibly, retaining acknowledged recovery."""
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+import time
+
+from recovery import stored
+from tui_smoke import Desktop, ROOT, RUNTIME
+
+ANCHOR = '        local sent, err = process.send(recipient, topic, value)'
+CASES = {
+    "bind": 'topic == "bee.app.request" and type(value) == "table" and value.op == "bind"',
+    "restore": 'topic == "bee.app.request" and type(value) == "table" and value.op == "open"',
+    "shutdown": 'topic == "bee.app.request" and type(value) == "table" and value.op == "shutdown"',
+    "scene": 'topic == "bee.desktop.command" and type(value) == "table" and value.op == "add"',
+    "receipt": 'topic == "bee.application.persisted"',
+}
+
+
+def run(packed):
+    for case, condition in CASES.items():
+        with tempfile.TemporaryDirectory(prefix="bee-delivery-") as directory:
+            folder = Path(directory)
+            # Establish an acknowledged real Settings checkpoint before faulting.
+            ui = Desktop(folder, apps=("bee.settings:app",))
+            try:
+                ui.wait("BEE SETTINGS")
+                ui.quit()
+            finally:
+                ui.close()
+            baseline = stored(folder)
+            before = baseline["applications"]
+            assert before, "Settings did not establish recovery state"
+
+            project = folder / "project"
+            shutil.copytree(ROOT / "src", project / "src")
+            for name in (".wippy.yaml", "wippy.lock"):
+                shutil.copy2(ROOT / name, project / name)
+            actor = project / "src/core/workspace/main.lua"
+            source = actor.read_text()
+            assert source.count(ANCHOR) == 1
+            injection = f'''        local sent, err = true, ""
+        if {condition} then
+            sent, err = false, "Injected core delivery failure"
+        else
+            local delivered, failure = process.send(recipient, topic, value)
+            sent, err = delivered == true, tostring(failure)
+        end'''
+            actor.write_text(source.replace(ANCHOR, injection))
+            subprocess.run([str(RUNTIME), "lint"], cwd=project, check=True)
+            pack = folder / "failure.wapp"
+            if packed:
+                subprocess.run([str(RUNTIME), "pack", str(pack)], cwd=project, check=True)
+            started = time.monotonic()
+            ui = Desktop(folder, packed, project=project, pack_file=pack)
+            try:
+                if case in ("shutdown",):
+                    ui.wait("BEE SETTINGS")
+                    started = time.monotonic()
+                    ui.key(b"\x11")
+                while ui.process.poll() is None and time.monotonic() - started < 5:
+                    ui.pump(.02)
+                ui.pump(.1)
+                assert ui.process.poll() is not None, f"{case}: core delivery hung"
+                assert ui.process.returncode != 0, f"{case}: failed delivery claimed success"
+                assert b"Core delivery failed:" in ui.raw, bytes(ui.raw[-2000:])
+                assert b"Injected core delivery failure" in ui.raw, bytes(ui.raw[-2000:])
+                if case in ("shutdown",):
+                    assert time.monotonic() - started < 1.5, f"{case}: rejected quit waited"
+                recovered = stored(folder)
+                after = recovered["applications"]
+                if case in ("bind", "restore", "scene"):
+                    assert recovered == baseline, f"{case}: incomplete bootstrap overwrote saved desktop"
+                assert [(v["id"], v["instance_id"]) for v in after] == [
+                    (v["id"], v["instance_id"]) for v in before
+                ], f"{case}: failed delivery lost recovery identity"
+            finally:
+                ui.close()
+            # The faulted launch must not poison the next healthy source launch.
+            ui = Desktop(folder)
+            try:
+                ui.wait("BEE SETTINGS")
+                ui.quit()
+            finally:
+                ui.close()
+    print(f"Core delivery {'pack' if packed else 'source'}: rejected bind/restore/scene/shutdown/receipt exit visibly, retain recovery, healthy reboot")
+
+
+def routine(packed):
+    for case in ("open", "close", "prepare"):
+        with tempfile.TemporaryDirectory(prefix="bee-command-failure-") as directory:
+            folder = Path(directory)
+            project = folder / "project"
+            shutil.copytree(ROOT / "src", project / "src")
+            for name in (".wippy.yaml", "wippy.lock"):
+                shutil.copy2(ROOT / name, project / name)
+            actor = project / "src/core/workspace/main.lua"
+            source = actor.read_text().replace("    local function application_request", "    local reject_command = true\n    local function application_request")
+            if case == "prepare":
+                anchor = '        local sent, err = process.send(broker, "bee.application.shutdown", {version = 1, op = "prepare"})'
+                operation = 'process.send(broker, "bee.application.shutdown", {version = 1, op = "prepare"})'
+                condition = "reject_command"
+            else:
+                anchor = '        local sent, err = process.send(broker, "bee.app.request", value)'
+                operation = 'process.send(broker, "bee.app.request", value)'
+                # The initial CLI open must succeed; reject the later user action.
+                condition = 'reject_command and request.op == "' + case + '"'
+                if case == "open":
+                    condition += ' and request.definition_id == "bee.processes:app"'
+            assert source.count(anchor) == 1
+            source = source.replace(anchor, f'''        local sent, err = true, ""
+        if {condition} then
+            reject_command = false
+            sent, err = false, "Injected command delivery failure"
+        else
+            local delivered, failure = {operation}
+            sent, err = delivered == true, tostring(failure)
+        end''')
+            actor.write_text(source)
+            subprocess.run([str(RUNTIME), "lint"], cwd=project, check=True)
+            pack = folder / "routine.wapp"
+            if packed:
+                subprocess.run([str(RUNTIME), "pack", str(pack)], cwd=project, check=True)
+            ui = Desktop(folder, packed, project=project, pack_file=pack,
+                         apps=("bee.console:app" if case == "prepare" else "bee.settings:app",))
+            try:
+                ui.wait("Terminal" if case == "prepare" else "BEE SETTINGS")
+                if case == "open":
+                    ui.open_start(); ui.choose("Process Manager")
+                else:
+                    ui.key(b"\x11" if case == "prepare" else b"\x17")
+                ui.wait("Injected command delivery failure")
+                assert ui.process.poll() is None
+                if case == "open":
+                    assert "BEE SETTINGS" in ui.text()
+                    ui.open_start(); ui.choose("Process Manager"); ui.wait("Heap")
+                elif case == "close":
+                    assert "BEE SETTINGS" in ui.text()
+                    ui.key(b"\x17"); ui.wait("No applications open")
+                else:
+                    ui.key(b"printf 'RETAINED_%s\\n' 'PTY'\r")
+                    ui.wait("RETAINED_PTY")
+                ui.quit(confirm=case == "prepare")
+            finally:
+                ui.close()
+    print(f"Command delivery {'pack' if packed else 'source'}: failed open/close/quit preserve apps, correlated failure clears pending state, explicit retry works")
+
+
+if __name__ == "__main__":
+    run(False)
+    run(True)
+    routine(False)
+    routine(True)
