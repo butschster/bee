@@ -114,6 +114,12 @@ must be checked independently of the visual shell implementation.
    idempotent after recipient cleanup, so an already removed grant is not a
    handoff failure. Binding several applications is still a per-app operation,
    not an atomic transfer of the entire desktop.
+   Its Terminal mode opens the real bundled `bee.console:app` without a physical
+   TTY, sends a shell command through its mount, detaches, and reconnects with a
+   fresh mount. It verifies the same Bash PID and shell variable remain, the old
+   grant cannot send input, and resize reaches `stty size`. Source and pack pass.
+   This is one local broker and a reconnecting consumer, not multi-client or remote
+   Bee attachment. Use this actual Terminal as the first remote application gate.
 2. Introduce owner-held attachment records for exact view references and actual
    recipient PIDs. Separate observe from input/resize grants. Keep one controller
    for each PTY; observers do not resize it to fit their own windows.

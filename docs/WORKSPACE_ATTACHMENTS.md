@@ -83,9 +83,12 @@ out of exported application definitions and ordinary registry metadata.
 
 The 2026-09-07 local native mesh proof used a clean archive of runtime `055505ef`:
 two runtimes, mutual TLS, one scheduler worker each and 20 cross-node PTY commands
-per runtime passed. This is a runtime primitive proof, not two Bee desktops or a
-LAN result. The authorized second-host attempt could not allocate temporary
-storage because its filesystems were full; no remote process was launched.
+per runtime passed. The same clean-build proof subsequently passed across two
+authorized Linux hosts after a confirmed Go build cache was cleared on the second
+host. Both peers connected over mutual TLS and completed 20 cross-host commands;
+observed command-to-screen p95 was approximately 17–19 ms in that test environment.
+Temporary identities and scratch files were isolated from existing cluster state.
+This is a runtime primitive proof, not two Bee desktops or Hive discovery.
 
 ## Required headless profile
 
