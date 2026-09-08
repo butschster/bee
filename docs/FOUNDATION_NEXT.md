@@ -50,6 +50,38 @@ It reads a descriptor on open, but that is not atomic admission/catalog refresh
 or code-version pinning. F12 replaces the presenter, not the broker. Therefore
 raw registry mutation must not be described as a supported live installation.
 
+## Moving daily work into Bee and recording it
+
+Keep the repository demo tied to verified behavior. The current GIF records the
+real local desktop, Settings, Terminal and Process Manager. It is not an agent
+integration or self-edit demonstration.
+
+1. **Use the terminal foundation.** Run an installed harness through `bee codex`,
+   `bee claude` or `bee agy`; prove arguments, working directory, input, resize,
+   close and presenter recovery. This launch slice is implemented. It does not
+   yet give the harness Bee tools or durable harness-session recovery.
+2. **Connect workspace operations.** After the owner/attachment boundary is
+   settled, expose explicitly authorized operations through an external adapter.
+   Thread observations and app operations retain their owners and typed contracts.
+   Prove sender admission, denied access and reconnect before moving orchestration
+   into Bee. MCP and harness hooks remain unimplemented.
+3. **Edit one application from inside Bee.** Introduce the publication owner,
+   source/draft ownership, expected revision, validation and activation receipts.
+   Preserve local edits and a known-good boot; test conflicting edits, denied
+   publication and interrupted activation. A review decision applies to the exact
+   validated revision. Self-edit authority is separately granted, never inherited
+   merely by opening an agent terminal.
+4. **Record the actual self-edit loop.** Show the agent working inside Bee,
+   the proposed diff, validation results, review, activation and the changed app.
+   Demonstrate the real refresh/restart behavior, including what state survives.
+   Record recovery from a rejected or failed candidate separately. Do not animate
+   an unimplemented success path or suggest native code updates are live Lua edits.
+
+Hub acquisition is not a prerequisite for the first local edit. Runtime overlays
+are an activation mechanism with their own restrictions, not the durable source
+of drafts. Broader self-edit coverage follows only after the single-app flow is
+accepted. This sequence is a plan, not permission to bypass publication checks.
+
 ## Code and organization critique
 
 The import graph, pure scene reducer, typed boundary decoders, independent apps,
