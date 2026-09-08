@@ -23,6 +23,10 @@ local function now(): number return time.now():unix_nano() / 1000000000 end
 local function main(owner: string, initial_preferences: unknown)
     local bootstrap: unknown = ctx.get("bee.workspace_owner")
     if bootstrap ~= owner or owner == "" then error("Untrusted broker bootstrap") end
+    local workspace_id = contract.text(ctx.get("bee.workspace_id"), 32)
+    if not workspace_id or #workspace_id ~= 32 or workspace_id:find("[^0-9a-f]") then
+        error("Invalid workspace identity bootstrap")
+    end
     local requests = assert(process.listen("bee.app.request", {message = true}))
     local shutdown_requests = assert(process.listen("bee.application.shutdown", {message = true}))
     local close_replies = assert(process.listen("bee.application.close.reply", {message = true}))
@@ -612,7 +616,7 @@ local function main(owner: string, initial_preferences: unknown)
                                 else
                                     local version = assert(registry.current_version())
                                     local pid, spawn_err = process.with_options({terminal = grant}):with_scope(scope_cache[req.definition_id])
-                                        :spawn_monitored(req.definition_id, "bee:workers", {version = 1, broker_pid = tostring(process.pid()), workspace_pid = owner,
+                                        :spawn_monitored(req.definition_id, "bee:workers", {version = 1, broker_pid = tostring(process.pid()), workspace_pid = owner, workspace_id = workspace_id,
                                             instance_id = instance_id, view_id = view_id, definition_id = req.definition_id,
                                             definition_revision = descriptor.definition_revision, registry_revision = version:string(), launch_token = token, resume_schema = descriptor.resume_schema, resume_state = req.resume_state, arguments = req.arguments})
                                     if not pid then view:close(); emit(contract.reply(req.request_id, "open", "spawn_failed", tostring(spawn_err)), true)

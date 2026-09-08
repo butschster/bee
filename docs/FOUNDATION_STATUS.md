@@ -100,7 +100,9 @@ registry history. Its append-only migration ledger verifies names and checksums;
 newer or altered migrations fail closed. Generation checks reject stale writers.
 Migration 2 assigns a stable opaque workspace identity without changing the
 existing envelope or migration 1. The ID survives reopen and database relocation.
-It is not yet carried through app launches or client attachments.
+The workspace supplies this ID through trusted broker bootstrap and application
+launch values. The app SDK exposes a copied logical view reference. Client
+attachments and mixed-workspace presentation do not carry it yet.
 Apps checkpoint through their broker; a successful receipt follows database commit.
 See [storage](STORAGE.md) and [application contracts](APPLICATION_CONTRACTS.md).
 

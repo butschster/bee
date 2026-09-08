@@ -49,10 +49,24 @@ package releases will follow contract stabilization.
 ## Launch and lifecycle
 
 The broker supplies one launch value with `version`, `broker_pid`, `workspace_pid`,
-`instance_id`, `view_id`, `definition_id`, `definition_revision`, `registry_revision`
+`workspace_id`, `instance_id`, `view_id`, `definition_id`, `definition_revision`,
+`registry_revision`
 and `launch_token`. `bee.application:client` validates it. The revision identifies
 the registry state observed for launch; it is not a promise that a mutable loader
 pins every future import. Transactional activation is a future installer concern.
+
+`workspace_id` is the required opaque ID from the owning workspace database.
+The workspace installs it in the broker's trusted bootstrap context; applications
+cannot select it through launch arguments. `client.reference(launch)` returns a
+copied `{workspace_id, instance_id, view_id}` logical reference. It contains no
+execution PID, mount, token or permission. Reopening an application in the same
+workspace retains the workspace ID even when execution changes.
+
+The stored recovery record remains local to its owning database. This reference
+helper does not add remote routing or turn local open/close APIs into
+cross-workspace operations. Sender, instance and capability checks remain the
+authority boundary. Restart the whole workspace after updating this launch
+contract; F12 only replaces the presenter.
 
 Open requests may carry `arguments`, a dense list of up to 16 strings (1 KiB each,
 8 KiB combined, no control characters). Omission means an empty list. The broker

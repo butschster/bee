@@ -51,6 +51,8 @@ local function main(initial_application: string?, secondary_application: string?
     assert(output:present(chrome.boot(width, height), {cursor = {x = 1, y = 1, visible = false}}))
     local database, database_error = store.open()
     if not database then error(tostring(database_error)) end
+    local workspace_id, identity_error = database:identity()
+    if not workspace_id then database:close(); error(tostring(identity_error)) end
     local encoded, read_error = database:read()
     if read_error then database:close(); error(tostring(read_error)) end
     local saved: recovery.Snapshot? = nil
@@ -84,7 +86,7 @@ local function main(initial_application: string?, secondary_application: string?
     local presenter_scope = security.new_scope({presenter_policy})
     local session = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner}):with_scope(session_scope)
         :spawn_monitored("bee.session:main", "bee:workers", owner, width, height, preferences)))
-    local broker = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner}):with_scope(broker_scope)
+    local broker = tostring(assert(process.with_options({}):with_context({["bee.workspace_owner"] = owner, ["bee.workspace_id"] = workspace_id}):with_scope(broker_scope)
         :spawn_monitored("bee.applications:broker", "bee:workers", owner, preferences)))
     local scene = model.new(width, height)
     local tabs: {string} = {}

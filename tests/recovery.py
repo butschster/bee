@@ -37,6 +37,7 @@ local function main(value: unknown)
         canvas:put(1, 1, "Counter: " .. tostring(count), width)
         canvas:put(1, 2, "Saved: " .. tostring(saved), width)
         canvas:put(1, 3, "Execution: " .. launch.launch_token, width)
+        canvas:put(1, 4, "Workspace: " .. client.reference(launch).workspace_id, width)
         assert(output:present(canvas:rows()))
     end
     local function checkpoint()
@@ -97,6 +98,9 @@ def run(packed):
         ui = boot(("probe:app",))
         try:
             ui.wait("Saved: 0")
+            with sqlite3.connect(folder / "workspace.db") as db:
+                workspace_id = db.execute("SELECT workspace_id FROM workspace_identity WHERE singleton=1").fetchone()[0]
+            ui.wait("Workspace: " + workspace_id)
             ui.key(b"ab")
             ui.wait("Saved: 2")
             ui.corners()
@@ -114,6 +118,7 @@ def run(packed):
             ui.wait("− Counter")
             ui.key(b"\x1b\t")
             ui.wait("Saved: 2")
+            ui.wait("Workspace: " + workspace_id)
             assert ui.frame() == bounds, (ui.frame(), bounds)
             assert stored(folder)["applications"][0]["instance_id"] == identity
             assert re.search(r"Execution: (\S+)", ui.text()).group(1) != old_execution
@@ -127,6 +132,7 @@ def run(packed):
         ui = boot()
         try:
             ui.wait("Saved: 3")
+            ui.wait("Workspace: " + workspace_id)
             ui.key(b"\x17")
             ui.wait("No applications open")
             ui.quit()

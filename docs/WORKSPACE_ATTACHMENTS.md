@@ -1,7 +1,8 @@
 # Workspace identity and client attachments
 
 Status: attachment design, not a callable API. The primary store now persists an
-opaque workspace ID through migration 2. Production still has one local workspace
+opaque workspace ID through migration 2. Application launches carry it and the
+app SDK exposes a logical view reference. Production still has one local workspace
 owner and one desktop session. [Workspace state](WORKSPACE_STATE.md) documents
 the implemented envelope. This design leaves cluster transport and naming to the
 runtime work; no remote discovery or network listener is enabled by it.
@@ -130,8 +131,8 @@ handoff. Runtime capability semantics must be verified before implementing this.
 ## Storage and profiles
 
 Workspace storage identity is implemented through immutable migration 2,
-preserving existing desktop and application records. It does not yet appear in
-launch, checkpoint or presentation messages. Separate client layout from workspace
+preserving existing desktop and application records. It appears in app launch
+values and logical view references, but not client presentation messages. Separate client layout from workspace
 domain
 state when adding multiple clients; existing desktop state becomes the initial
 local client's projection. Copying a database for a backup retains identity;
@@ -203,8 +204,8 @@ authority. Hosted execution and billing are outside this foundation.
 
 1. Finish the local run/view separation using the test-status application. A
    closed view must not cancel its run; reopening replays committed events.
-2. Storage identity is persisted. Carry it through launch, snapshot, checkpoint
-   and UI values. Test restore, rename, invalid identities and mismatched replies.
+2. Storage and app-launch identity are implemented. Carry it through client
+   snapshot, checkpoint routing and UI values. Test restore, rename, invalid identities and mismatched replies.
 3. Introduce explicit client layout ownership and local attachment lifecycle.
    Test independent layouts and denied/stale control changes before networking.
 4. Bind the same contract to verified runtime mesh capabilities behind the Hive
