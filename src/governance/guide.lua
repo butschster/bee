@@ -123,6 +123,14 @@ local DELIVERY_STEPS = {"review the plan in App Delivery", "select it there",
     "let the activation owner apply the overlay",
     "open it from the start menu"}
 
+-- The steps a person takes after an agent requests delivery. Exposed so the
+-- delivery tool and the guide cannot disagree about who does what.
+function M.delivery_steps(): {string}
+    local copied: {string} = {}
+    for index, step in ipairs(DELIVERY_STEPS) do copied[index] = step end
+    return copied
+end
+
 function M.document(): string
     local lines: {string} = {}
     lines[#lines + 1] = "Bee application authoring guide (" .. M.REVISION .. ")"
