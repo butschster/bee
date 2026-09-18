@@ -3,7 +3,7 @@
 local bounds = require("bounds")
 local base64 = require("base64")
 local M = {}
-type Operation = "create" | "put" | "remove" | "list" | "read" | "freeze"
+type Operation = "create" | "put" | "remove" | "list" | "read" | "freeze" | "guide"
 type Request = {operation: Operation, workspace_id: string, expected_revision: integer?,
     idempotency_key: string?, path: string?, content: string?, snapshot_digest: string?}
 local function path(value: unknown): string?
@@ -18,12 +18,22 @@ function M.decode(raw: unknown): (Request?, string?)
     local value = bounds.object(raw)
     if not value then return nil, "request must be an object" end
     local op = value.operation
-    if op ~= "create" and op ~= "put" and op ~= "remove" and op ~= "list" and op ~= "read" and op ~= "freeze" then
+    if op ~= "create" and op ~= "put" and op ~= "remove" and op ~= "list" and op ~= "read" and op ~= "freeze" and op ~= "guide" then
         return nil, "unknown workspace operation"
+    end
+    -- guide is read-only and names no workspace: it returns this destination's
+    -- authoring contract, so it is decoded before workspace identity is required.
+    if op == "guide" then
+        local extra = bounds.fields(value, {"operation"})
+        if extra then return nil, extra end
+        -- The facade returns the guide before any workspace is consulted,
+        -- so this request carries no workspace identity.
+        local request: Request = {operation = "guide", workspace_id = ""}
+        return request, nil
     end
     local allowed: {string} = {"operation", "workspace_id"}
     if op == "list" or op == "read" then allowed[#allowed + 1] = "snapshot_digest" end
-    if op ~= "list" and op ~= "read" then
+    if op ~= "list" and op ~= "read" and op ~= "guide" then
         allowed[#allowed + 1] = "expected_revision"
         allowed[#allowed + 1] = "idempotency_key"
     end

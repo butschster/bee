@@ -33,10 +33,10 @@ local TOOLS: {Tool} = {
             in_reply_to = {type = "object", additionalProperties = false, required = {"thread_id", "record_id"}, properties = {thread_id = {type = "string", minLength = 1, maxLength = 160}, record_id = {type = "string", minLength = 1, maxLength = 160}}},
             outcome = {type = "string", enum = {"succeeded", "failed", "cancelled", "uncertain"}},
         }}},
-    {name = "workspace", description = "Create, inspect, edit or freeze a caller-owned Governance authoring workspace", operation = "bee.governance:workspace_call",
+    {name = "workspace", description = "Learn this destination's application authoring contract (read-only guide), or create, inspect, edit or freeze a caller-owned Governance authoring workspace", operation = "bee.governance:workspace_call",
         policies = {"bee:gateway_tool_workspace_policy"}, annotations = WRITE_ANNOTATIONS,
-        schema = {type = "object", additionalProperties = false, required = {"operation", "workspace_id"}, properties = {
-            operation = {type = "string", enum = {"create", "list", "read", "put", "remove", "freeze"}},
+        schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
+            operation = {type = "string", enum = {"guide", "create", "list", "read", "put", "remove", "freeze"}},
             workspace_id = {type = "string", minLength = 1, maxLength = 160},
             expected_revision = {type = "integer", minimum = 0, maximum = 9007199254740990},
             idempotency_key = {type = "string", minLength = 1, maxLength = 160},

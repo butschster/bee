@@ -1,6 +1,17 @@
 version: '1.0'
 namespace: bee.governance
 entries:
+- name: guide_test
+  kind: function.lua
+  source: file://guide_test.lua
+  method: run
+  modules: [json]
+  meta: {type: test, suite: bee}
+  imports:
+    test: wippy.test:test
+    guide: bee.governance:guide
+    artifact: bee.governance:artifact
+    preflight: bee.governance:preflight
 - name: destination_public_test_policy
   kind: security.policy
   meta: {type: test_support}

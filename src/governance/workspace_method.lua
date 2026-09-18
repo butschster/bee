@@ -3,6 +3,7 @@
 local funcs = require("funcs")
 local security = require("security")
 local protocol = require("protocol")
+local guide = require("guide")
 local transaction = require("transaction")
 local bounds = require("bounds")
 
@@ -24,6 +25,12 @@ end
 local function handle(raw: unknown): Result
     local request, invalid = protocol.decode(raw)
     if not request then return transaction.failure("INVALID", invalid or "invalid workspace request") end
+    -- The guide is this destination's fixed authoring contract. It names no
+    -- workspace, reads no store and grants nothing, so it returns before the
+    -- caller's workspace ownership is consulted.
+    if request.operation == "guide" then
+        return transaction.success(guide.value(), false)
+    end
     local actor = security.actor()
     local action = (request.operation == "read" or request.operation == "list")
         and "bee.governance.workspace.read" or "bee.governance.workspace.write"

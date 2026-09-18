@@ -45,7 +45,11 @@ permission and destination owner checks still apply. Tools exposed through
 other call paths must authorize those callers too; a context value alone does
 not authenticate a direct function caller.
 
-The built-in `workspace` tool accepts up to 65,536 bytes of inline text or
+The built-in `workspace` tool's read-only `guide` operation returns this
+destination's application authoring contract and one minimal example, generated
+from the rule tables preflight enforces; it names no workspace and grants
+nothing. Its create/list/read/put/remove/freeze operations accept up to 65,536
+bytes of inline text or
 87,384 bytes of canonical padded base64 (at most 65,536 decoded bytes) per
 file. The HTTP MCP endpoint caps each complete JSON request body at 524,288
 bytes, leaving room for JSON escaping and the bounded request envelope.

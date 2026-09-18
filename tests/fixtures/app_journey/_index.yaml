@@ -46,6 +46,24 @@ entries:
         policies:
         - bee.app_journey_probe:operator_policy
         - bee:approval_consume_policy
+- name: guide
+  kind: process.lua
+  source: file://guide.lua
+  method: main
+  modules: [funcs, registry, system, json, logger]
+  imports:
+    bounds: bee.threads.records:bounds
+    guide: bee.governance:guide
+    artifact: bee.governance:artifact
+    preflight: bee.governance:preflight
+  security:
+    policies: [bee.app_journey_probe:operator_policy]
+  meta:
+    command:
+      name: app-journey-guide
+      security:
+        actor: {id: bee.app_journey.operator}
+        policies: [bee.app_journey_probe:operator_policy]
 - name: inspect
   kind: process.lua
   source: file://inspect.lua

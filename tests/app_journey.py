@@ -91,6 +91,26 @@ def deliver(project, folder):
     return evidence
 
 
+def guide(project, folder):
+    """The guide's own example, authored through the real chain, must reach a
+    ready preflight. This is what keeps the product guide from rotting: the
+    same value an agent reads over MCP is published and staged here."""
+    args = [str(RUNTIME), "run", "--verbose", "app-journey-guide", "--host", "bee:workers",
+            "--set", f"registry.history_path={folder}/registry.db"]
+    result = subprocess.run(args, cwd=project, capture_output=True, text=True,
+                            timeout=300, env=database_environment(folder))
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    match = re.search(r"APP_JOURNEY_GUIDE\s+(\{.*\})", output)
+    assert match, output
+    evidence = json.loads(match.group(1))
+    for name in ("snapshot_digest", "artifact_digest", "plan_digest"):
+        assert re.fullmatch(r"[0-9a-f]{64}", evidence[name]), (name, evidence)
+    assert evidence["ready"] is True and evidence["example_matches"] is True, evidence
+    assert evidence["definition_id"] == "bee.guide_demo:app", evidence
+    return evidence
+
+
 def inspect(project, folder):
     """A separate boot must compose the reviewed definition and admit it."""
     args = [str(RUNTIME), "run", "--verbose", "app-journey-inspect", "--host", "bee:workers",
@@ -117,6 +137,7 @@ def exercise():
         assert_overlay_authority(project)
         subprocess.run([str(RUNTIME), "lint", "--set", "lua.type_system.enabled=true",
                         "--set", "lua.type_system.strict=true"], cwd=project, check=True, timeout=300)
+        guide_evidence = guide(project, folder)
         evidence = deliver(project, folder)
         inspect(project, folder)
 
@@ -145,6 +166,9 @@ def exercise():
             restarted.quit()
         finally:
             restarted.close()
+    print("App journey guide: the MCP guide example authored as "
+          + guide_evidence["definition_id"] + " reached a ready preflight as plan "
+          + guide_evidence["plan_digest"][:12])
     print("App journey: authored and frozen as " + evidence["artifact_digest"][:12]
           + ", staged as plan " + evidence["plan_digest"][:12]
           + " with a ready preflight, approved on proposal " + evidence["proposal_digest"][:12]

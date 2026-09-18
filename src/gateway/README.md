@@ -9,7 +9,10 @@ the assigned address through supervisor state. The production-listener fixture
 passes real thread and credential checks on two runtimes. Candidate Agent
 profiles declare `thread_read`, `thread_wait`, `thread_message`, and the
 caller-owned Governance `workspace` tool. The host may admit any subset. The
-workspace tool can stage and freeze files but cannot publish or activate them.
+workspace tool also carries a read-only `guide` operation stating this
+destination's application authoring contract and one minimal example (derived
+from the same rule tables preflight enforces). It can stage and freeze files but
+cannot publish or activate them.
 The HTTP MCP route keeps its 64 KiB request bound. Workspace calls through MCP
 therefore accept at most 8 KiB of text or 48 KiB of canonical base64 per put;
 larger authoring files require another admitted facade rather than an oversized

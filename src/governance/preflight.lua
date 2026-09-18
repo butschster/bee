@@ -42,6 +42,10 @@ local CONFIG_OBJECTS: {[string]: {[string]: boolean}} = {
     ["process.lua"] = {imports = true, security = true},
     ["workflow.lua"] = {imports = true},
 }
+-- Exported so the authoring guide and its test derive the destination's
+-- configuration-shape rule from the tables that enforce it, not from memory.
+M.CONFIG_LISTS = CONFIG_LISTS
+M.CONFIG_OBJECTS = CONFIG_OBJECTS
 local function migration_key(item: Migration): string
     return item.target_db .. "\n" .. item.id
 end
