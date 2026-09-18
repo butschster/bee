@@ -404,6 +404,14 @@ research-benchmark-check:
 	env GOWORK=off GOTOOLCHAIN=go1.27.0 go -C native vet ../tests/research_benchmark.go
 	env GOWORK=off GOTOOLCHAIN=go1.27.0 go -C native run ../tests/research_benchmark.go -root .. -runtime "$(abspath $(WIPPY))"
 
+# Explicit live-provider proof: uses the installed Agy login and consumes
+# inference. One managed agent authors a Bee application through the scoped
+# Governance MCP, a person reviews and approves it, the activation owner
+# applies it, and it opens as a window that survives a host restart.
+.PHONY: agent-app-check
+agent-app-check:
+	BEE_RUNTIME="$(abspath $(WIPPY))" python3 tests/agent_app.py
+
 .PHONY: live-agy-mcp-check live-agy-mcp-lint
 live-agy-mcp-check:
 	env GOWORK=off GOTOOLCHAIN=go1.27.0 go -C native vet ../tests/live_agy_mcp.go
