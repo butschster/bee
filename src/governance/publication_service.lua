@@ -27,6 +27,32 @@ local function failure(code: string, message: string): Result
     return transaction.failure(code, message)
 end
 
+-- The delivery path consumes exactly one frozen file: entries.json, a JSON list
+-- of complete registry entries. A frozen workspace that cannot become an
+-- application is refused here, at the step where that truth is decided, with a
+-- named code and the remedy the author needs. The remedy is carried in the
+-- failure value under the field name the destination's own diagnostics use
+-- (src/governance/preflight.lua), so one reader handles both.
+local MISSING_ARTIFACT_REMEDY = "freeze a workspace that holds entries.json, a JSON list of complete "
+    .. "registry entries; read the workspace tool's guide operation for this destination's contract "
+    .. "and one minimal example"
+local INVALID_ARTIFACT_REMEDY = "write entries.json as a JSON list of complete registry entries, each "
+    .. "with id, kind and a data object; read the workspace tool's guide operation for the exact shape "
+    .. "and one minimal example"
+
+local function refusal(code: string, message: string, remedy: string): Result
+    return transaction.failure(code, message, {remedy = remedy})
+end
+
+-- Exposed so a unit test can pin the named code and remedy without standing up
+-- a live workspace. This is the same refusal prepare returns.
+function M.artifact_refusal(code: string, message: string?): Result
+    local remedy = code == "MISSING_ARTIFACT" and MISSING_ARTIFACT_REMEDY or INVALID_ARTIFACT_REMEDY
+    return refusal(code, message or (code == "MISSING_ARTIFACT"
+        and "the frozen workspace holds no entries.json"
+        or "authored entries are not a JSON list"), remedy)
+end
+
 function M.configuration(raw: unknown): (Configuration?, string?)
     local value = bounds.object(raw)
     local rows = value and value.profiles
@@ -68,20 +94,24 @@ local function load(): (Configuration?, string?)
     return M.configuration(entry.data)
 end
 
-function M.snapshot_artifact(raw: unknown): (unknown?, string?)
+-- Returns the measured artifact, or a named refusal code with its reason. The
+-- code distinguishes a snapshot with no entries.json at all from one whose
+-- entries.json cannot become a registry artifact, so the caller can hand the
+-- author the matching remedy.
+function M.snapshot_artifact(raw: unknown): (unknown?, string?, string?)
     local reply = bounds.object(raw)
     local value = reply and bounds.object(reply.value) or nil
     if not reply or reply.ok ~= true or not value or value.path ~= "entries.json"
         or type(value.content_base64) ~= "string" then
-        return nil, "authoring snapshot did not return entries.json"
+        return nil, "the frozen workspace holds no entries.json", "MISSING_ARTIFACT"
     end
     local bytes, decode_error = base64.decode(value.content_base64)
-    if not bytes or decode_error then return nil, "decode authored entries" end
+    if not bytes or decode_error then return nil, "decode authored entries: " .. tostring(decode_error), "INVALID_ARTIFACT" end
     local decoded, json_error = json.decode(bytes)
-    if json_error or type(decoded) ~= "table" then return nil, "authored entries are not a JSON list" end
+    if json_error or type(decoded) ~= "table" then return nil, "authored entries are not a JSON list", "INVALID_ARTIFACT" end
     local measured, artifact_error = artifact.create(decoded)
-    if not measured then return nil, artifact_error or "authored entries are invalid" end
-    return measured, nil
+    if not measured then return nil, artifact_error or "authored entries are invalid", "INVALID_ARTIFACT" end
+    return measured, nil, nil
 end
 
 local function chosen_profile(config: Configuration, workspace_id: string, component: string): Profile?
@@ -128,9 +158,13 @@ function M.call(raw: unknown): Result
         if not store then return failure("UNAVAILABLE", open_error or "open authoring workspace") end
         local read = store:read_frozen(chosen.source_workspace, "entries.json", snapshot_digest :: string)
         store:close()
-        local authored, authored_error = M.snapshot_artifact(read)
+        local authored, authored_error, authored_code = M.snapshot_artifact(read)
         local value = bounds.object(authored)
-        if not value then return failure("BLOCKED", authored_error or "read authored registry artifact") end
+        if not value then
+            -- A workspace that cannot become an application is refused with a
+            -- named code and the remedy for exactly that diagnosis.
+            return M.artifact_refusal(authored_code or "INVALID_ARTIFACT", authored_error)
+        end
         return publisher.prepare(sync_resource, node_id, {source_workspace = chosen.source_workspace,
             component = chosen.component, version = selected_version,
             artifact = {bytes = value.bytes, digest = value.digest}})

@@ -67,6 +67,7 @@ entries:
   imports:
     bounds: bee.threads.records:bounds
     artifact: bee.governance:artifact
+    publication_service: bee.governance:publication_service
   security:
     policies:
     - bee.agent_app_probe:operator_policy

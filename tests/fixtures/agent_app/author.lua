@@ -14,6 +14,7 @@ local sql = require("sql")
 local io = require("io")
 local base64 = require("base64")
 local artifact = require("artifact")
+local publication = require("publication_service")
 
 type Object = {[string]: unknown}
 
@@ -357,21 +358,37 @@ local function main()
         return
     end
 
+    -- A frozen workspace that cannot become an application is refused with the
+    -- destination's own named code and remedy, exactly as publication prepare
+    -- would refuse it. The remedy text comes from that product surface, not
+    -- from this fixture, so the agent is handed the same words.
+    local function refusal_findings(code: string, detail: string): string
+        local refusal = publication.artifact_refusal(code, detail)
+        local value = bounds.object(refusal.value) or {}
+        return "the destination refused your frozen workspace before delivery: " .. tostring(refusal.code)
+            .. ": " .. tostring(refusal.message) .. " Remedy: " .. tostring(value.remedy)
+    end
     local file = call("bee.governance:workspace_call", {operation = "read", workspace_id = source_workspace,
         path = "entries.json", snapshot_digest = snapshot_digest})
-    if type(file.content_base64) ~= "string" then error("the frozen workspace holds no entries.json") end
-    local source, decode_error = base64.decode(file.content_base64 :: string)
-    if not source then error(tostring(decode_error)) end
-    local decoded, parse_error = json.decode(source)
-    if not decoded then
-        report.findings = "entries.json is not valid JSON: " .. tostring(parse_error)
+    if type(file.content_base64) ~= "string" then
+        report.findings = refusal_findings("MISSING_ARTIFACT", "the frozen workspace holds no entries.json")
     else
-        local measured, measure_error = artifact.create(decoded)
-        if not measured then
-            report.findings = "the authored entries are not a measurable registry artifact: " .. tostring(measure_error)
+        local source, decode_error = base64.decode(file.content_base64 :: string)
+        if not source then
+            report.findings = refusal_findings("INVALID_ARTIFACT", tostring(decode_error))
         else
-            report.artifact_digest = measured.digest
-            report.entries = measured.entries
+            local decoded, parse_error = json.decode(source)
+            if not decoded then
+                report.findings = refusal_findings("INVALID_ARTIFACT", "entries.json is not valid JSON: " .. tostring(parse_error))
+            else
+                local measured, measure_error = artifact.create(decoded)
+                if not measured then
+                    report.findings = refusal_findings("INVALID_ARTIFACT", tostring(measure_error))
+                else
+                    report.artifact_digest = measured.digest
+                    report.entries = measured.entries
+                end
+            end
         end
     end
     io.print("AGENT_APP_AUTHORED " .. tostring(json.encode(report)))
