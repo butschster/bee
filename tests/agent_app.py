@@ -224,17 +224,36 @@ def stage(project, folder, round_label):
     return json.loads(match.group(1))
 
 
+def preflight_diagnostic(diagnostic):
+    """One destination diagnostic as the agent reads it. The preflight wire
+    contract names the field remedy (src/governance/preflight.lua), so a
+    reviewer that read another name would drop the destination's own repair
+    instruction and hand back a weaker finding than the host observed."""
+    return (str(diagnostic.get("code")) + " on " + str(diagnostic.get("target")) + ": "
+            + str(diagnostic.get("message")) + " " + str(diagnostic.get("remedy")))
+
+
 def preflight_findings(staged):
     if staged["ready"] and not staged["pending_migrations"]:
         return None
     lines = ["the destination refused this version at preflight:"]
     reported = staged["diagnostics"]
     for diagnostic in (reported.values() if isinstance(reported, dict) else reported):
-        lines.append(diagnostic["code"] + " on " + str(diagnostic.get("target")) + ": "
-                     + str(diagnostic.get("message")) + " " + str(diagnostic.get("remediation")))
+        lines.append(preflight_diagnostic(diagnostic))
     if staged["pending_migrations"]:
         lines.append("the version carries pending migrations, which this destination does not run")
     return "\n".join(lines)
+
+
+def review_contract_check():
+    """No inference and no host: the reviewer must carry exactly the field the
+    destination emits, before the live chain ever runs."""
+    dispatched = preflight_findings({"ready": False, "pending_migrations": 0, "diagnostics": [
+        {"code": "CONFIG_SHAPE", "target": DEFINITION_ID, "message": "modules must not be empty",
+         "remedy": "omit an empty modules list"}]})
+    assert "omit an empty modules list" in dispatched, dispatched
+    assert "None" not in dispatched, dispatched
+    assert preflight_findings({"ready": True, "pending_migrations": 0, "diagnostics": []}) is None
 
 
 def open_plan(ui, label):
@@ -353,6 +372,7 @@ def restore(folder, project):
 
 
 def exercise():
+    review_contract_check()
     bind_host()
     folder = evidence_root()
     print("Private evidence:", folder)
