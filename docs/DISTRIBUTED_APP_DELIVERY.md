@@ -226,6 +226,22 @@ opens the application from its own start menu and restores its checkpointed
 state after a full host restart. Nothing outside the destination owner holds
 overlay write authority, and the acceptance asserts that.
 
+`make agent-app-check` is the same chain with a real managed coding agent in
+the authoring seat, and it is opt-in because it consumes provider inference. A
+managed Agy attempt is launched through the production launch definition,
+admission, carrier, placement and gateway with a brief and the launch policy's
+host instructions. It reads the application contract through one admitted
+read-only tool and authors the definition into its own Governance workspace
+through the scoped MCP `workspace` tool, then freezes it. Its binding admits
+four tools and no publication, approval or overlay operation. The host lints the
+frozen source, and a refusal from typed lint or from the destination preflight
+returns to the agent as a record on its bound thread, which the next attempt
+reads before repairing; the acceptance is bounded to three rounds. The person
+then reads the verdict and the entry changes in App Delivery, accepts, selects
+and prepares there, approves in Approvals and steps, and the activation owner's
+receipt names the overlay it applied. The agent-authored window then opens from
+the start menu and comes back with its state after a full host restart.
+
 The runtime also defines the canonical receive surface
 `stream.pipe(peer, limit)`. Its Stream handle stays in the receiving actor's
 resource table and its opaque offer is routing metadata, not authority. The

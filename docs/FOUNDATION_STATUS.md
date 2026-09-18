@@ -17,6 +17,19 @@ fixed by waiting for the existing native listener address before launch. This
 is complemented by the performance-dashboard proof below. Global installation
 is unchanged.
 
+A managed coding agent now authors a Bee application end to end.
+`make agent-app-check` launches a real Agy attempt through the production launch
+definition, admission, carrier, placement and gateway, hands it the application
+contract in its brief and in the launch policy's host instructions, and carries
+what it authors the rest of the way: frozen artifact from the scoped Governance
+MCP workspace tool, typed lint, publication, destination stage and preflight,
+the person's review in App Delivery, the decision in Approvals, and apply by the
+activation owner. A lint or preflight refusal returns to the agent as a record on
+its bound thread and the next attempt repairs it, bounded to three rounds. The
+authored window opens from the start menu and is restored with its state after a
+full host restart. It is opt-in because it consumes provider inference; global
+installation is unchanged.
+
 The research dashboard now passes governed installation, managed Gemini
 requesting and receiving per-attempt MCP access, real measurements, automatic
 overlay recovery, ordinary-menu launch and a second physical desktop boot that
