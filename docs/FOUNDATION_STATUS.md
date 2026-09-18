@@ -19,8 +19,9 @@ is unchanged.
 
 A managed coding agent now authors a Bee application end to end.
 `make agent-app-check` launches a real Agy attempt through the production launch
-definition, admission, carrier, placement and gateway, hands it the application
-contract in its brief and in the launch policy's host instructions, and carries
+definition, admission, carrier, placement and gateway, briefs it with this
+destination's ceilings and hands it the authoring contract through one admitted
+read-only tool together with the launch policy's host instructions, and carries
 what it authors the rest of the way: frozen artifact from the scoped Governance
 MCP workspace tool, typed lint, publication, destination stage and preflight,
 the person's review in App Delivery, the decision in Approvals, and apply by the
