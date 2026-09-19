@@ -21,12 +21,26 @@ func TestFailedOwnerNeverFallsBackToStaleDiscovery(t *testing.T) {
 	close(done)
 	failure := errors.New("owner boot failed")
 	reads := 0
+	previous := rendezvous.Descriptor{Execution: "stale"}
 	err := waitOwnerPublication(context.Background(), func(context.Context) (rendezvous.Descriptor, error) {
 		reads++
-		return rendezvous.Descriptor{Execution: "stale"}, nil
-	}, rendezvous.Descriptor{}, done, func(context.Context) error { return failure })
-	if err != failure || reads != 0 {
+		return previous, nil
+	}, previous, done, func(context.Context) error { return failure })
+	if err != failure || reads != 1 {
 		t.Fatal("failed child accepted stale discovery", err, reads)
+	}
+}
+
+func TestLosingContenderUsesFreshOwnerPublication(t *testing.T) {
+	done := make(chan struct{})
+	close(done)
+	failure := errors.New("application state is owned")
+	previous := rendezvous.Descriptor{Execution: "starting"}
+	err := waitOwnerPublication(context.Background(), func(context.Context) (rendezvous.Descriptor, error) {
+		return rendezvous.Descriptor{Execution: "winner"}, nil
+	}, previous, done, func(context.Context) error { return failure })
+	if err != nil {
+		t.Fatal("fresh winning owner was not offered for authenticated attachment", err)
 	}
 }
 

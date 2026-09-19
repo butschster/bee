@@ -18,9 +18,9 @@ import (
 )
 
 // Run starts a detached owner contender, then attaches once. The child's normal
-// runtime lock selects the owner. A losing contender authenticates the existing
-// owner without mounting a desktop before it exits successfully. Discovery hints
-// select when to attempt admission; they never grant it. No mutation is replayed.
+// runtime lock selects the owner. A losing contender may exit with the runtime's
+// owned-state error; a newly published descriptor then permits one authenticated
+// attachment attempt. Discovery hints never grant admission. No mutation is replayed.
 func (c Client) Run(ctx context.Context, launch app.Launch) error {
 	if err := c.validate(ctx, launch); err != nil {
 		return err
@@ -105,9 +105,17 @@ func waitOwnerPublication(ctx context.Context, read func(context.Context) (rende
 		}
 		select {
 		case <-done:
-			// Success means the losing start contender completed a read-only native
-			// owner probe. The subsequent client attachment authenticates independently.
-			return wait(ctx)
+			childErr := wait(ctx)
+			current, readErr := read(ctx)
+			if readErr == nil && current != previous {
+				// The descriptor is only a fresh routing hint. Attach performs the
+				// actual owner authentication and can still refuse it.
+				return nil
+			}
+			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+				return errors.Join(childErr, readErr)
+			}
+			return childErr
 		default:
 		}
 		current, err := read(ctx)
