@@ -608,7 +608,7 @@ entries:
   source: file://launch_test.lua
   method: run
   meta: {type: test, suite: bee, timeout: "180s"}
-  modules: [funcs, security, process, channel, registry, env, time]
+  modules: [funcs, security, process, channel, registry, env, exec, time]
   security:
     policies: [bee.harness.catalog:apply_test_policy, bee.harness.catalog:carrier_spawn_policy, bee:placement_store_policy]
   imports:
@@ -855,6 +855,7 @@ entries:
     executables: {}
     environment: {}
     prepare_options: {sandbox: read-only}
+    profile_config_profile: true
 - name: claude_bin
   kind: env.variable
   meta: {type: test_support}

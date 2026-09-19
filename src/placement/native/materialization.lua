@@ -34,6 +34,7 @@ function M.required_file_missing(request: types.LaunchRequest): string?
     if not volume then return "host files are unavailable for " .. request.launch.executable .. "'s required file" end
     for _, file in ipairs(required) do
         local directory = request.environment[file.variable]
+        if directory ~= nil and directory == "" then directory = nil end
         local variable_ref = request.environment_refs[file.variable]
         if directory == nil and variable_ref ~= nil then
             local resolved, resolve_error = env.get(variable_ref)
@@ -41,6 +42,7 @@ function M.required_file_missing(request: types.LaunchRequest): string?
         end
         if directory == nil then
             local home = request.environment.HOME
+            if home ~= nil and home == "" then home = nil end
             if home == nil and request.environment_refs.HOME == "bee:machine_home" then
                 local resolved, resolve_error = env.get("bee:machine_home")
                 if not resolve_error and type(resolved) == "string" and resolved ~= "" then home = resolved end
