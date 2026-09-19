@@ -8,11 +8,13 @@ local time = require("time")
 local ctx = require("ctx")
 local bounds = require("bounds")
 local hash = require("hash")
+local uuid = require("uuid")
 local protocol = require("open_protocol")
 local arguments = require("arguments")
 local M = {}
 local BINDING_KEY = "bee.gateway.binding"
 local HOST_PREFIX = "bee.workspace.host/"
+local CALLER_PREFIX = "bee.application.open/"
 local MAX_WAIT_MS = 30000
 
 local function fail(code: string, message: string): {[string]: unknown}
@@ -39,6 +41,8 @@ function M.handle(raw: unknown): {[string]: unknown}
     local action_id = bounds.id(binding.action_id)
     local workspace_id = bounds.id(binding.workspace_id)
     if not action_id or not workspace_id then return fail("UNAUTHENTICATED", "gateway binding has no action or workspace") end
+    local origin = protocol.origin(binding.origin_view)
+    if binding.origin_view ~= nil and not origin then return fail("UNAUTHENTICATED", "gateway binding has an invalid origin view") end
     local object = bounds.object(raw)
     if not object then return fail("INVALID", "open request must be an object") end
     local extra = bounds.fields(object, {"definition_id", "arguments", "idempotency_key"})
@@ -50,27 +54,31 @@ function M.handle(raw: unknown): {[string]: unknown}
     if not idempotency_key or #idempotency_key > 64 then return fail("INVALID", "idempotency_key must be a bounded identifier") end
     if not args then return fail("INVALID", "arguments must be bounded literal strings") end
     if not security.actor() then return fail("UNAUTHENTICATED", "the caller is not authenticated") end
-    -- Catalog admission is destination-local. This prevents an agent from
-    -- asking the host to open a definition that exists only in a staged or
-    -- foreign registry view.
-    local catalog = require("catalog")
-    local admitted = false
-    for _, binding in ipairs(catalog.bindings()) do
-        if binding.definition_id == definition_id then admitted = true; break end
-    end
-    if not admitted or not catalog.descriptor(definition_id) then
-        return fail("NOT_ADMITTED", "application is not applied and admitted in this workspace")
-    end
     local request, request_error = request_id(action_id, idempotency_key)
     if not request then return fail("INVALID", request_error or "request identity failed") end
+    local nonce = uuid.v7()
+    local caller_token = CALLER_PREFIX .. nonce
+    local registered, register_error = process.registry.register(caller_token)
+    if not registered then return fail("UNAVAILABLE", "open caller registration failed: " .. tostring(register_error)) end
     local host, lookup_error = process.registry.lookup(HOST_PREFIX .. workspace_id)
-    if not host then return fail("UNAVAILABLE", "workspace host is unavailable: " .. tostring(lookup_error or "not registered")) end
+    if not host then
+        process.registry.unregister(caller_token, process.registry.LOCAL)
+        return fail("UNAVAILABLE", "workspace host is unavailable: " .. tostring(lookup_error or "not registered"))
+    end
     local replies, listen_error = process.listen("bee.host.application.reply", {message = true})
-    if not replies then return fail("UNAVAILABLE", tostring(listen_error or "open reply channel unavailable")) end
+    if not replies then
+        process.registry.unregister(caller_token, process.registry.LOCAL)
+        return fail("UNAVAILABLE", tostring(listen_error or "open reply channel unavailable"))
+    end
     local sent, send_error = process.send(host, "bee.host.application", {version = 1, workspace_id = workspace_id,
-        request_id = request, definition_id = definition_id, arguments = args})
-    if not sent then process.unlisten(replies); return fail("UNAVAILABLE", tostring(send_error or "workspace host rejected request")) end
-    local deadline = time.after(tostring(MAX_WAIT_MS) .. "ms")
+        request_id = request, definition_id = definition_id, arguments = args, caller_token = caller_token, origin_view = origin})
+    if not sent then
+        process.unlisten(replies)
+        process.registry.unregister(caller_token, process.registry.LOCAL)
+        return fail("UNAVAILABLE", tostring(send_error or "workspace host rejected request"))
+    end
+    local timer = assert(time.timer(tostring(MAX_WAIT_MS) .. "ms"))
+    local deadline = timer:channel()
     local reply: protocol.Reply? = nil
     while true do
         local selected = channel.select({replies:case_receive(), deadline:case_receive()})
@@ -83,12 +91,15 @@ function M.handle(raw: unknown): {[string]: unknown}
             end
         end
     end
+    timer:stop()
     process.unlisten(replies)
-    if not reply then return fail("UNAVAILABLE", "workspace host did not answer") end
+    process.registry.unregister(caller_token, process.registry.LOCAL)
+    if not reply then return fail("uncertain", "Application open outcome is unknown: workspace host did not answer") end
     local result = reply.reply
     if result.error_code ~= "" then return fail(result.error_code, result.error) end
     return {ok = true, value = {workspace_id = workspace_id, definition_id = result.definition_id,
-        id = result.id, instance_id = result.instance_id, title = result.title, replayed = result.op == "focus"}}
+        view_id = result.id, instance_id = result.instance_id, title = result.title, display_id = reply.display_id,
+        reused = result.op == "focus"}}
 end
 
 return {handle = M.handle}

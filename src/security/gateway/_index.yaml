@@ -188,7 +188,7 @@ entries:
     actions: [funcs.call, bee.governance.delivery.publish]
     resources: [bee.governance:delivery_call, '*']
     effect: allow
-- name: gateway_tool_open_policy
+- name: gateway_tool_application_open_policy
   kind: security.policy
   meta:
     comment: A binding may open an already applied/admitted application through its own workspace host; this grants no activation, publication or registry write.

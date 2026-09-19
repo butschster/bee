@@ -85,8 +85,8 @@ local TOOLS: {Tool} = {
             source_workspace = {type = "string", minLength = 1, maxLength = 160},
             version = {type = "string", minLength = 1, maxLength = 160},
         }}},
-    {name = "open", description = "Open one application already applied and admitted in this agent's bound workspace through the existing workspace host; arguments are literal launch strings and retries with the same key focus the original window.", operation = "bee.applications:open_call",
-        policies = {"bee:gateway_tool_open_policy"}, annotations = WRITE_ANNOTATIONS,
+    {name = "application_open", description = "Open one application already applied and admitted in this agent's bound workspace through the existing workspace host. Arguments are literal launch strings. Pending retries coalesce; completed retries use the broker's bounded replay cache.", operation = "bee.applications:open_call",
+        policies = {"bee:gateway_tool_application_open_policy"}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"definition_id", "arguments", "idempotency_key"}, properties = {
             definition_id = {type = "string", minLength = 1, maxLength = 160},
             arguments = {type = "array", maxItems = 16, items = {type = "string", maxLength = 1024}},

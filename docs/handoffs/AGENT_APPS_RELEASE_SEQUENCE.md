@@ -7,7 +7,7 @@ types. `llm.transition` is a future component integration, not a current API.
 
 Work one acceptance milestone at a time:
 
-1. **Application opening — active.** Complete the explicitly admitted MCP
+1. **Application opening — integration checks.** Complete the explicitly admitted MCP
    operation through the production gateway, workspace host and broker. Prove
    sender authorization, binding-selected workspace, refusal before application
    admission, concurrent retry/conflict handling, bounded pending state, visible
@@ -26,7 +26,15 @@ Work one acceptance milestone at a time:
    code and unnecessary indirection. Verify findings, fix bounded groups and run
    their behavioral gates. Do not create speculative abstractions from scan
    suggestions.
-5. **Reference application.** Prove one complete agent-authored application
+5. **App modification and node synchronization.** Prove create, edit, version
+   update and rollback across two real nodes. Replicated publication does not
+   replace destination-local review and activation.
+6. **Reference application.** Prove one complete agent-authored metrics app:
+   the agent opens it, invokes its declared traits/tools to run a task and read
+   measurements, and the user sees the same progress and metrics in its UI.
+   Use scoped MCP and existing thread coordination, with little application
+   glue and no separate agent-only state. This is an acceptance requirement,
+   not a claim that live application tools are already complete. Finish this
    before adding further hybrid worker/model features.
 
 Completed prerequisite: Bee PR #14 merged to `main` at `d97fd77`, with offline
@@ -37,3 +45,20 @@ the cache-repair fix, and is assigned to Rodrigo (`skhaz`) for review.
 
 The global executable has not been updated by this sequence. Preserve the
 unrelated `modules/bee-registry-planner/` work.
+
+Current app-opening worktree checkpoint: `make app-journey-check` passes the
+real MCP source and packed journeys, including presentation on the origin
+display, replay/conflict, unauthorized sender and foreign-workspace refusal,
+checkpoint and restart. Each composition is approved against its own exact
+base; source approvals are not replayed onto a different packed base.
+The combined unit run passes all 1,110 cases, including child launch origin
+inheritance through real MCP and gateway migration 12. `make gateway-check`
+and source/packed `make workspace-hosts-check` pass. Review found a late-reply
+race after the 30-second caller deadline: the host now retains bounded
+in-flight operations until broker settlement, so a late success still receives
+its originating display assignment. The source/packed delayed-broker regression
+passes with the production deadline unchanged. The final full-check run has
+passed units, managed windows/hooks, module boundaries, gateway, packaging and
+headless startup. It exposed a stale Governance guide dependency in a standalone
+fixture (fixed and passing), followed by Hub migration and Modules UI fixture
+failures still under investigation. No full-suite pass is claimed yet.
