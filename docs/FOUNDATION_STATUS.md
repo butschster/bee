@@ -1,13 +1,15 @@
 # Foundation status
 
 The September 19 runtime-application cut is installed globally from Bee
-`fbddfdc0` as executable SHA-256 `85205596820d`. The next candidate uses runtime
-PR #787 at `3d9926aa`, which additionally migrates verified immutable artifacts
+`c5b1dd7` as executable SHA-256 `6f4c1d074c00`. It uses runtime PR #787 at
+`3d9926aa`, which additionally migrates verified immutable artifacts
 from the runner's previous `artifact-cache/vendor` layout. This closes a real
 offline upgrade failure where retained registry history selected an older exact
-artifact that the new cache had not imported. The installed binary still uses
-runtime `7f9e7e89` until the candidate completes acceptance. Native Bee remains
-`ff9810fe`. Bee owns TOML subtree composition in Lua
+artifact that the new cache had not imported. The affected retained project
+state was first copied and reproduced unchanged; the candidate then rendered
+its desktop, and the installed global binary rendered the same `Gentle Ember`
+workspace from `/mnt/c/Users/Wolfy-J`. Native Bee remains `ff9810fe`. Bee owns
+TOML subtree composition in Lua
 through the runtime's existing codec and uses the current atomic filesystem
 write option; no TOML or Bee-specific ingress verb was added to runtime. Strict
 lint and all 1,110 unit tests pass. Exact standalone acceptance passes offline

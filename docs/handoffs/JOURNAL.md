@@ -7253,3 +7253,22 @@ old-binary rollback. Three old exact-executable owners stopped on SIGTERM. The
 six-file rollback snapshot is
 `bee-evidence/0919/global-before-runtime-787-c8d29db6`; receipt
 `global-runtime-787-fbddfdc-install.json`. No database was deleted or copied.
+### 2026-09-19 — Runtime #787 legacy cache migration and global Bee cut
+
+The real project state at `projects/98eb3403…` selected three exact immutable
+dependencies that remained in the previous runtime-owned
+`artifact-cache/vendor` layout but were absent from #787's new `cache` layout.
+Runtime PR #787 commit `3d9926aa` now imports those files through the existing
+confined content-addressed publisher while the application state lock is held;
+it preserves the old cache, registry history and every application database.
+Focused normal/race tests and all runtime CI checks pass.
+
+Bee `c5b1dd7` pins that runtime. Strict lint (the existing desktop lifecycle
+fixpoint warning), all 1,110 Lua tests, standalone build, offline boot,
+client/desktops, agent recovery and crash recovery, project isolation, old-root
+upgrade/rollback, and a copied-real-state rendered desktop pass. The global
+binary is SHA-256 `6f4c1d074c00a9c82dc5737b861ce66c6878a55ae5861921226f8b80f8474287`.
+The exact user path `bee` from `/mnt/c/Users/Wolfy-J` rendered retained workspace
+`Gentle Ember` and detached with Ctrl+Q. The rollback artifact directory is
+`bee-evidence/0919/global-before-legacy-cache-fix-1789843893`; the receipt is
+`global-legacy-cache-fix-c5b1dd7-install.json`.
