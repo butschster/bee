@@ -8,6 +8,11 @@ real HTTP open, same-instance replay, conflict and authorization refusals,
 display presentation, checkpoint and restart restoration. Each composition
 reviews and applies its own exact base. Gateway migration 12 preserves the
 optional origin view through durable bindings, and child launches inherit it.
+The delayed-broker source/pack regression proves that caller expiry preserves
+the eventual display assignment and does not redispatch an unresolved request.
+All 1,110 unit tests and the full check coverage pass after correcting three
+standalone test compositions; the resumed run completes desktop acceptance.
+The existing `desktop_lifecycle` inter-function lint warning remains.
 The tool remains host-admitted rather than enabled in every profile. Global
 Bee is unchanged; cross-node app version updates and rollback still need their
 own acceptance.

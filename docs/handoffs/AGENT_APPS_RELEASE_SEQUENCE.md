@@ -5,19 +5,20 @@ models and deterministic tools coordinate through profiles, scoped MCP, durable
 threads and governed applications. Prove applications before adding more worker
 types. `llm.transition` is a future component integration, not a current API.
 
-Work one acceptance milestone at a time:
+Work one acceptance milestone at a time.
 
 Bee is greenfield: keep one implementation and remove superseded paths rather
 than adding compatibility layers. Verified Bee changes go directly to `main`;
 runtime changes still use upstream pull requests.
 
-1. **Application opening — integration checks.** Complete the explicitly admitted MCP
-   operation through the production gateway, workspace host and broker. Prove
-   sender authorization, binding-selected workspace, refusal before application
-   admission, concurrent retry/conflict handling, bounded pending state, visible
-   client inventory and restart recovery in source and packed runs. Protocol
-   tests alone do not establish completion. Local commit `edbdbf2` is a draft
-   implementation awaiting these checks; it is not a release.
+1. **Application opening — complete in source and pack.** The explicitly admitted
+   MCP operation uses the production gateway, workspace host and broker.
+   Acceptance proves sender authorization, binding-selected workspace,
+   conflict/refusal behavior, visible display assignment and restart recovery.
+   A delayed-broker regression proves that caller expiry retains assignment
+   responsibility and that unresolved retries do not redispatch. Concurrent
+   callers are bounded and coalesced; simultaneous-caller fault injection is
+   not a separate acceptance claim. This milestone is not a global release.
 2. **Executable integration and global candidate.** After runtime PR #787 lands,
    integrate the prepared Bee Host/Plan port and update the runtime/build inputs.
    Run assembled native, offline startup, project isolation, recovery and pack
@@ -65,5 +66,14 @@ passes with the production deadline unchanged. The final full-check run has
 passed units, managed windows/hooks, module boundaries, gateway, packaging and
 headless startup. The standalone Governance guide dependency, Hub canonicalizer
 module declaration and Modules install-fixture lock were corrected; their
-focused gates now pass. Storage checks also pass, and desktop acceptance is
-still running. No full-suite pass is claimed yet.
+focused gates pass. The resumed check completes storage and all desktop gates,
+including input, selection, recovery, inbox, governed delivery, Hive Manager and
+Timeline. The full check coverage passes across the original and resumed runs.
+Restoring the former discard-on-expiry behavior in a disposable composition
+makes the delayed-broker regression fail with `retry redispatched unresolved open`.
+
+The next release step remains the prepared executable integration after runtime
+#787 merges. It is still open at `7f9e7e89bc`; no new runtime API or compatibility
+path was introduced for application opening. Agent identity UI work is scoped:
+project the existing definition/profile/thread/action/attempt identities and
+bounded descriptions rather than introducing another identity model.
