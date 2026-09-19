@@ -23,10 +23,19 @@ ordinary update that changes the database, prefix or physical definition. Strict
 legacy `@2` work remains readable without rewriting its bytes. The existing
 `applying` phase retains partial receipts and only exposes the complete overlay
 after the original target ledger confirms every captured migration. Temporary
-prerequisite definitions use a separate owner and are removed on recovery; SQL
+prerequisite definitions use a separate owner and are removed on recovery,
+including an exact empty-overlay cleanup state; SQL
 commits are never described as rolled back. New database allocation and the live
 managed-agent trait refresh remain subsequent milestones. `table_prefix` is a
 migration convention, not table-level SQL confinement. Global Bee is unchanged.
+
+The source and packed App Journey now exercise that binding through the complete
+reviewed application flow. One logical application target resolves to a shared
+host SQLite database with the `journey_` prefix. Its migration receives all
+three identities, writes one durable ledger row and `journey_items`, preserves
+the host's unrelated `other_items`, creates no unprefixed table, and is not
+rerun when the application restores after restart. Registry source-root
+databases retain their bounded empty owner marker as immutable evidence.
 
 The Hub migration runner now accepts the invoking owner's private-policy list
 while retaining Hub's existing default. Its execution child removes those exact

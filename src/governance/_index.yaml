@@ -57,7 +57,7 @@ entries:
 - name: materializer
   kind: library.lua
   source: file://materializer.lua
-  modules: [registry]
+  modules: [registry, hash]
   imports:
     artifact: bee.governance:artifact
     canonical: bee.sync:canonical

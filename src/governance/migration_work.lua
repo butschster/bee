@@ -63,6 +63,14 @@ local function identifier(value: unknown): string?
     return value
 end
 
+-- Registry source roots use the empty owner marker. It is still host-captured
+-- provenance and is compared exactly on recovery; unlike authored package
+-- identities, it does not need to be nonempty.
+local function owner(value: unknown): string?
+    if type(value) ~= "string" or #value > 160 or value:find("%c") then return nil end
+    return value
+end
+
 local function registry_id(value: unknown): string?
     local id = identifier(value)
     if not id or not id:match("^[A-Za-z0-9][A-Za-z0-9_.-]*:[A-Za-z0-9][A-Za-z0-9_.-]*$") then return nil end
@@ -184,12 +192,17 @@ local function normalize(raw: unknown): (Object?, string?)
                 return nil, "migration work contains an invalid database prefix"
             end
         end
-        local kind, package, measured = identifier(item.kind), identifier(item.package), sha(item.digest)
-        if not target_db or not database_id
-            or (kind ~= "db.sql.sqlite" and kind ~= "db.sql.postgres" and kind ~= "db.sql.mysql")
-            or not package or not measured
-            or type(item.planned) ~= "boolean" or seen_targets[target_db] or target_db <= previous_target then
-            return nil, "migration work contains an invalid database binding"
+        local kind, package, measured = identifier(item.kind), owner(item.package), sha(item.digest)
+        if not target_db then return nil, "migration work database has an invalid logical target" end
+        if not database_id then return nil, "migration work database has an invalid physical identity" end
+        if kind ~= "db.sql.sqlite" and kind ~= "db.sql.postgres" and kind ~= "db.sql.mysql" then
+            return nil, "migration work database has an invalid SQL kind"
+        end
+        if not package then return nil, "migration work database has no trusted owner" end
+        if not measured then return nil, "migration work database has an invalid definition digest" end
+        if type(item.planned) ~= "boolean" then return nil, "migration work database has no planned-state evidence" end
+        if seen_targets[target_db] or target_db <= previous_target then
+            return nil, "migration work database targets are duplicated or out of order"
         end
         local definition: Object? = nil
         if item.planned then

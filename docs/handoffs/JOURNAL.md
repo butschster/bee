@@ -7345,3 +7345,23 @@ checks pass 86/86; the complete suite passes 1,125/1,125; production packing
 and the 162-document agent corpus check pass. No runtime API or parallel
 manager was added. Next is the existing App Journey acceptance with one shared
 host database, an application prefix, restart recovery, and source/packed runs.
+
+### 2026-09-19 Codex: governed prefixed database App Journey
+
+The source and packed App Journey now carry one logical application database
+through the full reviewed delivery and activation flow into a host-selected
+shared SQLite database with the `journey_` prefix. The migration receives the
+logical target, frozen physical database ID and prefix, writes exactly one
+ledger row and the prefixed application table, preserves an unrelated host
+table, and creates no unprefixed table. Restart restores the application
+without rerunning the committed migration.
+
+Two production edge cases found by the acceptance are fixed at their owning
+boundaries. Immutable migration work preserves the registry source root's
+bounded empty owner marker as exact host evidence. Governance materialization
+can reconcile and observe an exact empty desired overlay during prerequisite
+cleanup while the public artifact contract remains nonempty. Strict lint passes
+with the existing `desktop_lifecycle` warning; all 1,127 tests, Hub's 86/86
+unit gate, source and packed App Journey, production pack, and the 162-document
+agent corpus check pass. Next is a managed-agent update that reuses its existing
+authoring workspace, durable thread and already-applied overlay.

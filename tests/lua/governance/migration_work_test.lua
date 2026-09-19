@@ -70,6 +70,17 @@ local function define_tests()
             test.is_true(assert(migration_work.verify(work, candidate, exact, context)))
         end)
 
+        test.it("preserves the registry root owner marker for a host database", function()
+            local exact, candidate, context = fixture()
+            context.entries["host:db"].package = ""
+            local work, problem = migration_work.capture(candidate, exact, context)
+            if not work then error(tostring(problem)) end
+            test.eq(work.databases[1].package, "")
+            local decoded, decode_error = migration_work.decode(work.bytes, work.digest)
+            if not decoded then error(tostring(decode_error)) end
+            test.eq(decoded.databases[1].package, "")
+        end)
+
         test.it("preserves numeric order across multi-digit migration ordinals", function()
             local _, candidate, context = fixture()
             local first: {[string]: unknown} = {id = "demo:001", kind = "function.lua",

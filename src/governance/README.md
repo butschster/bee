@@ -77,7 +77,9 @@ automatic process-exit cleanup. Expanded packages, service readiness and migrati
 ordering remain unproved by this registry-entry-only fixture.
 `bee.governance:materializer` keeps the overlay owner outside transferred data,
 copies and remeasures the desired artifact, and deletes definitions no longer in
-that owner's complete desired set. It makes one generation-fenced apply attempt.
+that owner's complete desired set. Cleanup can reconcile and observe the exact
+empty owner overlay without making an empty application artifact publishable. It
+makes one generation-fenced apply attempt.
 A conflict returns to the destination owner, which must rebuild its trusted
 context and rerun preflight before another attempt. It has no durable registry
 publication path. The later destination owner supplies the host-selected owner
