@@ -10,7 +10,7 @@ type Entry = {[string]: unknown}
 type Policy = {node_id: string, policy_digest: string, packages: {[string]: boolean},
     namespaces: {[string]: boolean}, kinds: {[string]: boolean}, databases: {[string]: boolean},
     grants: {[string]: boolean}, modules: {[string]: boolean}, applied: {[string]: unknown},
-    migration_barrier: boolean}
+    database_bindings: {[string]: Object}?, migration_barrier: boolean}
 type Captured = {revision: integer, entries: {Entry}, overlay_ids: {[string]: boolean}?,
     owner: (Entry) -> (string?, string?)}
 type Facts = {candidate: Object, context: Object}
@@ -114,6 +114,20 @@ local function define_tests()
             test.eq(((candidate.entries :: {Object})[1]).id, "private.app:main")
             test.eq(((candidate.entries :: {Object})[1]).package, "host/private-app")
             test.is_true(((facts.context.namespaces :: {[string]: boolean})["private.app"]) == true)
+        end)
+        test.it("retains copied host database bindings in the preflight context", function()
+            local policy: Policy = {node_id = "node-destination", policy_digest = SHA,
+                packages = {["host/private-app"] = true}, namespaces = {["private.app"] = true},
+                kinds = {["function.lua"] = true}, databases = {["private.app:data"] = true},
+                grants = {}, modules = {}, applied = {}, migration_barrier = false,
+                database_bindings = {["private.app:data"] = {database_id = "bee.host:db", table_prefix = "private_"}}}
+            local deps, spec = fixture(policy)
+            local facts = resolve(deps, spec)
+            local bindings = facts.context.database_bindings :: Object
+            test.eq((bindings["private.app:data"] :: Object).database_id, "bee.host:db")
+            local source_binding = (policy.database_bindings :: Object)["private.app:data"] :: Object
+            source_binding.database_id = "other:db"
+            test.eq((bindings["private.app:data"] :: Object).database_id, "bee.host:db")
         end)
 
         test.it("allows replacing definitions from only the selected destination overlay", function()

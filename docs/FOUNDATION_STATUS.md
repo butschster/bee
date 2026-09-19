@@ -14,16 +14,19 @@ revision 1 to 2 on the deployment refresh and remained at revision 2 on the
 second launch.
 
 Governance overlay activation now has a durable migration barrier in the current
-source candidate. Exact pending definitions, destination SQL IDs, package owners,
-checksums and order are sealed into the immutable activation intent. The existing
+source candidate. Exact pending definitions, logical targets, host-selected
+physical SQL IDs, optional table prefixes, physical definition evidence, package
+owners, checksums and order are sealed into the immutable activation intent.
+Execution uses that frozen binding rather than the current profile. Historical
+applied facts recover their binding through the originating intent and reject an
+ordinary update that changes the database, prefix or physical definition. Strict
+legacy `@2` work remains readable without rewriting its bytes. The existing
 `applying` phase retains partial receipts and only exposes the complete overlay
-after the target ledger confirms every captured migration. Temporary prerequisite
-definitions use a separate owner and are removed on recovery; SQL commits are
-never described as rolled back. This first slice accepts existing host-admitted
-databases and already installed migration dependencies. New database allocation,
-table-prefix bindings and the live managed-agent trait refresh remain subsequent
-milestones. Strict lint, all 1,115 unit tests, the production pack and the
-offline-agent corpus check pass for this slice. Global Bee is unchanged.
+after the original target ledger confirms every captured migration. Temporary
+prerequisite definitions use a separate owner and are removed on recovery; SQL
+commits are never described as rolled back. New database allocation and the live
+managed-agent trait refresh remain subsequent milestones. `table_prefix` is a
+migration convention, not table-level SQL confinement. Global Bee is unchanged.
 
 The Hub migration runner now accepts the invoking owner's private-policy list
 while retaining Hub's existing default. Its execution child removes those exact

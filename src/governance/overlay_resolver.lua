@@ -13,10 +13,12 @@ type Entry = {[string]: unknown}
 type Captured = {revision: integer, entries: {Entry}, overlay_ids: {[string]: boolean}?,
     owner: (Entry) -> (string?, string?)}
 type Root = {component: string, version: string}
+type DatabaseBinding = {database_id: string, table_prefix: string?}
+type DatabaseBindings = {[string]: DatabaseBinding}
 type Policy = {node_id: string, policy_digest: string, packages: {[string]: boolean},
     namespaces: {[string]: boolean}, kinds: {[string]: boolean}, databases: {[string]: boolean},
     grants: {[string]: boolean}, modules: {[string]: boolean}, applied: {[string]: unknown},
-    migration_barrier: boolean}
+    applied_databases: {[string]: unknown}?, database_bindings: DatabaseBindings?, migration_barrier: boolean}
 type Deps = {capture: () -> (Captured?, string?), root: (unknown) -> (Root?, string?),
     policy: (unknown, Captured, Root) -> (Policy?, string?)}
 
@@ -186,10 +188,30 @@ local function policy_context(policy: Policy, captured: Captured, base_digest: s
     for _, field in ipairs({"packages", "namespaces", "kinds", "databases", "grants", "modules", "applied"}) do
         if type((policy :: Object)[field]) ~= "table" then return nil, "host policy is missing " .. field end
     end
+    local bindings: DatabaseBindings? = nil
+    if policy.database_bindings ~= nil then
+        if type(policy.database_bindings) ~= "table" then return nil, "host policy database bindings are malformed" end
+        bindings = {}
+        for target, raw in pairs(policy.database_bindings :: table) do
+            local item = object(raw)
+            local database_id = item and bounds.id(item.database_id) or nil
+            local prefix: string? = nil
+            if item and item.table_prefix ~= nil then
+                prefix = bounds.text(item.table_prefix, 64)
+                if not prefix or not prefix:match("^[A-Za-z][A-Za-z0-9_]*$") then
+                    return nil, "host policy database binding prefix is invalid"
+                end
+            end
+            if not bounds.id(target) or not item or bounds.fields(item, {"database_id", "table_prefix"})
+                or not database_id then return nil, "host policy database binding is malformed" end
+            bindings[target :: string] = {database_id = database_id, table_prefix = prefix}
+        end
+    end
     return {node_id = policy.node_id, registry_revision = captured.revision, registry_digest = base_digest,
         policy_digest = policy.policy_digest, packages = policy.packages, namespaces = policy.namespaces,
         kinds = policy.kinds, databases = policy.databases, grants = policy.grants, modules = policy.modules,
-        entries = current, applied = policy.applied, exact_expansion = true,
+        database_bindings = bindings, entries = current, applied = policy.applied,
+        applied_databases = policy.applied_databases or {}, exact_expansion = true,
         migration_barrier = policy.migration_barrier == true}, nil
 end
 

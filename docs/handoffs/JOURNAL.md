@@ -7329,3 +7329,19 @@ registry entry. The next slice must carry bindings through those existing ports,
 freeze logical and physical identities plus prefix in immutable migration work,
 execute from that frozen evidence, and preserve old work bytes. No runtime or
 new manager is required.
+
+### 2026-09-19 Codex: immutable logical-to-physical migration evidence
+
+Governance now carries copied host database bindings through both existing
+resolvers and preflight. Migration work schema `@3` freezes the logical target,
+physical SQL resource, optional prefix and physical kind, owner and digest.
+Execution derives bindings from those immutable bytes. Applied facts recover
+the same evidence through their originating intents, so an ordinary later
+activation cannot silently relocate a migration or change its prefix. Strict
+`@2` work remains readable with its original bytes and identity binding.
+
+Strict lint passes with the existing `desktop_lifecycle` warning; Hub unit
+checks pass 86/86; the complete suite passes 1,125/1,125; production packing
+and the 162-document agent corpus check pass. No runtime API or parallel
+manager was added. Next is the existing App Journey acceptance with one shared
+host database, an application prefix, restart recovery, and source/packed runs.

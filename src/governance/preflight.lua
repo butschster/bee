@@ -10,12 +10,15 @@ type Entry = {id: string, kind: string, package: string, digest: string, referen
 type Artifact = {component: string, version: string, digest: string, dependencies: {string}, namespaces: {string}}
 type Requirement = {id: string, package: string, value: string?, expected_kind: string?, targets: {string}}
 type Migration = {id: string, target_db: string, checksum: string, ordinal: integer}
+type DatabaseBinding = {database_id: string, table_prefix: string?}
+type DatabaseEvidence = {database_id: string, table_prefix: string?, kind: string, package: string, digest: string}
 type Candidate = {destination_node: string, source_node: string, base_revision: integer, base_digest: string,
     artifacts: {Artifact}, entries: {Entry}, requirements: {Requirement}, migrations: {Migration}}
 type Context = {node_id: string, registry_revision: integer, registry_digest: string, policy_digest: string,
     packages: {[string]: boolean}, namespaces: {[string]: boolean}, kinds: {[string]: boolean}, databases: {[string]: boolean},
     grants: {[string]: boolean}, modules: {[string]: boolean},
-    entries: {[string]: Entry}, applied: {[string]: Migration}, exact_expansion: boolean,
+    database_bindings: {[string]: DatabaseBinding}?,
+    entries: {[string]: Entry}, applied: {[string]: Migration}, applied_databases: {[string]: DatabaseEvidence}?, exact_expansion: boolean,
     migration_barrier: boolean}
 type Diagnostic = {code: string, target: string, message: string, remedy: string}
 type Report = {schema_revision: string, plan_digest: string, destination_node: string,
@@ -454,8 +457,27 @@ function M.check(candidate: Candidate, context: Context): (Report?, string?)
         if migrations[key] or ordinals[ordinal] then issue("MIGRATION_COLLISION", item.id, "duplicate migration identity or order", "append a uniquely ordered migration") end
         migrations[key], ordinals[ordinal] = item, true
         if not context.databases[item.target_db] then issue("DATABASE_DENIED", item.id, "migration database is outside host policy", "select a host-authorized database") end
-        local database = final[item.target_db]
-        if not database or not database.kind:match("^db%.sql%.") then issue("MISSING_DATABASE", item.id, "migration target is not a final-state SQL resource", "bind an existing SQL resource") end
+        local binding = context.database_bindings and context.database_bindings[item.target_db] or nil
+        if context.database_bindings ~= nil and not binding then
+            issue("MISSING_DATABASE_BINDING", item.id, "migration target has no host database binding", "select an explicit host database binding")
+        end
+        local database_id = binding and binding.database_id or item.target_db
+        local database = final[database_id]
+        local existing_database = context.entries[database_id]
+        if not database or not database.kind:match("^db%.sql%.") then
+            issue("MISSING_DATABASE", item.id, "migration target is not bound to a final-state SQL resource", "bind an existing SQL resource")
+        elseif not existing_database or existing_database.kind ~= database.kind
+            or existing_database.package ~= database.package or existing_database.digest ~= database.digest then
+            issue("DATABASE_REPLACEMENT", item.id, "migration binding does not retain the host database definition", "bind an unchanged host SQL resource")
+        end
+        local historical = context.applied_databases and context.applied_databases[item.target_db] or nil
+        if historical and (historical.database_id ~= database_id
+            or historical.table_prefix ~= (binding and binding.table_prefix or nil)
+            or not database or historical.kind ~= database.kind or historical.package ~= database.package
+            or historical.digest ~= database.digest) then
+            issue("APPLIED_DATABASE_CHANGED", item.id, "applied migration database binding or definition changed",
+                "retain the original database binding or use an explicit relocation operation")
+        end
         local previous = context.applied[key]
         if previous then
             if previous.checksum ~= item.checksum or previous.ordinal ~= item.ordinal then issue("APPLIED_MIGRATION_CHANGED", item.id, "applied migration body or order changed", "restore the applied migration and append a new one") end
@@ -477,7 +499,7 @@ function M.check(candidate: Candidate, context: Context): (Report?, string?)
         return a.message < b.message
     end)
     local measurement = canonical.encode({candidate = candidate, policy_digest = context.policy_digest,
-        applied = context.applied}, 262144)
+        applied = context.applied, applied_databases = context.applied_databases or {}}, 262144)
     if not measurement then return nil, "cannot measure plan" end
     local measured, measure_error = hash.sha256(measurement)
     if not measured then return nil, tostring(measure_error) end
