@@ -7309,3 +7309,23 @@ physical resource or prefix. Strict lint passes with the existing warning;
 with 162 embedded documents and 2,136,200 bytes. The planner directory remains
 untouched. Next narrow milestone is a real destination acceptance using an
 application-owned prefixed table in a host-selected shared database.
+
+### 2026-09-19 Codex: host-selected migration execution grants
+
+Commit `7f77687` adds the authority half needed by that acceptance. Activation
+profiles may name a bounded, canonical `migration_policies` list, measured in
+the same host policy digest as database bindings. The reusable Hub runner copies
+the list, removes the invoking owner's named private policies, and adds only
+those exact host policies to the package function's call scope. This permits
+exact function and physical-database grants without leaking Governance overlay,
+approval or scope-construction authority.
+
+The Governance migration-effect test now calls its migration under a dedicated
+grant policy and asserts that policy is present while both Governance private
+policies are absent. Strict lint, 1,120/1,120 tests, pack and the 162-document
+corpus check pass. Astra's acceptance review found the next required seam:
+resolver/preflight/migration work still interpret logical `target_db` as a
+registry entry. The next slice must carry bindings through those existing ports,
+freeze logical and physical identities plus prefix in immutable migration work,
+execute from that frozen evidence, and preserve old work bytes. No runtime or
+new manager is required.
