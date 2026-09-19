@@ -383,6 +383,16 @@ func reportAuthorDelivery(call func(string, object, int) object, report object, 
 		report["delivery_diagnostics"] = value["diagnostics"]
 		report["delivery_human_steps"] = value["human_steps"]
 	}
+	// Report the frozen digest on the bound thread, the way any managed agent
+	// hands its result back; the desktop harness reads it from there.
+	marker := os.Getenv("BEE_FIXTURE_AUTHOR_MARKER")
+	if marker != "" && snapshot != nil {
+		if text, ok := snapshot.(string); ok {
+			call("thread_message", object{"idempotency_key": "report-" + marker, "message_id": marker,
+				"message_kind": "progress", "recipient_ids": []string{},
+				"content": object{"text": text, "artifact_ref": text}}, 42)
+		}
+	}
 }
 
 func toolsOf(listed rpcReply) ([]string, []object) {
