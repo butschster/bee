@@ -7,6 +7,10 @@ types. `llm.transition` is a future component integration, not a current API.
 
 Work one acceptance milestone at a time:
 
+Bee is greenfield: keep one implementation and remove superseded paths rather
+than adding compatibility layers. Verified Bee changes go directly to `main`;
+runtime changes still use upstream pull requests.
+
 1. **Application opening — integration checks.** Complete the explicitly admitted MCP
    operation through the production gateway, workspace host and broker. Prove
    sender authorization, binding-selected workspace, refusal before application
@@ -59,6 +63,7 @@ in-flight operations until broker settlement, so a late success still receives
 its originating display assignment. The source/packed delayed-broker regression
 passes with the production deadline unchanged. The final full-check run has
 passed units, managed windows/hooks, module boundaries, gateway, packaging and
-headless startup. It exposed a stale Governance guide dependency in a standalone
-fixture (fixed and passing), followed by Hub migration and Modules UI fixture
-failures still under investigation. No full-suite pass is claimed yet.
+headless startup. The standalone Governance guide dependency, Hub canonicalizer
+module declaration and Modules install-fixture lock were corrected; their
+focused gates now pass. Storage checks also pass, and desktop acceptance is
+still running. No full-suite pass is claimed yet.
