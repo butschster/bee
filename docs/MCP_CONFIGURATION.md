@@ -64,7 +64,9 @@ The built-in `thread_launch` tool starts one host-allow-listed managed launch
 in the caller's own workspace and thread, and returns the child's thread,
 action and attempt so the parent reaches it through the same `thread_read`,
 `thread_wait` and `thread_message`. Its arguments are one definition reference,
-one brief and one retry key. The definition must appear in the calling
+one brief and one retry key. A successful value also returns the admitted
+definition reference and title plus the bounded brief, alongside the child
+identities. The definition must appear in the calling
 attempt's own launch policy `agent_launch` list; a definition the policy does
 not name is refused with `LAUNCH_NOT_PERMITTED`, and a definition that would
 open a different thread is refused with `LAUNCH_THREAD_UNSUPPORTED` rather than

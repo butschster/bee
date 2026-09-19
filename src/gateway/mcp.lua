@@ -37,7 +37,7 @@ local TOOLS: {Tool} = {
             in_reply_to = {type = "object", additionalProperties = false, required = {"thread_id", "record_id"}, properties = {thread_id = {type = "string", minLength = 1, maxLength = 160}, record_id = {type = "string", minLength = 1, maxLength = 160}}},
             outcome = {type = "string", enum = {"succeeded", "failed", "cancelled", "uncertain"}},
         }}},
-    {name = "thread_launch", description = "Start one host-allow-listed managed agent in your own workspace, hand it a brief, and return its thread, action and attempt for thread_read, thread_message and thread_wait", operation = "bee.harness.launch:agent_launch_call",
+    {name = "thread_launch", description = "Start one host-allow-listed managed agent in your own workspace and thread. Returns the admitted definition and title, submitted brief, and child thread, action and attempt IDs for thread_read, thread_message and thread_wait.", operation = "bee.harness.launch:agent_launch_call",
         policies = {"bee:gateway_tool_launch_policy"}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"definition_ref", "brief", "idempotency_key"}, properties = {
             definition_ref = {type = "string", minLength = 1, maxLength = 160},
