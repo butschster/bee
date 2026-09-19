@@ -336,16 +336,23 @@ local function main()
     configure(launch_workspace, policy_ref, definition ~= DEFAULT_DEFINITION)
     listener_ready()
 
-    local marker = "agent-app-" .. round .. "-" .. tostring(time.now():unix_nano())
+    -- A scripted provider cannot read a computed marker out of the brief, so
+    -- the host may pin the exact marker it will report with.
+    local pinned_marker = bounds.text(values.marker, 160)
+    local marker: string = (pinned_marker and pinned_marker ~= "") and pinned_marker
+        or ("agent-app-" .. round .. "-" .. tostring(time.now():unix_nano()))
     local plan = call("bee.harness.launch:resolve", {definition_ref = definition})
     reply("bee.harness.launch:setup", {workspace_id = launch_workspace, definition_ref = definition,
         expected_plan_digest = plan.plan_digest})
     call("bee.threads.service:create", {thread_id = THREAD, idempotency_key = "create-" .. THREAD,
         title = "Agent-authored Bee application"})
-    local brief = first_brief(source_workspace, marker, round)
+    -- A scripted provider that learns the contract from the guide is given the
+    -- plain request instead of the host's contract-bearing brief.
+    local plain = bounds.text(values.brief, 65536)
+    local brief = (plain and plain ~= "") and plain or first_brief(source_workspace, marker, round)
     if findings ~= "" then
         deliver_findings(findings, round)
-        brief = repair_brief(source_workspace, marker, round)
+        if not (plain and plain ~= "") then brief = repair_brief(source_workspace, marker, round) end
     end
 
     local started = call("bee.harness.launch:start", {request_id = "agent-app-" .. round,
