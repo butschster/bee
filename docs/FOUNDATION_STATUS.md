@@ -1,5 +1,13 @@
 # Foundation status
 
+Managed Agent first-use setup now reconciles an existing host-selected project
+or session association when the admitted root definition changes across a Bee
+deployment. The resource authority keeps exact association replays stable and
+uses its existing revision CAS to refresh a changed root digest once, so old
+grants remain fenced while a retained workspace can launch again. The focused
+retained-root regression, all 1,116 unit tests, production pack, standalone
+build and full native Agent selector pass. Global installation is pending.
+
 Governance overlay activation now has a durable migration barrier in the current
 source candidate. Exact pending definitions, destination SQL IDs, package owners,
 checksums and order are sealed into the immutable activation intent. The existing
