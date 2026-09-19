@@ -241,6 +241,25 @@ entries:
       active_traits: []
       fixed_context: {project: managed-project}
       dynamic_keys: [experiment]
+- name: gateway_author_policy
+  kind: registry.entry
+  meta:
+    type: bee.launch_policy
+    test_support: true
+    comment: Fixture policy for the scripted authoring agent; it admits the workspace, delivery and publish MCP tools and is bound to the fixture executable by the suite at runtime
+  data:
+    schema_revision: bee.launch-policy@2
+    required_cleanup: direct_process
+    required_exit_observation: eof_gated
+    start_ms: 10000
+    stop_grace_ms: 500
+    drain_ms: 2000
+    runner_drain_ms: 1000
+    fixture: true
+    executables: {}
+    environment: {}
+    prepare_options: {permission_mode: dontAsk, max_turns: 1}
+    gateway_tools: [thread_read, thread_message, workspace, delivery, publish]
 - name: gateway_expiring_policy
   kind: registry.entry
   meta:
@@ -332,7 +351,7 @@ entries:
   source: file://gateway_carrier_test.lua
   method: run
   meta: {type: test, suite: bee, timeout: "240s"}
-  modules: [funcs, security, process, registry, env, time, channel, json]
+  modules: [funcs, security, process, registry, env, time, channel, json, system]
   security:
     policies: [bee.harness.catalog:apply_test_policy, bee.harness.catalog:carrier_spawn_policy]
   imports:

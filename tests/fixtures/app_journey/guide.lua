@@ -57,7 +57,7 @@ local function configure_host(workspace_id: string, local_node: string)
         source_workspace = SOURCE_WORKSPACE, component = COMPONENT, resolver = "overlay",
         overlay_owner = OVERLAY_OWNER, approval_policy = APPROVAL_POLICY, parameters = {},
         allow = {packages = {COMPONENT}, namespaces = {guide.NAMESPACE}, kinds = {"process.lua"},
-            databases = {}, grants = {}, modules = {"tty", "process", "channel"}}}}
+            databases = {}, grants = {}, modules = {"tty", "process", "channel", "json"}}}}
     act_entry.data = act_data
 
     local policy_entry = assert(registry.get("bee.approvals:approver_policies"))
