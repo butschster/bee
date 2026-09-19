@@ -46,3 +46,22 @@ entries:
 - name: shutdown
   kind: library.lua
   source: file://shutdown.lua
+- name: open_protocol
+  kind: library.lua
+  source: file://open_protocol.lua
+  imports:
+    arguments: bee.application:arguments
+    contract: bee.protocol:application
+    decode: bee.protocol:decode
+- name: open_call
+  kind: function.lua
+  source: file://open_method.lua
+  method: handle
+  modules: [process, security, channel, time, ctx, hash]
+  imports:
+    bounds: bee.threads.records:bounds
+    arguments: bee.application:arguments
+    open_protocol: bee.applications:open_protocol
+    catalog: bee.applications:catalog
+  security:
+    policies: [bee:application_open_facade_policy]

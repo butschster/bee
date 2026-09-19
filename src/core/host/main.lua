@@ -15,6 +15,7 @@ local interaction = require("interaction")
 local connections = require("connections")
 local inventory = require("inventory")
 local transfer = require("transfer")
+local open_protocol = require("open_protocol")
 
 local function main(owner: string, database_resource: string?)
     if owner == "" or ctx.get("bee.host_owner") ~= owner then error("Untrusted host bootstrap") end
@@ -33,10 +34,12 @@ local function main(owner: string, database_resource: string?)
     local appearance_changes = assert(process.listen("bee.client.appearance.changed", {message = true}))
     local client_appearance = assert(process.listen("bee.client.appearance.result", {message = true}))
     local transfer_requests = assert(process.listen("bee.host.transfer", {message = true}))
+    local open_requests = assert(process.listen("bee.host.application", {message = true}))
     local events = assert(process.events())
     assert(process.monitor(owner))
     local database, database_error = persistence.open(database_resource)
     if not database then error(tostring(database_error)) end
+    local host_registry_name = ""
     -- Recovery must observe every durable prepared fence before any admission
     -- can issue a controlling bind. Unresolved intents stay fenced for the
     -- supervisor/client reconciliation path; they are never silently failed.
@@ -56,6 +59,9 @@ local function main(owner: string, database_resource: string?)
     end
     local fresh_workspace = database.saved == nil
     local workspace_id = database.workspace_id
+    host_registry_name = "bee.workspace.host/" .. workspace_id
+    local registered, register_error = process.registry.register(host_registry_name)
+    if not registered then database:close(); error("Register workspace host: " .. tostring(register_error)) end
     local empty_tabs: {string} = {}
     local empty_records: {recovery.Record} = {}
     local snapshot: recovery.Snapshot = {version = 1,
@@ -88,6 +94,9 @@ local function main(owner: string, database_resource: string?)
     -- Keys are internal broker request IDs, never caller receipt IDs.  This
     -- keeps transfer replies out of the ordinary client-route namespace.
     local pending_transfers: {[string]: {request: transfer.Request, source: string, caller: string, receipt: string}} = {}
+    type OpenWaiters = {callers: {string}, definition_id: string, arguments_fingerprint: string}
+    local pending_opens: {[string]: OpenWaiters} = {}
+    local MAX_OPEN_WAITERS = 16
     local function deliver(topic: string, value: unknown)
         assert(process.send(owner, topic, value))
     end
@@ -219,7 +228,7 @@ local function main(owner: string, database_resource: string?)
     end
     local function run()
         while true do
-            local selected = channel.select({requests:case_receive(), replies:case_receive(), catalogs:case_receive(), catalog_readers:case_receive(),
+            local selected = channel.select({requests:case_receive(), open_requests:case_receive(), replies:case_receive(), catalogs:case_receive(), catalog_readers:case_receive(),
                 checkpoints:case_receive(), questions:case_receive(), answers:case_receive(), preferences:case_receive(), shutdown_requests:case_receive(), client_requests:case_receive(), transfer_requests:case_receive(),
                 selections:case_receive(), client_answers:case_receive(), appearance_changes:case_receive(), client_appearance:case_receive(), events:case_receive()})
             if not selected.ok then break end
@@ -297,6 +306,42 @@ local function main(owner: string, database_resource: string?)
                         end
                     end
                     if request and code ~= "" then transfer_result(caller, request, 0, code, error_text) end
+                elseif selected.channel == open_requests then
+                    local caller = tostring(message:from())
+                    local request = open_protocol.request(data, workspace_id)
+                    if request then
+                        local function send_open(recipient: string, reply: contract.Reply)
+                            reply.workspace_id = workspace_id
+                            process.send(recipient, "bee.host.application.reply", {version = 1, workspace_id = workspace_id,
+                                request_id = request.request_id, reply = reply})
+                        end
+                        if not ready or stopping then
+                            send_open(caller, contract.reply(request.request_id, "open", "unavailable", "Workspace host is not ready"))
+                        elseif pending_opens[request.request_id] then
+                            -- The original broker request owns the reply. A
+                            -- duplicate caller waits for that exact result.
+                            local waiters = pending_opens[request.request_id]
+                            local fingerprint = contract.argument_fingerprint(request.arguments)
+                            if waiters.definition_id ~= request.definition_id or waiters.arguments_fingerprint ~= fingerprint then
+                                send_open(caller, contract.reply(request.request_id, "open", "request_conflict", "Request ID was reused for another application"))
+                            elseif #waiters.callers >= MAX_OPEN_WAITERS then
+                                send_open(caller, contract.reply(request.request_id, "open", "busy", "Too many callers are waiting for this open"))
+                            else
+                                waiters.callers[#waiters.callers + 1] = caller
+                            end
+                        else
+                            pending_opens[request.request_id] = {callers = {caller}, definition_id = request.definition_id,
+                                arguments_fingerprint = contract.argument_fingerprint(request.arguments)}
+                            local sent, send_error = process.send(broker, "bee.app.request", {version = 1, request_id = request.request_id, op = "open",
+                                workspace_id = workspace_id, id = "", instance_id = "", definition_id = request.definition_id,
+                                recipient = "", restore_instance_id = "", restore_view_id = "", resume_schema = "",
+                                resume_state = "", arguments = request.arguments})
+                            if not sent then
+                                pending_opens[request.request_id] = nil
+                                send_open(caller, contract.reply(request.request_id, "open", "unavailable", tostring(send_error or "Workspace broker rejected request")))
+                            end
+                        end
+                    end
                 elseif selected.channel == requests then
                     local request = contract.request(data)
                     local caller = tostring(message:from())
@@ -323,6 +368,14 @@ local function main(owner: string, database_resource: string?)
                 elseif selected.channel == replies and message:from() == broker then
                     local reply = decode.reply(data)
                     if reply and decode.belongs(reply, workspace_id) then
+                        local open_waiters = pending_opens[reply.request_id]
+                        if open_waiters then
+                            pending_opens[reply.request_id] = nil
+                            for _, open_caller in ipairs(open_waiters.callers) do
+                                process.send(open_caller, "bee.host.application.reply", {version = 1, workspace_id = workspace_id,
+                                    request_id = reply.request_id, reply = data})
+                            end
+                        else
                         local pending_transfer = pending_transfers[reply.request_id]
                         if pending_transfer then
                             -- A broker bind can emit an intermediate attachment
@@ -392,6 +445,7 @@ local function main(owner: string, database_resource: string?)
                             end
                             if stopping and reply.op == "shutdown" then break end
                         end
+                        end
                     end
                 elseif selected.channel == questions and message:from() == broker then
                     connections.questions(client_connections, data)
@@ -423,9 +477,11 @@ local function main(owner: string, database_resource: string?)
         end
     end
     local completed, run_error = pcall(run)
+    pending_opens = {}
     database:close()
     process.terminate(broker)
-    for _, subscription in ipairs({requests, replies, catalogs, catalog_readers, checkpoints, questions, answers, preferences, shutdown_requests, client_requests, transfer_requests, selections, client_answers, appearance_changes, client_appearance}) do
+    process.registry.unregister(host_registry_name)
+    for _, subscription in ipairs({requests, open_requests, replies, catalogs, catalog_readers, checkpoints, questions, answers, preferences, shutdown_requests, client_requests, transfer_requests, selections, client_answers, appearance_changes, client_appearance}) do
         process.unlisten(subscription)
     end
     if not completed then error(run_error) end
