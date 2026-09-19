@@ -114,6 +114,7 @@ entries:
   imports:
     test: wippy.test:test
     policy: bee.harness.carrier:policy
+    preferences: bee.driver:preferences
 - name: window_hooks_test
   kind: function.lua
   source: file://window_hooks_test.lua

@@ -298,6 +298,17 @@ function M.plan(io: IO, request: Request): (Plan?, string?)
     local decoded_launch, launch_error = launch_request.launch(prepared_reply.launch)
     if not decoded_launch then return nil, "driver prepare: " .. tostring(launch_error) end
     local launch: driver_types.Launch = decoded_launch
+    -- A required file lives in the user's inherited home. Bee never copies the
+    -- owner's configuration or credentials into a private home, so a launch
+    -- that needs one is only available where the profile inherits the host
+    -- user's home. The refusal names the file the driver declared.
+    if launch.required_files and #launch.required_files > 0 then
+        if private_home then
+            local file = launch.required_files[1] :: driver_types.RequiredFile
+            return nil, "the named Codex profile " .. file.path:gsub("%.config%.toml$", "") ..
+                " is only available where Bee inherits the user's Codex home; a private home does not carry it"
+        end
+    end
     if request.session_ref then
         if not bounds.id(request.session_ref) then return nil, "session_ref is not an identifier" end
         local home: string? = nil
