@@ -7272,3 +7272,20 @@ The exact user path `bee` from `/mnt/c/Users/Wolfy-J` rendered retained workspac
 `Gentle Ember` and detached with Ctrl+Q. The rollback artifact directory is
 `bee-evidence/0919/global-before-legacy-cache-fix-1789843893`; the receipt is
 `global-legacy-cache-fix-c5b1dd7-install.json`.
+
+### 2026-09-19 Codex: host database binding adapter
+
+Commit `7813acb` keeps authored migration `target_db` values logical while the
+Hub execution adapter resolves a copied, host-owned binding to the physical SQL
+resource used for grants and ledger reads. A binding may supply a bounded table
+prefix to application migration code; an explicit map fails closed on missing,
+malformed or denied targets, and all captured grants are checked before the
+first group executes. Existing Hub callers that omit a binding retain their
+physical target identity.
+
+`make lint` passes with the existing `desktop_lifecycle` fixpoint warning;
+`make test` passes 1,118/1,118 after the final capture/preflight hardening.
+The unrelated untracked `modules/bee-registry-planner/` directory was not
+touched. Next: decode the bounded binding list in destination activation
+profiles, include it in the policy digest, and use it for execution and recovery
+ledger verification without moving policy into the Hub adapter.
