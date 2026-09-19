@@ -35,6 +35,9 @@ local function run(options: {[string]: unknown}): {[string]: unknown}
         expect_policy("bee.hub:publisher_policy", false)
         expect_policy("bee:governance_destination_service_policy", false)
         expect_policy("bee:governance_destination_execution_policy", false)
+        assert(options.target_db == "governance:data")
+        assert(options.database_id == DB)
+        assert(options.table_prefix == "governance_")
     elseif id == BOUND then
         assert(options.target_db == "demo:data")
         assert(options.database_id == BOUND_DB)
