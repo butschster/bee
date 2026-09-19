@@ -1,3 +1,5 @@
+//go:build rendezvousintegration
+
 // SPDX-License-Identifier: MIT
 
 package rendezvous
