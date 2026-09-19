@@ -1,7 +1,7 @@
-"""Two-binary base-code upgrade regression; never uses --base or user stores.
+"""Two-binary embedded-bundle upgrade regression; never uses recover or user stores.
 
 Select a Tools application added between the previous and current binary
-(Hive Manager by default). This proves base selection and workspace identity preservation;
+(Hive Manager by default). This proves embedded bundle selection and workspace identity preservation;
 authorized registry-overlay preservation remains a separate required gate.
 """
 from pathlib import Path
