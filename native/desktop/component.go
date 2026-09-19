@@ -120,11 +120,25 @@ func (h *Host) Plan(ctx context.Context, launch app.Launch) (app.Plan, error) {
 			return hookpost.Run(ctx, os.Stdin, args[1], args[2], args[3], args[4])
 		}}, nil
 	}
+	// Project selection belongs to an ordinary run. A reserved verb keeps the
+	// runtime's own state and deployment policy untouched.
+	if launch.Op != app.OpRun {
+		return h.launcher.Plan(ctx, launch)
+	}
 	selected, err := h.selectProject(launch)
 	if err != nil {
 		return app.Plan{}, err
 	}
-	return h.launcher.Plan(ctx, selected)
+	plan, err := h.launcher.Plan(ctx, selected)
+	if err != nil {
+		return app.Plan{}, err
+	}
+	// The model applies Plan.State to the launch, so the project state this host
+	// selected must travel in the plan rather than only in the forwarded launch.
+	if selected.State != launch.State {
+		plan.State = selected.State
+	}
+	return plan, nil
 }
 
 // selectProject gives each canonical launch folder one runtime state directory
