@@ -99,37 +99,43 @@ func (c Client) Run(ctx context.Context, launch app.Launch) error {
 func waitOwnerPublication(ctx context.Context, read func(context.Context) (rendezvous.Descriptor, error), previous rendezvous.Descriptor, done <-chan struct{}, wait func(context.Context) error) error {
 	tick := time.NewTicker(25 * time.Millisecond)
 	defer tick.Stop()
+	var childErr error
+	childFinished := false
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		select {
-		case <-done:
-			childErr := wait(ctx)
-			current, readErr := read(ctx)
-			if readErr == nil && current != previous {
-				// The descriptor is only a fresh routing hint. Attach performs the
-				// actual owner authentication and can still refuse it.
-				return nil
+		if !childFinished {
+			select {
+			case <-done:
+				childErr = wait(ctx)
+				childFinished = true
+			default:
 			}
-			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
-				return errors.Join(childErr, readErr)
-			}
-			return childErr
-		default:
 		}
 		current, err := read(ctx)
 		if err == nil && current != previous {
+			// The descriptor is only a fresh routing hint. Attach performs the
+			// actual owner authentication and can still refuse it.
 			return nil
 		}
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			if childFinished {
+				return errors.Join(childErr, err)
+			}
 			return err
+		}
+		if childFinished && !errors.Is(childErr, app.ErrOwned) {
+			return childErr
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-done:
-			return wait(ctx)
+			if !childFinished {
+				childErr = wait(ctx)
+				childFinished = true
+			}
 		case <-tick.C:
 		}
 	}
