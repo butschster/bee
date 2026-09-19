@@ -12,6 +12,15 @@ before calling its private backend. Catalog and installed inventory use the
 `catalog` resource. Caller input cannot choose a registry URL, credential, actor,
 execution scope or host filesystem path.
 
+Managed Agents receive the narrower MCP `components` tool when their host launch
+policy admits it. It accepts only `catalog`, `details`, `inspect`, `state`,
+`files`, `read_file` and `installed`, with package arguments under `request`.
+The MCP decoder refuses plan/apply/status and installation or removal names
+before dispatch. It can inspect effective installed state and verified Hub
+package metadata, entries, requirements and resource files; it cannot write the
+registry, install a package, activate an overlay or grant package permissions.
+Direct `bee.hub:call` management remains a separate host-authorized API.
+
 ## Read an uninstalled package
 
 Like Kickside's Hub artifact inspection, Bee opens the exact package, reads it

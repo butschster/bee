@@ -1,5 +1,17 @@
 # Foundation status
 
+Managed Agent profiles now include a read-only `components` MCP tool for
+authoring research. It exposes only the Hub facade's `catalog`, `details`,
+`inspect`, `state`, `files`, `read_file` and `installed` operations. A separate
+MCP decoder rejects planning, apply, status, install/update/uninstall names and
+caller-selected authority fields before dispatch. Agents can therefore inspect
+effective installed state and verified Hub package entries, requirements,
+documentation and examples without receiving Hub management, registry-write,
+overlay activation or package-grant authority. The Governance guide now
+describes general component packs while honestly refusing migrations until the
+reviewed migration barrier exists. Strict lint, all 1,110 unit tests and the
+production pack pass. Global Bee is unchanged.
+
 The September 19 runtime-application cut is installed globally from Bee
 `c5b1dd7` as executable SHA-256 `6f4c1d074c00`. It uses runtime PR #787 at
 `3d9926aa`, which additionally migrates verified immutable artifacts
