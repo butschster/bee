@@ -52,4 +52,7 @@ Authored component overlays and application launch/sharing admission remain sepa
 
 Package migrations retain host-supplied permissions and registry reads, with
 Hub's private publication, receipt, worker and scope-editing policies removed
-from their call scope. Host database and function grants remain required.
+from their call scope. The runner also accepts a trusted owner's explicit
+private-policy list so another owner can reuse the execution primitive without
+passing its own authority into component code. Only those named policies are
+removed; host database and function grants remain required.

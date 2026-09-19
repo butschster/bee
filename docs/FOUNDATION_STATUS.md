@@ -1,5 +1,12 @@
 # Foundation status
 
+The Hub migration runner now accepts the invoking owner's private-policy list
+while retaining Hub's existing default. Its execution child removes those exact
+policies before calling component migration code. Acceptance proves both the Hub
+default and a Governance policy set inside the called migration while preserving
+the selected database grant and durable ledger write. Governance does not call
+this path yet; durable overlay migration activation remains the next milestone.
+
 Managed Agent profiles now include a read-only `components` MCP tool for
 authoring research. It exposes only the Hub facade's `catalog`, `details`,
 `inspect`, `state`, `files`, `read_file`, `installed` and effect-free `plan`
