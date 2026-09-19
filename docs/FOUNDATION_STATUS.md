@@ -1,11 +1,23 @@
 # Foundation status
 
+Governance overlay activation now has a durable migration barrier in the current
+source candidate. Exact pending definitions, destination SQL IDs, package owners,
+checksums and order are sealed into the immutable activation intent. The existing
+`applying` phase retains partial receipts and only exposes the complete overlay
+after the target ledger confirms every captured migration. Temporary prerequisite
+definitions use a separate owner and are removed on recovery; SQL commits are
+never described as rolled back. This first slice accepts existing host-admitted
+databases and already installed migration dependencies. New database allocation,
+table-prefix bindings and the live managed-agent trait refresh remain subsequent
+milestones. Strict lint, all 1,115 unit tests, the production pack and the
+offline-agent corpus check pass for this slice. Global Bee is unchanged.
+
 The Hub migration runner now accepts the invoking owner's private-policy list
 while retaining Hub's existing default. Its execution child removes those exact
-policies before calling component migration code. Acceptance proves both the Hub
-default and a Governance policy set inside the called migration while preserving
-the selected database grant and durable ledger write. Governance does not call
-this path yet; durable overlay migration activation remains the next milestone.
+policies before calling component migration code. Governance uses that shared
+path for its captured migration work. Acceptance proves both the Hub default and
+Governance execution while preserving the selected database grant and durable
+ledger write.
 
 Managed Agent profiles now include a read-only `components` MCP tool for
 authoring research. It exposes only the Hub facade's `catalog`, `details`,
@@ -16,10 +28,10 @@ apply, status and direct install/update/uninstall names and
 caller-selected authority fields before dispatch. Agents can therefore inspect
 effective installed state and verified Hub package entries, requirements,
 documentation and examples without receiving Hub management, registry-write,
-overlay activation or package-grant authority. The Governance guide now
-describes general component packs while honestly refusing migrations until the
-reviewed migration barrier exists. Strict lint, all 1,110 unit tests and the
-production pack pass. Global Bee is unchanged.
+overlay activation or package-grant authority. The Governance guide describes
+the accepted append-only migration slice and its database/dependency limits.
+Its prior 1,110-test checkpoint and production pack passed; the migration
+extension is covered by the newer acceptance record above. Global Bee is unchanged.
 
 The September 19 runtime-application cut is installed globally from Bee
 `c5b1dd7` as executable SHA-256 `6f4c1d074c00`. It uses runtime PR #787 at

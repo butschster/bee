@@ -4,6 +4,7 @@ local security = require("security")
 
 local DEFAULT = "bee.hub:test_default_migration"
 local CUSTOM = "bee.hub:test_custom_migration"
+local GOVERNANCE = "bee.hub:test_governance_migration"
 local DB = "bee.hub:migration_runner_db"
 
 local function expect_policy(id: string, wanted: boolean)
@@ -25,6 +26,11 @@ local function run(options: {[string]: unknown}): {[string]: unknown}
     elseif id == CUSTOM then
         expect_policy("bee.hub:execution_policy", true)
         expect_policy("bee.hub:publisher_policy", true)
+        expect_policy("bee:governance_destination_service_policy", false)
+        expect_policy("bee:governance_destination_execution_policy", false)
+    elseif id == GOVERNANCE then
+        expect_policy("bee.hub:execution_policy", false)
+        expect_policy("bee.hub:publisher_policy", false)
         expect_policy("bee:governance_destination_service_policy", false)
         expect_policy("bee:governance_destination_execution_policy", false)
     else

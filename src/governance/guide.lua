@@ -10,7 +10,7 @@ local preflight = require("preflight")
 local json = require("json")
 local M = {}
 
-M.REVISION = "bee.governance-component-guide@2"
+M.REVISION = "bee.governance-component-guide@3"
 M.SCHEMA = "bee.governance-artifact@1"
 M.ENTRIES_PATH = "entries.json"
 
@@ -189,8 +189,10 @@ function M.document(): string
         .. " from that exact snapshot into the canonical artifact (" .. M.SCHEMA
         .. "). Requesting delivery stages the version at this destination and reads its preflight verdict;"
         .. " a refusal names the diagnostic and its remedy. Then a person must " .. join(DELIVERY_STEPS)
-        .. ". Only the activation owner may write an overlay. This release activates migration-free packs;"
-        .. " a pack containing migrations is refused until the reviewed migration barrier is available."
+        .. ". Only the activation owner may write an overlay. A pack may append migration functions for an"
+        .. " existing host-admitted database when every imported dependency is already installed and no"
+        .. " auto-start consumer is present. Governance seals the exact functions and runs them before exposing"
+        .. " the complete overlay. New databases, changed applied migrations and schema rollback are refused."
     lines[#lines + 1] = ""
     lines[#lines + 1] = M.platform_documentation()
     lines[#lines + 1] = ""

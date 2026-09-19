@@ -73,6 +73,15 @@ local function read_applied(target: string, ids: {string}): ({Applied}?, string?
     return result, nil
 end
 
+function M.is_applied(target: string, id: string): (boolean?, string?)
+    if type(target) ~= "string" or target == "" or type(id) ~= "string" or id == "" then
+        return nil, "migration ledger identity is invalid"
+    end
+    local rows, problem = read_applied(target, {id})
+    if not rows then return nil, problem end
+    return #rows == 1, nil
+end
+
 function M.source(entries: {migrations.Entry}, private_policies: {string}?): migrations.Source
     local by_id: {[string]: migrations.Entry} = {}
     for _, entry in ipairs(entries) do by_id[entry.id] = entry end
@@ -125,9 +134,7 @@ function M.source(entries: {migrations.Entry}, private_policies: {string}?): mig
         is_applied = function(target: string, id: string): (boolean?, string?)
             local entry = by_id[id]
             if not entry or entry.meta.target_db ~= target then return nil, "migration is outside the captured database selection" end
-            local rows, problem = read_applied(target, {id})
-            if not rows then return nil, problem end
-            return #rows == 1, nil
+            return M.is_applied(target, id)
         end,
         runner = {setup = function(target: string): (migrations.DatabaseRunner?, string?)
             return {
