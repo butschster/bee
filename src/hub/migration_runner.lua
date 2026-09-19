@@ -8,6 +8,7 @@ local M = {}
 type Applied = {id: string, group: integer}
 type Binding = {database_id: string, table_prefix: string?}
 type Bindings = {[string]: Binding}
+type PolicyIds = {string}
 
 local HUB_PRIVATE_POLICIES: {string} = {
     "bee.hub:execution_policy", "bee.hub:publisher_policy", "bee.hub:dependency_policy",
@@ -58,6 +59,20 @@ local function capture_bindings(entries: {migrations.Entry}, bindings: Bindings?
         end
     end
     return captured, nil
+end
+
+local function capture_policy_ids(raw: PolicyIds?): (PolicyIds?, string?)
+    if raw == nil then return nil, nil end
+    if #raw > 64 then return nil, "migration execution policies exceed their bound" end
+    local result: PolicyIds = {}
+    local seen: {[string]: boolean} = {}
+    for index, value in ipairs(raw) do
+        local id = registry_id(value)
+        if not id or seen[id] then return nil, "migration execution policy is invalid or duplicated" end
+        seen[id] = true
+        result[index] = id
+    end
+    return result, nil
 end
 
 function M.allowed(entries: {migrations.Entry}, bindings: Bindings?): (boolean, string?)
@@ -134,10 +149,12 @@ function M.is_applied(target: string, id: string, binding: Binding?): (boolean?,
     return #rows == 1, nil
 end
 
-function M.source(entries: {migrations.Entry}, private_policies: {string}?, bindings: Bindings?): migrations.Source
+function M.source(entries: {migrations.Entry}, private_policies: {string}?, bindings: Bindings?,
+    execution_policies: PolicyIds?): migrations.Source
     local by_id: {[string]: migrations.Entry} = {}
     for _, entry in ipairs(entries) do by_id[entry.id] = entry end
     local captured_bindings, bindings_error = capture_bindings(entries, bindings)
+    local captured_policies, policies_error = capture_policy_ids(execution_policies)
     local stripped_policies: {string} = {}
     for index, policy in ipairs(private_policies or HUB_PRIVATE_POLICIES) do
         stripped_policies[index] = policy
@@ -171,6 +188,12 @@ function M.source(entries: {migrations.Entry}, private_policies: {string}?, bind
         for _, policy in ipairs(stripped_policies) do
             scope = scope:without(policy)
         end
+        if policies_error then error(policies_error) end
+        for _, policy_id in ipairs(captured_policies or {}) do
+            local policy, policy_error = security.policy(policy_id)
+            if not policy then error(tostring(policy_error or "migration execution policy is unavailable")) end
+            scope = scope:with(policy)
+        end
         local executor, scope_error = funcs.new():with_scope(scope)
         if not executor then error(tostring(scope_error)) end
         local options: {[string]: unknown} = {target_db = target, database_id = selected_binding.database_id,
@@ -200,6 +223,7 @@ function M.source(entries: {migrations.Entry}, private_policies: {string}?, bind
         end,
         runner = {setup = function(target: string): (migrations.DatabaseRunner?, string?)
             if bindings_error then return nil, bindings_error end
+            if policies_error then return nil, policies_error end
             local selected_binding, binding_error = binding_for(target, captured_bindings)
             if not selected_binding then return nil, binding_error end
             local allowed, grant_error = M.allowed(entries, captured_bindings)

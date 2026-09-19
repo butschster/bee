@@ -64,3 +64,10 @@ table prefix to the migration call. Once a map is supplied, every selected
 logical target must have a valid binding. Packages cannot choose either the
 physical database or its prefix. Callers that omit the map keep the existing
 identity mapping where the logical target is the physical registry ID.
+
+A reusable owner may also supply a bounded list of host policy IDs for the
+migration call. The runner copies that list, removes the owner's named private
+policies from the current scope, then adds only those selected execution
+policies. This lets package code receive exact function and physical-database
+grants without inheriting Hub or Governance publication authority. Policy
+selection remains the invoking host owner's responsibility.

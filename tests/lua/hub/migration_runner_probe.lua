@@ -35,6 +35,7 @@ local function run(options: {[string]: unknown}): {[string]: unknown}
         expect_policy("bee.hub:publisher_policy", false)
         expect_policy("bee:governance_destination_service_policy", false)
         expect_policy("bee:governance_destination_execution_policy", false)
+        expect_policy("bee.hub:governance_migration_grant_policy", true)
         assert(options.target_db == "governance:data")
         assert(options.database_id == DB)
         assert(options.table_prefix == "governance_")

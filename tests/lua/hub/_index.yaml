@@ -13,8 +13,8 @@ entries:
   kind: security.policy
   meta: {type: test_support}
   policy:
-    actions: [db.get, funcs.call, funcs.security, security.scope.create]
-    resources: [bee.hub:migration_runner_db, bee.hub:migration_binding_db, bee.hub:test_default_migration, bee.hub:test_custom_migration, bee.hub:test_governance_migration, bee.hub:test_bound_migration, security, without]
+    actions: [db.get, funcs.call, funcs.security, security.scope.create, security.policy.get]
+    resources: [bee.hub:migration_runner_db, bee.hub:migration_binding_db, bee.hub:test_default_migration, bee.hub:test_custom_migration, bee.hub:test_governance_migration, bee.hub:test_bound_migration, bee.hub:governance_migration_grant_policy, security, without]
     effect: allow
 - name: migration_binding_deny_policy
   kind: security.policy
@@ -23,6 +23,13 @@ entries:
     actions: [db.get]
     resources: [demo:ungranted]
     effect: deny
+- name: governance_migration_grant_policy
+  kind: security.policy
+  meta: {type: test_support}
+  policy:
+    actions: [db.get, funcs.call]
+    resources: [bee.hub:migration_runner_db, bee.hub:test_governance_migration]
+    effect: allow
 - name: test_default_migration
   kind: function.lua
   source: file://migration_runner_probe.lua

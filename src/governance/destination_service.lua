@@ -36,10 +36,11 @@ type Object = {[string]: unknown}
 type Set = {[string]: boolean}
 type DatabaseBinding = {database_id: string, table_prefix: string?}
 type DatabaseBindings = {[string]: DatabaseBinding}
+type PolicyIds = {string}
 type Profile = {workspace_id: string, source_node: string, source_workspace: string,
     component: string, overlay_owner: string, approval_policy: string, resolver: string, parameters: {unknown},
     packages: Set, namespaces: Set, kinds: Set, databases: Set, grants: Set, modules: Set,
-    database_bindings: DatabaseBindings?, policy_digest: string}
+    database_bindings: DatabaseBindings?, migration_policies: PolicyIds?, policy_digest: string}
 type Configuration = {profiles: {Profile}}
 type Result = transaction.Result
 type ResolverRoot = {component: string, version: string, parameters: {unknown}}
@@ -117,11 +118,29 @@ local function database_bindings(raw: unknown, databases: Set): (DatabaseBinding
     return result, measured, nil
 end
 
+local function policy_ids(raw: unknown): (PolicyIds?, string?)
+    if raw == nil then return nil, nil end
+    local rows, rows_error = list(raw, "migration policies")
+    if not rows then return nil, rows_error end
+    if #rows > 64 then return nil, "migration policies exceed their bound" end
+    local result: PolicyIds = {}
+    local seen: Set = {}
+    for index, raw_id in ipairs(rows) do
+        local id = bounds.id(raw_id)
+        if not id or seen[id] then return nil, "migration policies contain an invalid or duplicate value" end
+        seen[id] = true
+        result[index] = id
+    end
+    table.sort(result)
+    return result, nil
+end
+
 local function profile(raw: unknown, node_id: string): (Profile?, string?)
     local value = bounds.object(raw)
     if not value then return nil, "activation profile must be an object" end
     local extra = bounds.fields(value, {"workspace_id", "source_node", "source_workspace", "component",
-        "overlay_owner", "approval_policy", "resolver", "parameters", "allow", "database_bindings"})
+        "overlay_owner", "approval_policy", "resolver", "parameters", "allow", "database_bindings",
+        "migration_policies"})
     if extra then return nil, "activation profile: " .. extra end
     local workspace_id, source_node = bounds.id(value.workspace_id), bounds.id(value.source_node)
     local source_workspace, component = bounds.id(value.source_workspace), bounds.text(value.component, 160)
@@ -147,11 +166,14 @@ local function profile(raw: unknown, node_id: string): (Profile?, string?)
     end
     local bindings, measured_bindings, bindings_error = database_bindings(value.database_bindings, databases)
     if bindings_error then return nil, bindings_error end
+    local migration_policies, migration_policies_error = policy_ids(value.migration_policies)
+    if migration_policies_error then return nil, migration_policies_error end
     local policy: Object = {schema_revision = "bee.governance-activation-policy@1",
         node_id = node_id, workspace_id = workspace_id, source_node = source_node,
         source_workspace = source_workspace, component = component, overlay_owner = overlay_owner,
         approval_policy = approval_policy, resolver = resolver_kind, parameters = parameters, allow = allow}
     if measured_bindings then policy.database_bindings = measured_bindings end
+    if migration_policies then policy.migration_policies = migration_policies end
     local policy_bytes, encode_error = canonical.encode(policy)
     local policy_digest, digest_error = policy_bytes and hash.sha256(policy_bytes) or nil
     if not policy_digest then return nil, tostring(encode_error or digest_error or "measure activation policy") end
@@ -160,7 +182,8 @@ local function profile(raw: unknown, node_id: string): (Profile?, string?)
         resolver = resolver_kind :: string,
         parameters = parameters, packages = packages, namespaces = namespaces, kinds = kinds,
         databases = databases, grants = grants, modules = modules,
-        database_bindings = bindings, policy_digest = policy_digest}, nil
+        database_bindings = bindings, migration_policies = migration_policies,
+        policy_digest = policy_digest}, nil
 end
 
 function M.configuration(raw: unknown, node_raw: unknown): (Configuration?, string?)
@@ -277,7 +300,8 @@ local function owner_config(config: Configuration, profile_value: Profile, plan_
         matches = migration_effect.matches, prepare = migration_effect.prepare,
         clear = migration_effect.clear, cleared = migration_effect.cleared,
         execute = function(work: unknown): ({bytes: string, digest: string}?, boolean, string?)
-            local receipt, complete, execute_error = migration_effect.execute(work, profile_value.database_bindings)
+            local receipt, complete, execute_error = migration_effect.execute(work,
+                profile_value.database_bindings, profile_value.migration_policies)
             return receipt, complete, execute_error
         end,
     }
