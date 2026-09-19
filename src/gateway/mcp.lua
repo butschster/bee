@@ -67,10 +67,10 @@ local TOOLS: {Tool} = {
             offset = {type = "integer", minimum = 0},
             limit = {type = "integer", minimum = 1, maximum = 16384},
         }}},
-    {name = "components", description = "Inspect installed registry components and explore Hub packages without installing them. Catalog and details discover packages; installed reads effective component state; inspect and state show exact package entries, resources and requirements; files and read_file inspect packaged documentation and examples. This tool cannot plan, install, update, uninstall or write the registry.", operation = "bee.hub:call",
+    {name = "components", description = "Inspect installed registry components, explore Hub packages and review a resolved installation plan without applying it. Catalog and details discover packages; installed reads effective component state; inspect and state show exact package entries, resources and requirements; files and read_file inspect packaged documentation and examples; plan resolves the exact dependency closure, migrations and capabilities. This tool cannot apply, install, update, uninstall or write the registry.", operation = "bee.hub:call",
         policies = {"bee:gateway_tool_components_policy"}, annotations = READ_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
-            operation = {type = "string", enum = {"catalog", "details", "inspect", "state", "files", "read_file", "installed"}},
+            operation = {type = "string", enum = {"catalog", "details", "inspect", "state", "files", "read_file", "installed", "plan"}},
             request = {type = "object"},
         }}},
     {name = "delivery", description = "Request delivery of your frozen component pack to this destination: publish the frozen artifact, stage it and read the destination's preflight verdict; or read a staged version's review, selection and activation status. It names the human steps it cannot take: review in App Delivery, approval in Approvals and apply by the activation owner.", operation = "bee.governance:delivery_call",
@@ -315,7 +315,7 @@ function M.components_arguments(params: Object): (Object?, string?)
     if not arguments then return nil, "arguments must be an object" end
     local unknown_field = bounds.fields(arguments, {"operation", "request"})
     if unknown_field then return nil, unknown_field end
-    local operation = bounds.member(arguments.operation, {"catalog", "details", "inspect", "state", "files", "read_file", "installed"})
+    local operation = bounds.member(arguments.operation, {"catalog", "details", "inspect", "state", "files", "read_file", "installed", "plan"})
     if not operation then return nil, "components operation is read-only" end
     if arguments.request ~= nil and not bounds.object(arguments.request) then return nil, "request must be an object" end
     return {operation = operation, request = arguments.request}, nil

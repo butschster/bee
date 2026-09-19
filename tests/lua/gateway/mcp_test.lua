@@ -135,8 +135,8 @@ local function define_tests()
             local components_schema = components_tools[1].inputSchema :: {[string]: unknown}
             local components_operation = (components_schema.properties :: {[string]: unknown}).operation :: {[string]: unknown}
             local read_operations = components_operation.enum :: {string}
-            test.eq(#read_operations, 7)
-            for _, operation in ipairs({"catalog", "details", "inspect", "state", "files", "read_file", "installed"}) do
+            test.eq(#read_operations, 8)
+            for _, operation in ipairs({"catalog", "details", "inspect", "state", "files", "read_file", "installed", "plan"}) do
                 local found = false
                 for _, admitted in ipairs(read_operations) do if admitted == operation then found = true end end
                 test.is_true(found)
@@ -144,7 +144,7 @@ local function define_tests()
                 test.is_nil(request_error)
                 test.eq(request and request.operation, operation)
             end
-            for _, operation in ipairs({"plan", "apply", "status", "uninstall", "update"}) do
+            for _, operation in ipairs({"apply", "status", "install", "uninstall", "update"}) do
                 local _, mutation_error = mcp.components_arguments({arguments = {operation = operation, request = {}}})
                 test.eq(mutation_error, "components operation is read-only")
             end

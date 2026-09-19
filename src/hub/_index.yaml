@@ -137,8 +137,8 @@ entries:
     type: tool
     title: Component explorer
     llm_alias: BeeComponents
-    llm_description: Inspect effective installed component state and explore exact Hub package entries, requirements, resources, documentation and examples without installing or changing anything.
-    input_schema: '{"type":"object","additionalProperties":false,"required":["operation"],"properties":{"operation":{"type":"string","enum":["catalog","details","inspect","state","files","read_file","installed"]},"request":{"type":"object"}}}'
+    llm_description: Inspect effective installed component state, explore exact Hub package entries, requirements, resources, documentation and examples, and review a resolved dependency plan without applying it.
+    input_schema: '{"type":"object","additionalProperties":false,"required":["operation"],"properties":{"operation":{"type":"string","enum":["catalog","details","inspect","state","files","read_file","installed","plan"]},"request":{"type":"object"}}}'
 - name: research_trait
   kind: registry.entry
   meta:
@@ -148,8 +148,10 @@ entries:
   prompt: |
     Use BeeComponents to inspect the effective installed component inventory and
     to explore Hub packages before authoring. Read package entries, requirements,
-    resources, documentation and examples for patterns you can reuse. Inspection
-    does not install a package, grant its policies or modify the registry.
+    resources, documentation and examples for patterns you can reuse. Use plan
+    to review the exact dependency closure, requirements, migrations and
+    capabilities before proposing installation. Inspection and planning do not
+    apply a package, grant its policies or modify the registry.
   tools: [bee.hub:call]
 - name: facade_policy
   kind: security.policy.expr

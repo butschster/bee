@@ -62,12 +62,14 @@ base64 is canonical; the MCP limits are transport bounds for one tool call.
 
 The built-in `components` tool is the managed-agent read-only view of the Hub
 and effective registry. Its `operation` is one of `catalog`, `details`,
-`inspect`, `state`, `files`, `read_file` or `installed`; package requests are
+`inspect`, `state`, `files`, `read_file`, `installed` or `plan`; package requests are
 passed as the nested `request` object and remain subject to the Hub facade's
 exact component, version, resource and path decoders. The MCP boundary rejects
-`plan`, `apply`, `status`, `install`, `update`, `uninstall` and unknown fields
-before calling the Hub facade. Reads may inspect installed state or verified
-package contents; they do not install packages, publish registry entries,
+`apply`, `status`, `install`, `update`, `uninstall` and unknown fields before
+calling the Hub facade. `plan` resolves a digest-bound dependency closure at
+review time, requirements, migrations and capability definitions, and may populate the native verified
+artifact cache; it does not publish registry state. Reads may inspect installed
+state or verified package contents; they do not apply packages, publish registry entries,
 activate overlays or grant package permissions. The private `bee.hub:call`
 facade still serves separately authorized Hub management callers, but that
 surface is not part of the managed-agent `components` tool.

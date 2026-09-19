@@ -2,8 +2,10 @@
 
 Managed Agent profiles now include a read-only `components` MCP tool for
 authoring research. It exposes only the Hub facade's `catalog`, `details`,
-`inspect`, `state`, `files`, `read_file` and `installed` operations. A separate
-MCP decoder rejects planning, apply, status, install/update/uninstall names and
+`inspect`, `state`, `files`, `read_file`, `installed` and effect-free `plan`
+operations. Planning resolves the exact dependency closure for review and may
+populate the native verified artifact cache. A separate MCP decoder rejects
+apply, status and direct install/update/uninstall names and
 caller-selected authority fields before dispatch. Agents can therefore inspect
 effective installed state and verified Hub package entries, requirements,
 documentation and examples without receiving Hub management, registry-write,
