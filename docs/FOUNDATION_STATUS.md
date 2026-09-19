@@ -1,5 +1,18 @@
 # Foundation status
 
+The September 19 runtime-application cut is installed globally from Bee
+`fbddfdc0` as executable SHA-256 `85205596820d`. It uses runtime PR #787 at
+`7f9e7e89` and native Bee `ff9810fe`. Bee owns TOML subtree composition in Lua
+through the runtime's existing codec and uses the current atomic filesystem
+write option; no TOML or Bee-specific ingress verb was added to runtime. Strict
+lint and all 1,110 unit tests pass. Exact standalone acceptance passes offline
+boot/reconnect, independent and selected desktops, simultaneous cold clients,
+Agent recovery after graceful and abrupt owner loss, isolated project nodes,
+legacy-root cutover and old-binary rollback. The previous six-file artifact set
+is preserved at `bee-evidence/0919/global-before-runtime-787-c8d29db6`; the
+install receipt is `global-runtime-787-fbddfdc-install.json`. Three old owners
+exited on SIGTERM, and no application database was copied or deleted.
+
 Explicitly admitted agents can now open an applied application through the
 `application_open` MCP tool. The workspace host uses the originating agent
 view's existing display assignment; callers cannot choose a foreign workspace

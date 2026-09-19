@@ -7229,3 +7229,27 @@ fixture only. Standalone build is exec 73251,
 No new branch or worktree. The earlier inventory found 185 local branches,
 96 remote branches, and 232 worktree registrations; 111 missing worktree
 registrations were pruned, with no branch or source deletion.
+
+### Runtime #787 global cut — September 19
+
+Global Bee now matches `main` source `fbddfdc0`: executable SHA-256
+`85205596820d8ec86a513fba565e662ca94b8eb4e75279c5e22372e8450b1b18`,
+runtime #787 `7f9e7e89` and native Bee `ff9810fe`. Bee performs bounded TOML
+subtree composition in Lua and uses the runtime's existing atomic write option;
+no runtime TOML insertion or message-ingress API was restored.
+
+Release review found and fixed three concrete Bee defects: the strict native
+Hive decoder omitted `DESKTOP_CONTROLLED`; the #787 port dropped
+`Starting Bee…` / `Connecting to Hive…`; and concurrent cold contenders could
+mistake the loser's cross-process exit status for a definitive owner failure.
+The latter now consults the runtime's existing application lock and waits for
+fresh publication only while another process holds the state. Three consecutive
+isolated simultaneous-start checks and the full client gate pass.
+
+Strict lint and 1,110/1,110 unit tests pass. Exact candidate and installed checks
+pass standalone, offline/reconnect, native client, independent/selected desktop,
+Agent graceful/crash recovery, project isolation, legacy-root upgrade and
+old-binary rollback. Three old exact-executable owners stopped on SIGTERM. The
+six-file rollback snapshot is
+`bee-evidence/0919/global-before-runtime-787-c8d29db6`; receipt
+`global-runtime-787-fbddfdc-install.json`. No database was deleted or copied.
