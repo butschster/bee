@@ -7289,3 +7289,23 @@ The unrelated untracked `modules/bee-registry-planner/` directory was not
 touched. Next: decode the bounded binding list in destination activation
 profiles, include it in the policy digest, and use it for execution and recovery
 ledger verification without moving policy into the Hub adapter.
+
+### 2026-09-19 Codex: governed database bindings done
+
+Commit `8860d63` completes that next slice. A destination activation profile may
+carry a bounded `database_bindings` list from logical `target_db` to physical
+`database_id`, with an optional safe table prefix. Governance validates and
+normalizes it, requires every logical key to be inside the profile's database
+ceiling, and includes the sorted list in the host policy digest. The composition
+root closes the selected map over the Hub migration effect; destination recovery
+uses the same mapping for physical-ledger evidence.
+
+Migration progress now separately pins the approved migration work's policy
+digest while permitting its pending set to shrink. A focused test changes only
+that policy during `applying`, proves execution is refused, restores the approved
+policy, and then completes. Agents and package artifacts still select no
+physical resource or prefix. Strict lint passes with the existing warning;
+`make test` passes 1,120/1,120; `make pack` and `make agent-corpus-check` pass
+with 162 embedded documents and 2,136,200 bytes. The planner directory remains
+untouched. Next narrow milestone is a real destination acceptance using an
+application-owned prefixed table in a host-selected shared database.
