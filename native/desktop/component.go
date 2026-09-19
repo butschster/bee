@@ -120,11 +120,8 @@ func (h *Host) Plan(ctx context.Context, launch app.Launch) (app.Plan, error) {
 			return hookpost.Run(ctx, os.Stdin, args[1], args[2], args[3], args[4])
 		}}, nil
 	}
-	// Project selection belongs to an ordinary run. A reserved verb keeps the
-	// runtime's own state and deployment policy untouched.
-	if launch.Op != app.OpRun {
-		return h.launcher.Plan(ctx, launch)
-	}
+	// Every stateful operation selects the same project state. The runtime still
+	// owns the operation itself; this host only decides which state it targets.
 	selected, err := h.selectProject(launch)
 	if err != nil {
 		return app.Plan{}, err

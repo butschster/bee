@@ -74,18 +74,25 @@ func TestPlanKeepsExplicitState(t *testing.T) {
 	}
 }
 
-// A reserved verb keeps the runtime's own route: the host plans nothing for it.
-func TestPlanIgnoresReservedVerbs(t *testing.T) {
+// Reserved verbs keep the runtime's own route while targeting the same project
+// state as an ordinary launch from that directory.
+func TestPlanSelectsProjectStateForReservedVerbs(t *testing.T) {
 	host := testHost(t)
+	project := privateDir(t)
+	root := privateDir(t)
+	want, err := launchpkg.DefaultProjectStateDir(root, project)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, op := range []app.Op{app.OpUpdate, app.OpRecover, app.OpWippy} {
 		plan, err := host.Plan(context.Background(), app.Launch{
-			Op: op, Command: "bee", Dir: privateDir(t), State: filepath.Join(privateDir(t), "state"),
+			Op: op, Command: "bee", Dir: project, State: root,
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if plan.Run != nil || plan.Prepare != nil || plan.State != "" || plan.Command != "" {
-			t.Fatalf("reserved verb %v was intercepted: %+v", op, plan)
+		if plan.Run != nil || plan.Prepare != nil || plan.State != want || plan.Command != "" {
+			t.Fatalf("reserved verb %v received the wrong state-only plan: %+v", op, plan)
 		}
 	}
 }
