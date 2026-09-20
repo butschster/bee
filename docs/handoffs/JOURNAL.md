@@ -8000,3 +8000,10 @@ work remains untouched. Renewal-runtime strict lint and all 1,175 units pass.
 The broad Hive supervisor gate remains independently red because its frozen
 fixture omits `replica_admission` and does not create the approvals database
 directory; neither failure resolves or references either removed module.
+
+The standalone release gate exposed a separate acceptance race: the Agent
+picker paints its heading while its asynchronous profile catalog still shows
+`Loading profiles…`, but the native selector treated that heading as catalog
+readiness and immediately asserted all five rows. The selector now waits for
+the final shipped row within its existing 25-second budget before checking the
+complete set. The full native Agent gate passes without a wider deadline.
