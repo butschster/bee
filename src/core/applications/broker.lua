@@ -146,6 +146,7 @@ local function main(owner: string, initial_preferences: unknown)
     -- The function is assigned below before the first refresh call.
     local transition: (Instance, lifecycle.Event) -> ()
     local find_instance: (string) -> Instance?
+    local find_pid: (string) -> Instance?
     local settle_exited_replacement: (Instance, boolean) -> boolean
     -- Reconcile one protected registry snapshot. Compatible automatic
     -- producers may follow a later revision through the replacement path below.
@@ -385,7 +386,10 @@ local function main(owner: string, initial_preferences: unknown)
         local provisional = {instance_id = instance_id, thread_id = provenance.thread_id, actor_id = actor_id,
             role = "participant", initiating_owner_id = provenance.initiating_owner}
         local get = thread_binding.get_request(provisional, workspace_id)
-        local owner_reply = get and thread_call(provenance.initiating_owner, "bee.threads.service:get", get) or nil
+        local owner_reply
+        if get then
+            owner_reply = thread_call(provenance.initiating_owner, "bee.threads.service:get", get)
+        end
         local head_revision = thread_binding.owner_get(owner_reply, provisional, workspace_id)
         if not head_revision then
             emit(contract.reply(req.request_id, "open", "permission_denied", "Only the current thread owner may delegate application access"), true)
@@ -553,7 +557,7 @@ local function main(owner: string, initial_preferences: unknown)
         for _, item in pairs(instances) do if item.instance_id == instance_id then return item end end
         return nil
     end
-    local function find_pid(pid: string): Instance?
+    find_pid = function(pid: string): Instance?
         for _, item in pairs(instances) do if item.execution_pid == pid then return item end end
         return nil
     end

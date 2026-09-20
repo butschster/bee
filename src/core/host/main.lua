@@ -481,7 +481,7 @@ local function main(owner: string, database_resource: string?)
                     if type(data) == "table" and data.version == 1 and data.workspace_id == workspace_id
                         and contract.text(data.request_id, 80) and record then
                         local committed, err = replace_record(record)
-                        send("bee.application.persisted", {version = 1, request_id = data.request_id,
+                        process.send(broker, "bee.application.persisted", {version = 1, request_id = data.request_id,
                             error_code = committed and "" or "persistence_failed", error = err or ""})
                         if committed then deliver("bee.host.checkpoint", {version = 1, workspace_id = workspace_id, record = record}) end
                     end
@@ -564,6 +564,7 @@ local function main(owner: string, database_resource: string?)
                                 if ready then connections.publish(client_connections, live_inventory, "views") end
                             end
                             if open_waiters then
+                                reply.workspace_id = workspace_id
                                 local assigned_display: string? = nil
                                 if reply.error_code == "" and open_waiters.display_id then
                                     local existing, assignment_error = database.assignments:get({view_id = reply.id, instance_id = reply.instance_id})

@@ -23,7 +23,8 @@ entries:
     thread_binding_reducer: bee.applications:thread_binding_reducer
     thread_protocol: bee.applications:thread_protocol
   security:
-    policies: [bee:broker_policy]
+    policies: [bee:broker_policy, bee:application_thread_membership_policy,
+      bee:application_thread_facade_policy]
 - name: lifecycle
   kind: library.lua
   source: file://lifecycle.lua
