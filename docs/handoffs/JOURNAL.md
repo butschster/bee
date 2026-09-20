@@ -7483,3 +7483,27 @@ return remains typed. Moving mount ownership into the broker or duplicating a
 viewport interface would be worse. The clean follow-up is to intern the native
 type identity across component compilation boundaries in runtime, then restore
 the direct typed parameters.
+
+### 2026-09-19 Codex: managed overlay global installation
+
+Bee source `9fb90d756c53afa958dd9b7e2f1c7469e2a0f004` is pushed to `main`
+and installed globally. The exact executable SHA-256 is
+`3d95c4d2ffe482d9dc63e8b9a1fb0cd3af16d398dbc3e33178aad0f59fa9382c`;
+provenance pins runtime `b476104e63b62c9679df78a585727b7f64d48d02` and
+native Bee `v0.0.0-20260919180600-ff9810fea081`. Native Settings, Terminal,
+Modules, About, all five default Agent profiles and offline cold/restart/
+reconnect acceptance pass. The candidate warm attach measured 0.216 seconds.
+
+The six-file installer verified provenance and patch contents, proved the exact
+rollback path through an injected post-replacement failure, backed up the prior
+global set at `bee-evidence/0919/global-before-managed-overlay-9fb90d7`, and
+atomically replaced sidecars before the executable. Receipt:
+`bee-evidence/0919/global-managed-overlay-9fb90d7-install.json`. One exact old
+owner exited on SIGTERM. No database, profile, conversation, workspace, display,
+credential or migration ledger was removed or copied.
+
+The installed executable was then run from `/mnt/c/Users/Wolfy-J`. It rendered
+retained workspace `Gentle Ember`. `bee agy` opened the managed Antigravity
+terminal with the inherited signed-in account and exact project directory; it
+was closed with Ctrl+C without submitting a turn, and the client detached with
+Ctrl+Q. The running owner resolves to the installed executable.

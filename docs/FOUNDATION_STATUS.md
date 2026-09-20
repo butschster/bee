@@ -18,8 +18,11 @@ start path, and lets explicit close and workspace shutdown win. Strict lint,
 1,138/1,138 units, App Delivery's delayed-response UI regression, managed
 windows 5/5, source and packed App Journey, Governance workspace restart,
 production pack, and the 162-document agent corpus pass against the combined
-runtime candidate. Global standalone installation and installed smoke are the
-remaining release steps.
+runtime candidate. Source `9fb90d7` is installed globally as executable
+SHA-256 `3d95c4d2ffe4`. The exact installed binary starts the retained
+`Gentle Ember` workspace from `/mnt/c/Users/Wolfy-J`; `bee agy` reaches the
+managed Antigravity terminal with the inherited account and project directory,
+and exits without submitting a turn.
 
 Managed Agent first-use setup now reconciles an existing host-selected project
 or session association when the admitted root definition changes across a Bee
