@@ -106,8 +106,8 @@ package releases will follow contract stabilization.
 ## Launch and lifecycle
 
 The broker supplies one launch value with `version`, `broker_pid`, `workspace_pid`,
-`workspace_id`, `instance_id`, `view_id`, `definition_id`, `definition_revision`,
-`registry_revision`
+`workspace_id`, `instance_id`, `view_id`, `definition_id`, optional `thread_id`,
+`execution_generation`, `definition_revision`, `registry_revision`
 and `launch_token`. `bee.application:client` validates it. The revision identifies
 the registry state observed for launch; it is not a promise that a mutable loader
 pins every future import. Transactional activation is a future installer concern.
@@ -143,10 +143,13 @@ Open requests may carry an optional bounded `thread_id` association. The value u
 the thread record identifier bound (nonempty, printable, at most 160 bytes). It is
 an owner-selected descriptive association and grants no thread membership or
 operation permission. It is carried by the host-authorized open request and the
-broker's immutable instance; applications cannot set or infer it from launch
-arguments. Identified replies and host inventory expose the association, and
-checkpoint records retain it for recovery. An open without `thread_id` may restore
-the association saved with its selected checkpoint.
+broker's immutable instance. `bee.application.open` rejects caller-supplied
+`thread_id`; applications cannot set or infer it from launch arguments. The broker
+includes the selected value in the launch payload, and `client.launch` validates
+and copies it before returning the typed launch. Identified replies and host
+inventory expose the association, and checkpoint records retain it for recovery.
+An open without `thread_id` may restore the association saved with its selected
+checkpoint.
 
 Open requests may carry `arguments`, a dense list of up to 16 strings (1 KiB each,
 8 KiB combined, no control characters). Omission means an empty list. The broker

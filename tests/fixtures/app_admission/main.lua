@@ -8,7 +8,8 @@ local tty = require("tty")
 local decode = require("decode")
 local appearance = require("appearance")
 local logger = require("logger")
-type Principal = {actor_id: string, workspace_id: string, definition_id: string, definition_revision: string, execution_generation: integer}
+type Principal = {actor_id: string, workspace_id: string, definition_id: string, definition_revision: string,
+    execution_generation: integer, launch_generation: integer, thread_id: string?}
 local function run()
     local owner = tostring(process.pid())
     local workspace = "0123456789abcdef0123456789abcdef"
@@ -44,9 +45,9 @@ local function run()
         end
         error("Reply channel closed")
     end
-    local function open(id: string): decode.Reply
+    local function open(id: string, thread_id: string?): decode.Reply
         assert(process.send(broker, "bee.app.request", {version = 1, workspace_id = workspace,
-            request_id = id, op = "open", definition_id = "bee.admission_probe:app"}))
+            request_id = id, op = "open", definition_id = "bee.admission_probe:app", thread_id = thread_id}))
         return reply(id)
     end
     local function principal(): Principal
@@ -58,8 +59,12 @@ local function run()
             and type(value.definition_id) == "string" and type(value.definition_revision) == "string"
             and type(value.execution_generation) == "number" and value.execution_generation == math.floor(value.execution_generation),
             "Application principal report was malformed")
+        assert(type(value.launch_generation) == "number" and value.launch_generation == math.floor(value.launch_generation),
+            "Application launch generation was malformed")
+        if value.thread_id ~= nil and type(value.thread_id) ~= "string" then error("Application thread identity was malformed") end
         return {actor_id = value.actor_id, workspace_id = value.workspace_id, definition_id = value.definition_id,
-            definition_revision = value.definition_revision, execution_generation = math.floor(value.execution_generation)}
+            definition_revision = value.definition_revision, execution_generation = math.floor(value.execution_generation),
+            launch_generation = math.floor(value.launch_generation), thread_id = value.thread_id}
     end
     local function publish(bindings: unknown)
         local snapshot = assert(registry.snapshot())
@@ -76,7 +81,7 @@ local function run()
     assert(reply("bind").error_code == "")
     publish({{definition_id = "bee.admission_probe:app", policies = {"bee.admission_probe:grant"}}})
     catalog_contains(true)
-    local first = open("admitted")
+    local first = open("admitted", "admission-thread")
     assert(first.error_code == "", first.error)
     local retained = assert(tty.attach(first.mount))
     assert(table.concat(assert(retained:snapshot()).rows):find("GRANTED", 1, true), "Host-selected scope was not used")
@@ -85,11 +90,17 @@ local function run()
     assert(first_principal.workspace_id == workspace and first_principal.definition_id == "bee.admission_probe:app"
         and first_principal.definition_revision == "1" and first_principal.execution_generation == 1,
         "Application actor metadata was not delivered")
+    assert(first_principal.launch_generation == first_principal.execution_generation,
+        "Application launch and actor generations diverged")
+    assert(first.thread_id == "admission-thread" and first_principal.thread_id == "admission-thread",
+        "Broker-selected thread identity was not delivered to the application")
     -- A valid replacement changes only future launches, not an existing scope.
     publish({{definition_id = "bee.admission_probe:app", policies = {}}})
     catalog_contains(true)
     local second = open("reduced")
     assert(second.error_code == "", second.error)
+    local second_principal = principal()
+    assert(second.thread_id == nil and second_principal.thread_id == nil, "Unbound open unexpectedly inherited a thread identity")
     local reduced = assert(tty.attach(second.mount))
     assert(table.concat(assert(reduced:snapshot()).rows):find("DENIED", 1, true), "Old scope cache survived replacement")
     assert(table.concat(assert(retained:snapshot()).rows):find("GRANTED", 1, true), "Refresh replaced an existing producer")

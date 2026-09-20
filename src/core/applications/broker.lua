@@ -325,6 +325,8 @@ local function main(owner: string, initial_preferences: unknown)
             actor = application_actor(workspace_id, item.instance_id, item.descriptor.definition_id,
                 item.descriptor.definition_revision, execution_generation),
             instance_id = item.instance_id, view_id = item.view_id,
+            thread_id = item.thread_id,
+            execution_generation = execution_generation,
             definition_revision = item.descriptor.definition_revision,
             registry_revision = version:string(), launch_token = token,
             resume_schema = item.descriptor.resume_schema, resume_state = item.resume_state,
@@ -934,7 +936,9 @@ local function main(owner: string, initial_preferences: unknown)
                                         scope = scope, workspace_pid = owner, workspace_id = workspace_id,
                                         actor = application_actor(workspace_id, instance_id, req.definition_id,
                                             selected_descriptor.definition_revision, 1),
-                                        instance_id = instance_id, view_id = view_id, definition_revision = selected_descriptor.definition_revision,
+                                        instance_id = instance_id, view_id = view_id, thread_id = req.thread_id,
+                                        execution_generation = 1,
+                                        definition_revision = selected_descriptor.definition_revision,
                                         registry_revision = version:string(), launch_token = token, resume_schema = selected_descriptor.resume_schema,
                                         resume_state = req.resume_state, arguments = req.arguments}
                                     local started = execution.start(grant, launch)
