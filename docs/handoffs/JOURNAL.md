@@ -8007,3 +8007,11 @@ picker paints its heading while its asynchronous profile catalog still shows
 readiness and immediately asserted all five rows. The selector now waits for
 the final shipped row within its existing 25-second budget before checking the
 complete set. The full native Agent gate passes without a wider deadline.
+
+The focused Approvals journey now follows the public user path in both source
+and packed runs: it opens Approvals from Start, confirms the exact pending
+proposal, and records the broker-created
+`bee.application:<workspace>:<instance>` actor as the decider before one effect
+is consumed. The companion scope test proves a sibling application sees
+nothing, request-supplied definition metadata is rejected, and only the
+authenticated host-selected `bee.inbox:app` definition selector is eligible.
