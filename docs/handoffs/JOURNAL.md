@@ -7507,3 +7507,40 @@ retained workspace `Gentle Ember`. `bee agy` opened the managed Antigravity
 terminal with the inherited signed-in account and exact project directory; it
 was closed with Ctrl+C without submitting a turn, and the client detached with
 Ctrl+Q. The running owner resolves to the installed executable.
+
+### 2026-09-20 Codex: Bee UI brand book and runnable reference
+
+The website's Honey language is now an implemented application-authoring
+reference rather than a screenshot or a second theme system. `UI_BRAND_BOOK.md`
+defines the existing appearance roles, cell rhythm, page anatomy, controls,
+feedback, compact/wide behavior, keyboard and mouse parity, hostile text rules
+and user-visible acceptance. The generated offline corpus now contains 163
+digest-checked documents and includes that authored source. The Agent guide and
+documentation map point to it.
+
+`bee.stylebook:app` is explicitly admitted under only the ordinary application
+boundary and appears at Tools → Learn → UI Guide. Its pure view demonstrates
+principles, controls, states and responsive layout across the controlling
+display's current theme. It has no database, registry publication, system
+inspection or appearance-write access. Short views reserve their footer,
+render the current sample as their useful compact state and create hits only for
+visible controls. The disabled example is muted and inert. No new visibility
+metadata or widget framework was introduced.
+
+Promptmap scanned 478 Lua files as a wide UI sensor; its concrete narrow-layout
+and external-text leads were checked against source. Its suggested expansion to
+success/error theme roles was rejected because Bee deliberately carries state
+in words and retains the small semantic palette. Astra's focused read-only
+review confirmed the ownership, admission, menu and corpus design and found two
+reference-view defects; footer overlap/selection reveal and the falsely active
+disabled sample were fixed before acceptance.
+
+Strict lint passes on the release runtime with only the known
+`desktop_lifecycle` fixpoint warning. All 1,142 unit cases pass. The focused view
+matrix covers widths 1/20/40/80/120, heights 1/2/3/4/6/9/11/12/13/24, every
+bundled theme, bounded rows and hits, selected-sample reveal and the inert
+disabled sample. Source and packed PTY journeys pass keyboard section/item
+navigation, compact selection reveal, narrow/wide resize, clean shutdown,
+Tools → Learn discovery and singleton reopen. Pack, the 163-document corpus
+check and the admitted offline docs-agent source/pack proof pass. The unrelated
+untracked `modules/bee-registry-planner/` directory remains untouched.

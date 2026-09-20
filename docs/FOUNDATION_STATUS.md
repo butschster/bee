@@ -1,5 +1,16 @@
 # Foundation status
 
+Bee now ships one canonical terminal visual language and a runnable reference.
+The authored UI brand book defines semantic appearance roles, cell spacing,
+hierarchy, responsive behavior, feedback, keyboard/mouse parity and external
+text handling. Managed agents receive it through the 163-document offline
+corpus. **UI Guide** under **Tools → Learn** demonstrates those rules as an
+ordinary least-authority application; it owns no database, registry, inspection
+or appearance-write capability. Its pure view passes narrow/wide geometry and
+hit testing across every bundled theme, and the source and packed application
+pass real terminal navigation, selection reveal, resize and singleton reopen.
+This is reference source rather than a new widget framework.
+
 Managed application updates now pass the complete agent-to-UI journey in the
 source candidate. One real managed Agy authors v1 through Governance, a person
 reviews and approves it in App Delivery and Approvals, and the same durable
