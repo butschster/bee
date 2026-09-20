@@ -8031,3 +8031,21 @@ exact prior owner on SIGTERM, preserved its complete artifact set at
 `bee-evidence/0920/global-before-cleaned-8f0756a`, and installed only verified
 artifacts. Receipt: `bee-evidence/0920/global-cleaned-8f0756a-install.json`.
 Application and Bee state databases were not copied, removed or reset.
+
+## 2026-09-20 — native Hive supervisor fixture gate repaired
+
+The frozen native Hive fixtures now carry the current supervisor protocol
+dependencies and protected host policies. The obsolete `admit_feed` execution
+resource was replaced by `advertise`; the service fixture likewise grants only
+`execute` and `advertise`. The supervisor composition mirrors the production
+policy exposure, policy admission, replica admission, name lifecycle and
+foreign-name publication boundaries. The broad probe controller policy remains
+confined to the test coordinator and is not attached to the supervisor.
+
+The staging helper now freezes the current shared protocol libraries once,
+gives each node its own approvals, node and sync database, and sends a typed
+sibling-forgery request through the current wire decoder. `TestHiveSupervisors`,
+`TestHiveSupervisorFeeds` and `TestHiveSupervisorServiceBootstrap` pass together
+under the renewal runtime. The complete feed journey also passed three
+additional consecutive runs. This closes the stale-fixture failure recorded by
+the production duplication audit; production behavior is unchanged.
