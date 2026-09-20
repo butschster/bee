@@ -88,7 +88,14 @@ entries:
     actions: [funcs.call]
     resources: [bee.gateway:address, bee.gateway:open,
       bee.harness.launch:resolve, bee.harness.launch:start,
-      bee.threads.service:create, bee.threads.service:get, bee.threads.service:read_after]
+      bee.threads.service:create, bee.threads.service:get, bee.threads.service:leave,
+      bee.threads.service:read_after]
+    effect: allow
+- name: recheck_policy
+  kind: security.policy
+  policy:
+    actions: [process.listen, process.send]
+    resources: '*'
     effect: allow
 - name: seed
   kind: process.lua

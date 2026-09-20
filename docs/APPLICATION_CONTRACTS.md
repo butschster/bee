@@ -106,9 +106,17 @@ adopts or removes a different membership revision. Live acceptance pauses the
 host after the revoke row commits and before its broker reply, observes the old
 application still present, crashes the runtime, and proves the next boot
 completes cleanup without restoring the revoked checkpoint. Compatible
-execution replacement retains the logical delegation, while the old launch
-token and generation cease to authenticate; live replacement credential
-acceptance remains required before that claim is release evidence.
+execution replacement retains the logical delegation. While its old producer
+is retiring, a request receives `UNCERTAIN` rather than running against stale
+definition bytes or revoking the still-valid binding. Removing the membership
+through the real thread owner makes the next facade request return `DENIED`,
+durably revokes and cleans the binding, and a restart neither rejoins nor
+restores that instance; an unchanged sibling remains active and proves a fresh
+read from its new execution. An explicit close that races already-committed
+revocation proceeds without waiting for the independent membership cleanup.
+The old launch token and generation cease to authenticate across compatible
+replacement; live replacement credential acceptance remains required before
+that claim is release evidence.
 
 The admitted icon is copied into the window's presentation state. Settings can
 select compact icon tabs; the taskbar clips icons to two terminal cells and falls

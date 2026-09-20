@@ -55,7 +55,8 @@ def bind_admission(project):
     document = yaml.safe_load(index.read_text())
     admission = next(entry for entry in document["entries"] if entry["name"] == "application_admission")
     admission["bindings"].append({"definition_id": DEFINITION_ID,
-                                  "policies": ["bee:ordinary_app_subsystem_boundary"],
+                                  "policies": ["bee:ordinary_app_subsystem_boundary",
+                                               "bee.app_open_probe:recheck_policy"],
                                   "thread_access": "observe_post"})
     index.write_text(yaml.safe_dump(document, sort_keys=False))
 
@@ -260,12 +261,17 @@ def run_open_probe(project, directory, packed=False, pack_file=None):
     assert report["unapproved_refused"] is True and report["agent_exited"] is True, report
     assert report["first_thread_proof"]["instance_id"] == report["first_instance"], report
     assert report["second_thread_proof"]["instance_id"] == report["second_instance"], report
+    assert report["removed_instance"] == report["first_instance"] and report["removed_access"] == "denied", report
+    assert report["surviving_instance"] == report["second_instance"] and report["surviving_access"] == "active", report
     assert report["direct_sender_refused"] is True, report
     restarted = Desktop(directory, packed=packed, project=project, pack_file=pack_file)
     try:
         restarted.wait("APP JOURNEY DELIVERED", timeout=COLD_BOOT)
         restarted.wait("Count: 1")
         restarted.wait("Saved: 1")
+        restarted.wait("Access: pending")
+        restarted.key(b"r")
+        restarted.wait("Access: active")
         restarted.quit()
     finally:
         restarted.close()
@@ -288,6 +294,25 @@ def binding_rows(root, instance_ids):
             tuple(instance_ids)).fetchall()
     return {instance_id: (state, cleanup_pending)
             for instance_id, state, cleanup_pending in rows}
+
+
+def binding_records(root, instance_ids):
+    with sqlite3.connect(Path(root) / "workspace.db") as db:
+        rows = db.execute(
+            "SELECT instance_id, thread_id, actor_id, state, membership_revision, cleanup_pending "
+            "FROM workspace_application_thread_bindings "
+            f"WHERE instance_id IN ({','.join('?' for _ in instance_ids)}) ORDER BY instance_id",
+            tuple(instance_ids)).fetchall()
+    return {row[0]: row[1:] for row in rows}
+
+
+def thread_members(root, actor_ids):
+    with sqlite3.connect(Path(root) / "threads.db") as db:
+        rows = db.execute(
+            "SELECT actor, revision, active FROM bee_thread_members "
+            f"WHERE actor IN ({','.join('?' for _ in actor_ids)}) ORDER BY actor",
+            tuple(actor_ids)).fetchall()
+    return {actor: (revision, active) for actor, revision, active in rows}
 
 
 def wait_binding(root, instance_ids, predicate, timeout=5):
@@ -322,11 +347,13 @@ def revoke_crash_recovery(project, source_root, report, destination):
     host.write_text(original.replace(
         anchor,
         anchor + "            if value and not operation_error then while true do time.sleep(\"1s\") end end\n"))
-    instance_ids = [report["first_instance"], report["second_instance"]]
+    instance_ids = [report["surviving_instance"]]
     ui = Desktop(destination, project=project)
     try:
         ui.wait("APP JOURNEY DELIVERED", timeout=COLD_BOOT)
-        assert all(value == ("active", 0) for value in binding_rows(destination, instance_ids).values())
+        initial = binding_rows(destination, instance_ids)
+        assert set(initial) == set(instance_ids) and all(
+            value == ("active", 0) for value in initial.values()), initial
         ui.window_control("×")
         revoked = wait_binding(
             destination, instance_ids,
@@ -339,10 +366,21 @@ def revoke_crash_recovery(project, source_root, report, destination):
 
     restarted = Desktop(destination, project=project)
     try:
-        restarted.wait("APP JOURNEY DELIVERED", timeout=COLD_BOOT)
+        restarted.wait("No applications open", timeout=COLD_BOOT)
         wait_binding(destination, instance_ids,
                      lambda rows: revoked if rows.get(revoked) == ("revoked", 0) else None)
         assert revoked not in saved_instances(destination)
+        # Catalog readiness is the user-visible owner-ready boundary; the
+        # empty desktop can render before all startup services settle.
+        deadline = time.monotonic() + COLD_BOOT
+        while True:
+            restarted.open_start()
+            if TITLE in restarted.text():
+                restarted.key(b"\x1b")
+                break
+            restarted.key(b"\x1b")
+            assert time.monotonic() < deadline, restarted.text()
+            restarted.pump(.1)
         restarted.quit()
     finally:
         restarted.close()
@@ -379,6 +417,21 @@ def exercise():
         open_source_root.mkdir()
         copy_activation(folder, open_source_root)
         open_source = run_open_probe(project, open_source_root)
+
+        removed = open_source["removed_instance"]
+        surviving = open_source["surviving_instance"]
+        assert removed == open_source["first_instance"] and surviving == open_source["second_instance"], open_source
+        assert open_source["removed_access"] == "denied" and open_source["surviving_access"] == "active", open_source
+        records = binding_records(open_source_root, [removed, surviving])
+        assert set(records) == {removed, surviving}, records
+        assert records[removed][2:] == ("revoked", records[removed][3], 0), records
+        assert records[surviving][2] == "active" and records[surviving][4] == 0, records
+        surviving_membership = records[surviving][3]
+        assert isinstance(surviving_membership, int) and surviving_membership > 0, records
+        actors = {instance: records[instance][1] for instance in (removed, surviving)}
+        members = thread_members(open_source_root, list(actors.values()))
+        assert members[actors[removed]][1] == 0 and members[actors[surviving]][1] == 1, members
+        assert removed not in saved_instances(open_source_root) and surviving in saved_instances(open_source_root)
 
         revoke_crash_recovery(project, open_source_root, open_source,
                               folder / "open-revoke-crash")

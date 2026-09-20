@@ -7879,7 +7879,7 @@ second approval and exits while both applications remain live.
 
 Each app has only the broker message facade. Both complete `subscribe`, `post`,
 `read`, `page` and `ack_page` against the initiating thread and report a stable
-host-derived actor. The UI reaches `Thread: ok`; checkpoint mutation reaches
+host-derived actor. The UI reaches `Access: active`; checkpoint mutation reaches
 `Count: 1 / Saved: 1`; cold restart restores the state. Source and packed
 results match. The host-side negative probe also proves that an ordinary caller
 cannot register the protected carrier identity or send a successful direct open
@@ -7891,7 +7891,7 @@ PID lookup is bound before thread requests can call it, removing the live
 `attempt to call a non-function object` crash. Checkpoint acknowledgement is a
 best-effort send to the monitored broker, so an already exited broker cannot
 hide the original failure. Lifecycle recovery across the durable revoke fence
-is still awaiting its separate live acceptance; this entry does not claim it.
+was proved in the following checkpoint.
 Global Bee remains unchanged.
 
 ## 2026-09-20 — revoke crash recovery proved live
@@ -7910,5 +7910,32 @@ starting its broker. A matching revoked binding removes the checkpoint
 durably; a binding whose thread or definition differs from the checkpoint is
 treated as corruption. Ordinary unbound checkpoints remain unchanged. The
 source and packed governed agent journey, including the new source-only crash
-injection, passes. Changed-membership and compatible-replacement live cases are
-still separate acceptance work. Global Bee remains unchanged.
+injection, passes. Compatible-replacement credential acceptance is still
+separate work. Global Bee remains unchanged.
+
+## 2026-09-20 — changed thread membership fenced live
+
+The source and packed App Journey now use the real initiating thread owner to
+remove the first of two stable application actors at the exact current head
+revision. Both executions then receive an explicit fixture-local trigger for an
+ordinary broker-facade read. The removed member receives `DENIED`; the sibling
+succeeds. Durable evidence requires the first binding to be revoked with cleanup
+complete, its Threads member inactive and its checkpoint absent, while the
+sibling binding and membership revision remain active.
+
+On restart only the sibling returns. Its UI begins at `Access: pending` even
+though the prior full facade proof is checkpointed; a fresh read from the new
+execution is required before it paints `Access: active`. The removed membership
+stays inactive and is never silently adopted or rejoined. The crash-after-fence
+case now starts from that exact surviving binding and also requires the complete
+expected row set, avoiding a vacuous partial-row assertion.
+
+Astra's review exposed two production races while this case was being closed.
+An authenticated retiring producer now receives `UNCERTAIN` during an exact
+compatible replacement instead of revoking valid delegation or executing under
+stale bytes. A changed access binding or changed replacement target still denies
+and revokes. Explicit close also proceeds immediately after a revoke is durable,
+including an exited replacement, while the existing coordinator finishes
+membership cleanup independently. Strict lint, all 1,172 unit tests and the full
+source/packed App Journey pass. Compatible-replacement token/generation evidence
+remains the next bounded slice. Global Bee remains unchanged.

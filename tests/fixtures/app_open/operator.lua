@@ -18,6 +18,8 @@ local POLICY = "app-open-runtime"
 local THREAD = "open-probe-thread"
 local AGENT = "bee.app_open_probe:managed_agent"
 local RESULT = "bee.app_open_probe.operator.result"
+local RECHECK = "bee.app_journey_probe.recheck"
+local RECHECK_RESULT = "bee.app_journey_probe.recheck.result"
 
 local function object(value: unknown): Object?
     return bounds.object(value)
@@ -231,6 +233,53 @@ local function await_proofs(workspace_id: string, action_id: string, attempt_id:
         .. " applications=" .. tostring(proof_count) .. " carrier=" .. carrier_report())
 end
 
+local function revoke_first_and_recheck(workspace_id: string, proof: Object): Object
+    local first = object(proof.first_thread_proof)
+    local second = object(proof.second_thread_proof)
+    local first_instance, second_instance = first and bounds.id(first.instance_id), second and bounds.id(second.instance_id)
+    local first_pid, second_pid = first and bounds.id(first.execution_pid), second and bounds.id(second.execution_pid)
+    if not first_instance or not second_instance or not first_pid or not second_pid then
+        error("application recheck identities are missing")
+    end
+    local owner = assert(call("bee.threads.service:get", {thread_id = THREAD}))
+    local summary = object(owner.summary)
+    local revision = summary and bounds.count(summary.revision)
+    if not revision or revision < 1 then error("application thread head is missing") end
+    local actor = assert(thread_binding.actor(workspace_id, first_instance))
+    local left, leave_error = call("bee.threads.service:leave", {thread_id = THREAD,
+        idempotency_key = "remove-first-application", member_id = actor, expected_revision = revision})
+    if not left then error("remove first application member: " .. tostring(leave_error)) end
+
+    local replies = assert(process.listen(RECHECK_RESULT, {message = true}))
+    assert(process.send(first_pid, RECHECK, {}))
+    assert(process.send(second_pid, RECHECK, {}))
+    local found: {[string]: Object} = {}
+    local deadline = time.after("10s")
+    while not found[first_instance] or not found[second_instance] do
+        local selected = channel.select({replies:case_receive(), deadline:case_receive()})
+        if not selected.ok or selected.channel == deadline then
+            process.unlisten(replies)
+            error("application membership rechecks timed out")
+        end
+        local value = object(selected.value:payload():data())
+        local instance_id = value and bounds.id(value.instance_id)
+        if instance_id and (tostring(selected.value:from()) == first_pid or tostring(selected.value:from()) == second_pid) then
+            found[instance_id] = value
+        end
+    end
+    process.unlisten(replies)
+    if found[first_instance].access ~= "denied" or found[first_instance].code ~= "DENIED"
+        or found[second_instance].access ~= "active" or found[second_instance].code ~= "" then
+        error("application membership rechecks differ: " .. json.encode(found))
+    end
+    proof.removed_instance = first_instance
+    proof.surviving_instance = second_instance
+    proof.removed_actor = actor
+    proof.removed_access = "denied"
+    proof.surviving_access = "active"
+    return proof
+end
+
 local function execute(workspace_id: string, view_id: string, instance_id: string): Object
     local started = start_agent(workspace_id, view_id, instance_id)
     local action_id, attempt_id = bounds.id(started.action_id), bounds.id(started.attempt_id)
@@ -243,7 +292,7 @@ local function execute(workspace_id: string, view_id: string, instance_id: strin
     local approved, approval_error = approve(workspace_id, THREAD, "bee.app_open.operator", action_id, attempt_id, carrier)
     if not approved then error(tostring(approval_error or "app-open approval failed")) end
     wait_carrier(carrier)
-    return await_proofs(workspace_id, action_id, attempt_id)
+    return revoke_first_and_recheck(workspace_id, await_proofs(workspace_id, action_id, attempt_id))
 end
 
 local function main()

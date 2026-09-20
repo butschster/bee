@@ -174,14 +174,23 @@ opens two distinct admitted application instances without another approval and
 exits while both applications remain live. Each application uses only its
 broker-bound facade to subscribe, post, read, page and acknowledge a page on the
 originating thread; the host supplies the stable application actor and binding
-identity. The UI reaches `Thread: ok`, checkpoint mutation reaches `Count: 1 /
-Saved: 1`, and cold restart restores the application state. The workspace host
+identity. The UI reaches `Access: active`, checkpoint mutation reaches `Count: 1 /
+Saved: 1`, and cold restart restores the application state but resets access
+evidence to pending until a fresh facade read succeeds. The workspace host
 uses the originating agent view's display assignment, so tool arguments cannot
 choose a foreign workspace, display, thread or application actor. Source and
 packed outcomes match. A live source recovery case pauses the workspace host
 after the durable revoke commit and before the broker can issue Threads leave:
 the application remains visible at the fence, a process crash follows, and the
 next boot completes cleanup without restoring the revoked checkpoint. The tool
+journey also has the real thread owner remove one of two application members.
+That app's next ordinary read is denied and its binding is durably revoked;
+the sibling reads successfully, retains the exact membership revision, and
+performs another fresh read after restart while the removed instance stays
+inactive and absent. A compatible replacement race now returns `UNCERTAIN` to
+the retiring producer without revoking valid delegation, and explicit close no
+longer waits on already-durable independent cleanup. Live replacement token and
+generation acceptance remains unfinished. The tool
 remains host-admitted rather than enabled in every profile. Global Bee is
 unchanged.
 
