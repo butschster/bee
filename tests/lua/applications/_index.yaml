@@ -53,6 +53,7 @@ entries:
   imports:
     protocol: bee.applications:open_protocol
     contract: bee.protocol:application
+    test: wippy.test:test
 - name: thread_protocol_test
   kind: function.lua
   source: file://thread_protocol_test.lua

@@ -11,6 +11,9 @@ local function reply(actor: string, role: string, active: boolean): {[string]: u
         revision = 7, head_sequence = 4, owner_id = "agent-1", created_at = "2026-09-20T10:11:12.123Z"},
         membership = {member_id = actor, role = role, revision = 6, active = active}}}
 end
+local function failure(code: string): {[string]: unknown}
+    return {ok = false, replayed = false, error = {code = code, message = "thread result", retryable = false}}
+end
 
 local function define_tests()
     test.describe("Application thread binding", function()
@@ -33,6 +36,34 @@ local function define_tests()
             test.is_nil(binding.application_get(reply("bee.application:" .. WORKSPACE .. ":app-1", "participant", false), value(), WORKSPACE))
             local closed = reply("agent-1", "owner", true); closed.value.summary.state = "closed"
             test.is_nil(binding.owner_get(closed, value(), WORKSPACE))
+            test.eq(binding.owner_head(closed, value(), WORKSPACE), 7)
+            test.is_nil(binding.owner_head(reply("agent-1", "participant", true), value(), WORKSPACE))
+        end)
+
+        test.it("distinguishes active, absent and unknown application membership", function()
+            local active = binding.application_status(reply("bee.application:" .. WORKSPACE .. ":app-1", "participant", true), value(), WORKSPACE)
+            test.eq(active.state, "active")
+            test.eq(active.head_revision, 7)
+            test.eq(active.membership_revision, 6)
+
+            local absent = binding.application_status(failure("DENIED"), value(), WORKSPACE)
+            test.eq(absent.state, "absent")
+            test.is_nil(absent.head_revision)
+            absent = binding.application_status(failure("NOT_FOUND"), value(), WORKSPACE)
+            test.eq(absent.state, "absent")
+            local inactive = binding.application_status(reply("bee.application:" .. WORKSPACE .. ":app-1", "participant", false), value(), WORKSPACE)
+            test.eq(inactive.state, "absent")
+            test.eq(inactive.head_revision, 7)
+            test.eq(inactive.membership_revision, 6)
+
+            local unknown = binding.application_status(failure("BUSY"), value(), WORKSPACE)
+            test.eq(unknown.state, "unknown")
+            unknown = binding.application_status(nil, value(), WORKSPACE)
+            test.eq(unknown.state, "unknown")
+            local malformed = reply("bee.application:" .. WORKSPACE .. ":app-1", "participant", true)
+            malformed.value.membership.member_id = "other"
+            unknown = binding.application_status(malformed, value(), WORKSPACE)
+            test.eq(unknown.state, "unknown")
         end)
 
         test.it("rejects malformed replies, identities, revisions and extra fields", function()

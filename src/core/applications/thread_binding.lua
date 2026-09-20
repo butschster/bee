@@ -11,6 +11,7 @@ type Reply = {ok: boolean, value?: unknown, replayed: boolean,
 type Binding = {instance_id: string, thread_id: string, actor_id: string,
     role: "participant", initiating_owner_id: string}
 type Membership = {head_revision: integer, membership_revision: integer}
+type MembershipStatus = {state: "active" | "absent" | "unknown", head_revision: integer?, membership_revision: integer?}
 
 local M = {}
 local MAX_WORKSPACE_ID = 32
@@ -75,15 +76,16 @@ function M.reply(value: unknown): Reply?
         error = {code = checked_code, message = checked_message, retryable = failure.retryable :: boolean}}
 end
 
-local function get_value(reply: unknown, thread_id: string): Object?
+local function get_value(reply: unknown, thread_id: string, allow_closed: boolean?): Object?
     local decoded = M.reply(reply)
     local input = decoded and decoded.ok and object(decoded.value)
     if not input or not exact(input, {"summary", "membership"}) then return nil end
     local summary, member = object(input.summary), object(input.membership)
     if not summary or not member or not exact(summary, {"thread_id", "title", "state", "revision", "head_sequence", "owner_id", "created_at"})
         or not exact(member, {"member_id", "role", "revision", "active"}) then return nil end
+    local valid_state = summary.state == "open" or (allow_closed == true and summary.state == "closed")
     if summary.thread_id ~= thread_id or not bounds.line(summary.title, bounds.MAX_TITLE_BYTES)
-        or summary.state ~= "open" or not revision(summary.revision)
+        or not valid_state or not revision(summary.revision)
         or not bounds.cursor(summary.head_sequence) or not bounds.id(summary.owner_id) or not bounds.timestamp(summary.created_at)
         or not bounds.id(member.member_id) or (member.role ~= "owner" and member.role ~= "participant" and member.role ~= "observer")
         or not revision(member.revision) or type(member.active) ~= "boolean" then return nil end
@@ -93,23 +95,59 @@ end
 function M.owner_get(reply: unknown, value: unknown, workspace_id: unknown): integer?
     local selected = binding(value, workspace_id)
     if not selected then return nil end
-    local result = get_value(reply, selected.thread_id)
+    local result = get_value(reply, selected.thread_id, false)
     local summary, member = result and object(result.summary), result and object(result.membership)
     if not summary or not member or summary.owner_id ~= selected.initiating_owner_id
         or member.member_id ~= selected.initiating_owner_id or member.role ~= "owner" or member.active ~= true then return nil end
     return revision(summary.revision)
 end
 
-function M.application_get(reply: unknown, value: unknown, workspace_id: unknown): Membership?
+-- Cleanup may still need the thread head after its owner closed the thread.
+-- This decoder only proves the owner/head identity; callers must still use
+-- the ordinary leave operation, whose authority and state checks remain in
+-- the Threads service. It is never used to authorize a new join.
+function M.owner_head(reply: unknown, value: unknown, workspace_id: unknown): integer?
     local selected = binding(value, workspace_id)
     if not selected then return nil end
-    local result = get_value(reply, selected.thread_id)
+    local result = get_value(reply, selected.thread_id, true)
     local summary, member = result and object(result.summary), result and object(result.membership)
-    if not summary or not member or member.member_id ~= selected.actor_id
-        or member.role ~= "participant" or member.active ~= true then return nil end
+    if not summary or not member or summary.owner_id ~= selected.initiating_owner_id
+        or member.member_id ~= selected.initiating_owner_id or member.role ~= "owner" or member.active ~= true then return nil end
+    return revision(summary.revision)
+end
+
+function M.application_status(reply: unknown, value: unknown, workspace_id: unknown): MembershipStatus
+    local selected = binding(value, workspace_id)
+    if not selected then return {state = "unknown", head_revision = nil, membership_revision = nil} end
+    local decoded = M.reply(reply)
+    if not decoded then return {state = "unknown", head_revision = nil, membership_revision = nil} end
+    if not decoded.ok then
+        local failure = decoded.error
+        if failure and (failure.code == "DENIED" or failure.code == "NOT_FOUND") then
+            return {state = "absent", head_revision = nil, membership_revision = nil}
+        end
+        return {state = "unknown", head_revision = nil, membership_revision = nil}
+    end
+    local result = get_value(reply, selected.thread_id, false)
+    local summary, member = result and object(result.summary), result and object(result.membership)
+    if not summary or not member then return {state = "unknown", head_revision = nil, membership_revision = nil} end
     local head_revision, membership_revision = revision(summary.revision), revision(member.revision)
-    if not head_revision or not membership_revision then return nil end
-    return {head_revision = head_revision, membership_revision = membership_revision}
+    if not head_revision or not membership_revision then
+        return {state = "unknown", head_revision = nil, membership_revision = nil}
+    end
+    if member.member_id ~= selected.actor_id then
+        return {state = "unknown", head_revision = nil, membership_revision = nil}
+    end
+    if member.role ~= "participant" or member.active ~= true then
+        return {state = "absent", head_revision = head_revision, membership_revision = membership_revision}
+    end
+    return {state = "active", head_revision = head_revision, membership_revision = membership_revision}
+end
+
+function M.application_get(reply: unknown, value: unknown, workspace_id: unknown): Membership?
+    local status = M.application_status(reply, value, workspace_id)
+    if status.state ~= "active" or not status.head_revision or not status.membership_revision then return nil end
+    return {head_revision = status.head_revision, membership_revision = status.membership_revision}
 end
 
 function M.get_request(value: unknown, workspace_id: unknown): Object?
