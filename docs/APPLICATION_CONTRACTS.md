@@ -286,9 +286,15 @@ work. An application reaches a subsystem's store only inside that subsystem's
 methods, which attach their own store policy; `bee:workspace_storage_boundary`
 denies the stores no method may open on an application's behalf, so a store
 reached through an owner's methods (threads, approvals) is not listed there.
-Every local desktop application acts as the client's actor (`bee.local`);
-admission grants an application calls, not an identity of its own. Native execution requires OS-level confinement before admitting untrusted
-shell commands or external agents. TTY capability isolation is not filesystem isolation.
+Every broker-launched local desktop application receives a host-created actor.
+Its stable ID derives from the trusted workspace ID and logical application
+instance ID, never from application input. Bounded actor metadata carries
+`workspace_id`, `definition_id`, `definition_revision` and
+`execution_generation`; a compatible producer replacement keeps the ID and
+advances only the generation. Admission still selects scopes and capabilities:
+metadata does not authorize calls. Native execution requires OS-level
+confinement before admitting untrusted shell commands or external agents. TTY
+capability isolation is not filesystem isolation.
 
 ## Durable checkpoint and restore
 

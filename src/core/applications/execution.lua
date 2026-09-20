@@ -5,6 +5,7 @@ local security = require("security")
 type Launch = {
     definition_id: string,
     scope: security.Scope,
+    actor: security.Actor,
     workspace_pid: string,
     workspace_id: string,
     instance_id: string,
@@ -20,7 +21,7 @@ type Result = {pid: string?, error_code: string, error: string}
 local M = {}
 
 function M.start(grant: string, launch: Launch): Result
-    local pid, spawn_error = process.with_options({terminal = grant}):with_scope(launch.scope)
+    local pid, spawn_error = process.with_options({terminal = grant}):with_actor(launch.actor):with_scope(launch.scope)
         :spawn_monitored(launch.definition_id, "bee:workers", {version = 1,
             broker_pid = tostring(process.pid()), workspace_pid = launch.workspace_pid,
             workspace_id = launch.workspace_id, instance_id = launch.instance_id,
