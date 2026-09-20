@@ -153,6 +153,14 @@ entries:
   imports:
     test: wippy.test:test
     artifact: bee.governance:artifact
+- name: application_admission_test
+  kind: function.lua
+  source: file://application_admission_test.lua
+  method: run
+  meta: {type: test, suite: bee}
+  imports:
+    test: wippy.test:test
+    application_admission: bee.governance:governed_application_admission
 - name: materializer_test
   kind: function.lua
   source: file://materializer_test.lua

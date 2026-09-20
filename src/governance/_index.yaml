@@ -54,6 +54,13 @@ entries:
   modules: [hash, json]
   imports:
     canonical: bee.sync:canonical
+- name: governed_application_admission
+  kind: library.lua
+  source: file://application_admission.lua
+  modules: [hash]
+  imports:
+    canonical: bee.sync:canonical
+    bounds: bee.threads.records:bounds
 - name: materializer
   kind: library.lua
   source: file://materializer.lua
