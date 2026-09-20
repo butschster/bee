@@ -7687,3 +7687,24 @@ shutdown timeout after the Agy child exits 0 and placement records cleanup
 complete. The command exits 0 and the later source restart, recovery and
 publication pass, but this is retained as a separate headless runtime shutdown
 defect; the evidence is not described as a clean shutdown proof.
+
+### 2026-09-20 Codex: compact work stays visible and the UI reference is exact
+
+Managed agents now receive the exact manifest, process and pure-view source of
+Bee's runnable UI Guide in the offline corpus. The prose reference and resident
+example therefore describe the same revision without granting agents a broader
+Hub or registry read. Corpus regeneration remains reproducible at 163 documents
+and 2,159,745 bytes.
+
+Two hidden-mode defects are fixed. The Modules editor remains visible and modal
+after a resize below 28×14, with no underlying page hit targets exposed, and the
+Agent profile form edits a named Codex configuration profile from its own value
+instead of the persistent instructions field. Timeline compact rows now lead
+with the message or operation and a short state at 20 and 40 columns; sequence,
+kind, source, producer, cursor, lease and owner incarnation remain available in
+Details. Hostile control text stays inert and every row and hit remains bounded.
+
+`make agent-corpus-check` passes. Focused Timeline format/view acceptance passes,
+and the complete candidate-runtime unit gate passes 1,145/1,145 cases with only
+the two known interprocedural fixpoint warnings. The unrelated untracked
+`modules/bee-registry-planner/` directory remains untouched.
