@@ -18,7 +18,7 @@ type Context = {node_id: string, registry_revision: integer, registry_digest: st
     packages: {[string]: boolean}, namespaces: {[string]: boolean}, kinds: {[string]: boolean}, databases: {[string]: boolean},
     grants: {[string]: boolean}, modules: {[string]: boolean},
     database_bindings: {[string]: DatabaseBinding}?,
-    entries: {[string]: Entry}, applied: {[string]: Migration}, applied_databases: {[string]: DatabaseEvidence}?, exact_expansion: boolean,
+    entries: {[string]: Entry}, installed_entries: {[string]: Entry}?, applied: {[string]: Migration}, applied_databases: {[string]: DatabaseEvidence}?, exact_expansion: boolean,
     migration_barrier: boolean}
 type Diagnostic = {code: string, target: string, message: string, remedy: string}
 type Report = {schema_revision: string, plan_digest: string, destination_node: string,
@@ -364,6 +364,13 @@ function M.check(candidate: Candidate, context: Context): (Report?, string?)
     end
     local final: {[string]: Entry} = {}
     for id, item in pairs(context.entries) do final[id] = item end
+    -- The selected private overlay is deliberately absent from `entries`: it
+    -- cannot be part of the external-base approval digest or applying the
+    -- approved overlay would invalidate its own evidence. It is still part of
+    -- the installed state this complete-set update replaces, so retain it for
+    -- final-state reference validation only.
+    local installed: {[string]: Entry} = context.installed_entries or {}
+    for id, item in pairs(installed) do final[id] = item end
     -- Updates replace the complete owned set; removed definitions do not remain
     -- available merely because they existed in the pre-update registry.
     for id, item in pairs(final) do if artifacts[item.package] then final[id] = nil end end
@@ -429,7 +436,8 @@ function M.check(candidate: Candidate, context: Context): (Report?, string?)
     -- destination's standing state and is diagnosed where it is owned.
     for id, item in pairs(final) do
         for _, reference in ipairs(item.references) do
-            if not final[reference] and (seen[id] or context.entries[reference] ~= nil) then
+            if not final[reference] and (seen[id] or context.entries[reference] ~= nil
+                or installed[reference] ~= nil) then
                 issue("DANGLING_REFERENCE", id, "missing final-state target " .. reference, "repair the reference or include its target")
             end
         end

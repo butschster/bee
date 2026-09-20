@@ -105,6 +105,19 @@ local function define_tests()
             test.is_true(materializer.matches_with(api(state), "bee.governance:overlay", {}) == true)
         end)
 
+        test.it("treats empty artifact and registry metadata as the same object", function()
+            local state: State = {entries = { ["app:item"] = {
+                id = "app:item", kind = "registry.entry", data = {value = true},
+                meta = table.create(0, 1)}}, generation = 1, conflicts = 0}
+            local desired = {{id = "app:item", kind = "registry.entry", data = {value = true},
+                meta = table.create(1, 0)}}
+            test.is_true(materializer.matches_with(api(state), "bee.governance:overlay", desired) == true)
+            local result, result_error = materializer.reconcile_with(api(state), is_conflict,
+                "bee.governance:overlay", desired)
+            if not result then error(tostring(result_error)) end
+            test.is_false(result.changed == true)
+        end)
+
         test.it("measures and reconciles an overlay entry near the 256 KiB artifact limit", function()
             local state: State = {entries = {}, generation = 1, conflicts = 0}
             local desired = {{id = "app:large", kind = "function.lua",

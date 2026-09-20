@@ -1,5 +1,26 @@
 # Foundation status
 
+Managed application updates now pass the complete agent-to-UI journey in the
+source candidate. One real managed Agy authors v1 through Governance, a person
+reviews and approves it in App Delivery and Approvals, and the same durable
+thread authors v2. The second plan is shown as `changed` and requires its own
+approval. Applying it renews the application producer behind the existing
+viewport: logical instance, controller and observer mounts, display assignment,
+geometry and last acknowledged checkpoint remain continuous. The live window
+changes to `AGENT APP UPDATED` while retaining `Count: 1`, and a host restart
+restores both v2 and that state. Evidence is in
+`.wippy/evidence/agent-app-20260919-225922`.
+
+Runtime PR #789 at `b476104e63` supplies generation-fenced viewport renewal on
+top of the open application-model PR #787 at `3d9926aa`; Rodrigo is requested on
+#787. Bee keeps replacement state on each instance, shares one typed execution
+start path, and lets explicit close and workspace shutdown win. Strict lint,
+1,138/1,138 units, App Delivery's delayed-response UI regression, managed
+windows 5/5, source and packed App Journey, Governance workspace restart,
+production pack, and the 162-document agent corpus pass against the combined
+runtime candidate. Global standalone installation and installed smoke are the
+remaining release steps.
+
 Managed Agent first-use setup now reconciles an existing host-selected project
 or session association when the admitted root definition changes across a Bee
 deployment. The resource authority keeps exact association replays stable and

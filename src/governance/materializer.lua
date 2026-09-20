@@ -31,7 +31,10 @@ local function encoded(value: unknown): (string?, string?)
     -- The registry's author-facing snapshot always emits an empty metadata
     -- object. Treat omitted metadata in an artifact as that same canonical
     -- default; every non-default field remains byte-for-byte significant.
-    if normalized.meta == nil then normalized.meta = {} end
+    if normalized.meta == nil
+        or (type(normalized.meta) == "table" and next(normalized.meta :: table) == nil) then
+        normalized.meta = table.create(0, 1)
+    end
     local result, err = canonical.encode(normalized, artifact.MAX_BYTES)
     if not result then return nil, tostring(err or "cannot encode registry entry") end
     return result, nil

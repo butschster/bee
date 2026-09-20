@@ -16,7 +16,7 @@ local function fixture(): (preflight.Candidate, preflight.Context)
         migrations = {{id = "demo:001", target_db = "host:db", checksum = SHA, ordinal = 1}}}
     local context: preflight.Context = {node_id = "node-a", registry_revision = 7, registry_digest = SHA, policy_digest = SHA,
         packages = {["wolfy-j/demo"] = true}, namespaces = {demo = true}, kinds = {["function.lua"] = true}, databases = {["host:db"] = true},
-        entries = entries,
+        entries = entries, installed_entries = nil,
         applied = {}, grants = {}, modules = {}, exact_expansion = true, migration_barrier = false}
     return candidate, context
 end
@@ -93,7 +93,8 @@ local function define_tests()
                     policy_digest = context.policy_digest, packages = context.packages,
                     namespaces = context.namespaces, kinds = context.kinds, databases = {["demo:data"] = true},
                     grants = context.grants, modules = context.modules, database_bindings = bindings,
-                    entries = context.entries, applied = context.applied, exact_expansion = context.exact_expansion,
+                    entries = context.entries, installed_entries = context.installed_entries,
+                    applied = context.applied, exact_expansion = context.exact_expansion,
                     migration_barrier = context.migration_barrier}
                 return candidate, mapped
             end
@@ -158,6 +159,22 @@ local function define_tests()
             context.entries["host:option"].references = {"demo:retired"}
             context.entries["demo:retired"] = {id = "demo:retired", kind = "function.lua", package = "wolfy-j/demo", digest = SHA, references = {}, auto_start = false, grants = {}, modules = {}, config_objects = {}, config_lists = {}, config_empty = {}}
             test.is_true(has(checked(candidate, context), "DANGLING_REFERENCE"))
+        end)
+        test.it("validates removals against the separately installed private overlay", function()
+            local candidate, context = fixture()
+            local retained: preflight.Entry = {id = "host:option", kind = "function.lua", package = "host",
+                digest = SHA, references = {"demo:retired"}, auto_start = false, grants = {}, modules = {},
+                config_objects = {}, config_lists = {}, config_empty = {}}
+            local retired: preflight.Entry = {id = "demo:retired", kind = "function.lua", package = "wolfy-j/demo",
+                digest = SHA, references = {}, auto_start = false, grants = {}, modules = {},
+                config_objects = {}, config_lists = {}, config_empty = {}}
+            context.entries[retained.id] = retained
+            context.installed_entries = {[retired.id] = retired}
+            local report = checked(candidate, context)
+            test.is_false(report.ready)
+            test.is_true(has(report, "DANGLING_REFERENCE"))
+            candidate.entries[#candidate.entries + 1] = retired
+            test.is_true(checked(candidate, context).ready)
         end)
         test.it("preserves applied migrations and binds their baseline into the measurement", function()
             local candidate, context = fixture()

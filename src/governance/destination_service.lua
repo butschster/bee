@@ -370,11 +370,20 @@ local function plan_changes(plan_store: plans.Store, activation_store: activatio
     local base = bounds.object(context)
     if not base then return failure("BLOCKED", tostring(resolve_error or "resolve the composed base")) end
     local base_entries = bounds.object(base.entries)
+    local installed_entries = base.installed_entries == nil and {} or bounds.object(base.installed_entries)
     local base_digest = bounds.text(base.registry_digest, 64)
     local base_revision = bounds.count(base.registry_revision)
-    if not base_entries or not base_digest or base_revision == nil then
+    if not base_entries or not installed_entries or not base_digest or base_revision == nil then
         return failure("INTERNAL", "resolved composed base is malformed")
     end
+    -- Approval measures the external composition and deliberately excludes
+    -- the selected overlay, since applying that overlay must not invalidate
+    -- its own evidence. Change review compares against the separately
+    -- measured installed state as well: this update replaces that complete
+    -- owner-local set.
+    local comparison: Object = {}
+    for id, item in pairs(base_entries) do comparison[id] = item end
+    for id, item in pairs(installed_entries) do comparison[id] = item end
     local packages: Set = {}
     for _, item in ipairs(reviewed.artifacts) do packages[item.component] = true end
     local proposed: Set = {}
@@ -383,7 +392,7 @@ local function plan_changes(plan_store: plans.Store, activation_store: activatio
     local removed: {Object} = {}
     for _, item in ipairs(reviewed.entries) do
         proposed[item.id] = true
-        local existing = bounds.object(base_entries[item.id])
+        local existing = bounds.object(comparison[item.id])
         local row = entry_change({id = item.id, kind = item.kind, digest = item.digest})
         if not row then return failure("INTERNAL", "reviewed candidate entry is malformed") end
         if not existing then added[#added + 1] = row
@@ -391,7 +400,7 @@ local function plan_changes(plan_store: plans.Store, activation_store: activatio
     end
     -- An update replaces the complete owned set, so a base entry of an updated
     -- package that the candidate omits is removed by this plan.
-    for id, raw in pairs(base_entries) do
+    for id, raw in pairs(comparison) do
         local existing = bounds.object(raw)
         local package = existing and bounds.id(existing.package) or nil
         if package and packages[package] and not proposed[id] then

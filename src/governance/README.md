@@ -55,7 +55,7 @@ no code and does not mutate the workspace or frozen snapshot.
 The host links `target_db`; `BEE_GOVERNANCE_DB` selects the default SQLite path.
 Checked migration 1 owns the workspace, files, frozen copies and receipt tables.
 Capacity is bounded to eight workspaces per authenticated author and 64 per node,
-two distinct snapshots and 512 mutation receipts per workspace, in addition to
+16 distinct snapshots and 512 mutation receipts per workspace, in addition to
 the file bounds above. One Agent therefore cannot consume every authoring slot on
 the node. Exhaustion fails explicitly; there is no eviction, garbage collection
 or ownership transfer yet. Frozen content and receipts are durable; they do not imply activation,
