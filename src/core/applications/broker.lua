@@ -133,6 +133,15 @@ local function main(owner: string, initial_preferences: unknown)
     local recipient = ""
     local preferences = appearance.decode(initial_preferences) or appearance.defaults()
     local preference_waiters: {[string]: PreferenceWaiter} = {}
+    local function current_application(definition_id: string): (contract.Descriptor?, contract.Binding?, security.Scope?)
+        local current = admission.current
+        if not current then return nil, nil, nil end
+        local selected: contract.Binding? = nil
+        for _, candidate in ipairs(current.bindings) do
+            if candidate.definition_id == definition_id then selected = candidate; break end
+        end
+        return current.descriptors[definition_id], selected, current.scopes[definition_id]
+    end
     -- Admission refresh enters the same termination path as explicit close.
     -- The function is assigned below before the first refresh call.
     local transition: (Instance, lifecycle.Event) -> ()
@@ -277,11 +286,18 @@ local function main(owner: string, initial_preferences: unknown)
         local durable = durable_bindings[instance_id]
         if durable then
             if durable.state ~= "active" or durable.thread_id ~= provenance.thread_id
-                or durable.definition_id ~= descriptor.definition_id or durable.actor_id ~= actor_id then
+                or durable.definition_id ~= descriptor.definition_id or durable.actor_id ~= actor_id
+                or durable.initiating_owner_id ~= provenance.initiating_owner then
                 emit(contract.reply(req.request_id, "open", "thread_conflict", "Application instance has another thread delegation"), true)
             elseif existing and existing.state.phase == "ready" then
-                existing.thread_id = durable.thread_id
-                emit(identified(existing, "focus", req.request_id), true)
+                local get = thread_binding.get_request(durable, workspace_id)
+                local owner_reply = get and thread_call(provenance.initiating_owner, "bee.threads.service:get", get) or nil
+                if not thread_binding.owner_get(owner_reply, durable, workspace_id) then
+                    emit(contract.reply(req.request_id, "open", "permission_denied", "Only the current thread owner may open the bound application"), true)
+                else
+                    existing.thread_id = durable.thread_id
+                    emit(identified(existing, "focus", req.request_id), true)
+                end
             else
                 emit(contract.reply(req.request_id, "open", "busy", "Application binding recovery is incomplete"), true)
             end
@@ -374,6 +390,13 @@ local function main(owner: string, initial_preferences: unknown)
     local function launch_runtime(work: RuntimeOpen)
         local stored = work.stored
         if not stored or stored.state ~= "active" then fail_runtime(work, "persistence_failed", "Application thread binding did not activate"); return end
+        local current_descriptor, current_binding, current_scope = current_application(work.descriptor.definition_id)
+        if not current_descriptor or current_descriptor.definition_revision ~= work.descriptor.definition_revision
+            or not current_binding or current_binding.thread_access ~= "observe_post" or not current_scope then
+            revoke_runtime(work, "not_admitted", "Application admission changed while thread access was being admitted")
+            return
+        end
+        work.descriptor, work.binding, work.scope = current_descriptor, current_binding, current_scope
         durable_bindings[stored.instance_id] = stored
         if work.existing then
             local item = instances[work.view_id]
@@ -429,7 +452,10 @@ local function main(owner: string, initial_preferences: unknown)
         if not item or item.instance_id ~= request.instance_id or item.launch_token ~= request.launch_token
             or item.producer_generation ~= request.execution_generation then return end
         local stored = durable_bindings[item.instance_id]
-        if item.binding.thread_access ~= "observe_post" or not stored or stored.state ~= "active"
+        local current_descriptor, current_binding = current_application(item.descriptor.definition_id)
+        if not current_descriptor or current_descriptor.definition_revision ~= item.descriptor.definition_revision
+            or not current_binding or current_binding.thread_access ~= "observe_post"
+            or not stored or stored.state ~= "active"
             or stored.actor_id ~= thread_binding.actor(workspace_id, item.instance_id)
             or stored.thread_id ~= item.thread_id then
             send_thread_result(sender, request, nil, "DENIED", "Application thread access is not active")
