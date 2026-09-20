@@ -7,9 +7,9 @@
 local funcs = require("funcs")
 local registry = require("registry")
 local system = require("system")
+local env = require("env")
 local json = require("json")
 local sql = require("sql")
-local uuid = require("uuid")
 local logger = require("logger")
 local bounds = require("bounds")
 local artifact = require("artifact")
@@ -49,6 +49,16 @@ local function main(value: unknown)
     local receipts = assert(process.listen("bee.application.checkpoint_result", {message = true}))
     local thread_results = assert(process.listen("bee.application.thread.result", {message = true}))
     local rechecks = assert(process.listen("bee.app_journey_probe.recheck", {message = true}))
+    local stale_status = "n/a"
+    local operator: string? = nil
+    for _ = 1, 100 do
+        operator = process.registry.lookup("bee.app_open_probe:operator")
+        if operator then break end
+        time.sleep("20ms")
+    end
+    if not operator then error("app-open operator is unavailable") end
+    assert(process.send(operator, "bee.app_open_probe.credentials", {instance_id = launch.instance_id,
+        launch_token = launch.launch_token, execution_generation = launch.execution_generation}))
     local count = 0
     local thread_complete = false
     if launch.resume_state ~= "" then
@@ -72,6 +82,7 @@ local function main(value: unknown)
         canvas:put(1, 2, "Count: " .. tostring(count), width)
         canvas:put(1, 3, "Saved: " .. tostring(saved), width)
         canvas:put(1, 4, "Access: " .. thread_status, width)
+        canvas:put(1, 5, "Stale credentials: " .. stale_status, width)
         assert(output:present(canvas:rows()))
     end
     local function checkpoint()
@@ -252,6 +263,7 @@ local function main(value: unknown)
     end
 
     paint(); client.ready(launch); checkpoint()
+    -- APP_JOURNEY_REPLACEMENT_PROBE
     if launch.thread_id and not thread_complete then
         run_thread_probe(launch.thread_id)
         thread_complete = true
@@ -395,7 +407,8 @@ local function configure_host(workspace_id: string, local_node: string)
     local policy_entry = assert(registry.get("bee.approvals:approver_policies"))
     local policy_data = object(policy_entry.data)
     local policies = policy_data.policies :: {unknown}
-    policies[#policies + 1] = {name = APPROVAL_POLICY, approvers = {"bee.app_journey.operator"}, max_ttl_ms = 60000}
+    policies[#policies + 1] = {name = APPROVAL_POLICY,
+        approvers = {"bee.app_journey.operator", {definition_id = "bee.inbox:app"}}, max_ttl_ms = 600000}
     policy_data.policies = policies
     policy_entry.data = policy_data
 
@@ -439,7 +452,8 @@ local function main()
         workspace_id = SOURCE_WORKSPACE, expected_revision = 2, idempotency_key = "freeze-" .. SOURCE_WORKSPACE})
     local snapshot_digest = digest_of(freeze_res.digest, "frozen workspace digest")
 
-    local workspace_id = tostring(uuid.v7())
+    local workspace_id = bounds.id(env.get("bee.app_journey_probe:destination_workspace"))
+    if not workspace_id then error("destination workspace identity is unavailable") end
     local local_node = assert(system.node.id())
     configure_host(workspace_id, local_node)
 

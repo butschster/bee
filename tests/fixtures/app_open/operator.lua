@@ -20,6 +20,9 @@ local AGENT = "bee.app_open_probe:managed_agent"
 local RESULT = "bee.app_open_probe.operator.result"
 local RECHECK = "bee.app_journey_probe.recheck"
 local RECHECK_RESULT = "bee.app_journey_probe.recheck.result"
+local CREDENTIALS = "bee.app_open_probe.credentials"
+local CREDENTIALS_GET = "bee.app_open_probe.credentials.get"
+local CREDENTIALS_RESULT = "bee.app_open_probe.credentials.result"
 
 local function object(value: unknown): Object?
     return bounds.object(value)
@@ -299,13 +302,41 @@ local function main()
     local registered, register_error = process.registry.register(NAME)
     if not registered then error("register app-open operator: " .. tostring(register_error)) end
     local signals = assert(process.listen(SIGNAL, {message = true}))
+    local credentials = assert(process.listen(CREDENTIALS, {message = true}))
+    local credential_requests = assert(process.listen(CREDENTIALS_GET, {message = true}))
     local events = assert(process.events())
     local completed: {[string]: boolean} = {}
+    local saved_credentials: {[string]: Object} = {}
     while true do
-        local selected = channel.select({signals:case_receive(), events:case_receive()})
+        local selected = channel.select({signals:case_receive(), credentials:case_receive(),
+            credential_requests:case_receive(), events:case_receive()})
         if not selected.ok then break end
         if selected.channel == events then
             if selected.value.kind == process.event.CANCEL then break end
+        elseif selected.channel == credentials or selected.channel == credential_requests then
+            local recipient = tostring(selected.value:from())
+            local value = object(selected.value:payload():data())
+            local instance_id = value and bounds.id(value.instance_id)
+            if not instance_id then error("app-open operator received invalid credential signal") end
+            if selected.channel == credentials then
+                local launch_token = value and bounds.id(value.launch_token)
+                local execution_generation = value and bounds.count(value.execution_generation)
+                if not launch_token or not execution_generation or execution_generation < 1 then
+                    error("app-open operator received invalid launch credentials")
+                end
+                local previous = saved_credentials[instance_id]
+                saved_credentials[instance_id] = {instance_id = instance_id, launch_token = launch_token,
+                    execution_generation = execution_generation,
+                    previous_launch_token = previous and previous.launch_token or nil,
+                    previous_execution_generation = previous and previous.execution_generation or nil}
+            else
+                local saved = saved_credentials[instance_id]
+                if saved then
+                    assert(process.send(recipient, CREDENTIALS_RESULT, saved))
+                else
+                    assert(process.send(recipient, CREDENTIALS_RESULT, {instance_id = instance_id, error = "credentials unavailable"}))
+                end
+            end
         else
             local recipient = tostring(selected.value:from())
             local value = object(selected.value:payload():data())
@@ -327,6 +358,8 @@ local function main()
         end
     end
     process.unlisten(signals)
+    process.unlisten(credentials)
+    process.unlisten(credential_requests)
     process.registry.unregister(NAME, process.registry.LOCAL)
 end
 
