@@ -7588,10 +7588,10 @@ crosses Hive.
 Both headless nodes then stop. With the source offline, the destination desktop
 opens **Agent App** from Start, renders `AGENT APP UPDATED` and `Count: 0`, and
 acknowledges `x` as `Count: 1 / Saved: 1`. A full destination restart restores
-`Count: 1` with workspace `b7f6bce4e9a7148dbb50f96e7e543e3f` and identical
+`Count: 1` with workspace `70b79399d54542dafe4c5085f7a40b02` and identical
 view/instance identities. The retained receipt, source artifact, Hive transcript
 and five UI frames are in
-`.wippy/evidence/agent-app-hive-20260920-010634`. The combined gate took 59.544
+`.wippy/evidence/agent-app-hive-20260920-011207`. The combined gate took 60.723
 seconds. It republishes the exact agent-authored artifact from a fixture source
 runtime; it does not claim the original authoring process stayed alive as the
 publisher.

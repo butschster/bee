@@ -43,7 +43,7 @@ its own fixed policy, public destination operations and Approvals owner before
 applying the overlay. With the source stopped, the destination opens **Agent
 App** from Start, checkpoints `Count: 1 / Saved: 1`, and cold-restores `Count:
 1` under the same workspace, view and instance identities. Evidence is in
-`.wippy/evidence/agent-app-hive-20260920-010634`. This composes the previously
+`.wippy/evidence/agent-app-hive-20260920-011207`. This composes the previously
 proved authoring result with an exact-artifact fixture publisher; it does not
 claim the original authoring process remained the live publishing node.
 
