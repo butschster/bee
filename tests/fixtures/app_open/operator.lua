@@ -8,6 +8,7 @@ local time = require("time")
 local funcs = require("funcs")
 local bounds = require("bounds")
 local json = require("json")
+local registry = require("registry")
 local thread_binding = require("thread_binding")
 
 type Object = {[string]: unknown}
@@ -17,12 +18,15 @@ local SIGNAL = "bee.app_open_probe.operator.signal"
 local POLICY = "app-open-runtime"
 local THREAD = "open-probe-thread"
 local AGENT = "bee.app_open_probe:managed_agent"
+local APPLICATION = "bee.app_journey_demo:app"
 local RESULT = "bee.app_open_probe.operator.result"
 local RECHECK = "bee.app_journey_probe.recheck"
 local RECHECK_RESULT = "bee.app_journey_probe.recheck.result"
 local CREDENTIALS = "bee.app_open_probe.credentials"
 local CREDENTIALS_GET = "bee.app_open_probe.credentials.get"
 local CREDENTIALS_RESULT = "bee.app_open_probe.credentials.result"
+local ACCESS_REVOKE = "bee.app_open_probe.access.revoke"
+local ACCESS_REVOKE_RESULT = "bee.app_open_probe.access.revoke.result"
 
 local function object(value: unknown): Object?
     return bounds.object(value)
@@ -304,12 +308,13 @@ local function main()
     local signals = assert(process.listen(SIGNAL, {message = true}))
     local credentials = assert(process.listen(CREDENTIALS, {message = true}))
     local credential_requests = assert(process.listen(CREDENTIALS_GET, {message = true}))
+    local access_revocations = assert(process.listen(ACCESS_REVOKE, {message = true}))
     local events = assert(process.events())
     local completed: {[string]: boolean} = {}
     local saved_credentials: {[string]: Object} = {}
     while true do
         local selected = channel.select({signals:case_receive(), credentials:case_receive(),
-            credential_requests:case_receive(), events:case_receive()})
+            credential_requests:case_receive(), access_revocations:case_receive(), events:case_receive()})
         if not selected.ok then break end
         if selected.channel == events then
             if selected.value.kind == process.event.CANCEL then break end
@@ -328,15 +333,44 @@ local function main()
                 saved_credentials[instance_id] = {instance_id = instance_id, launch_token = launch_token,
                     execution_generation = execution_generation,
                     previous_launch_token = previous and previous.launch_token or nil,
-                    previous_execution_generation = previous and previous.execution_generation or nil}
+                    previous_execution_generation = previous and previous.execution_generation or nil,
+                    execution_pid = recipient}
             else
                 local saved = saved_credentials[instance_id]
                 if saved then
-                    assert(process.send(recipient, CREDENTIALS_RESULT, saved))
+                    assert(process.send(recipient, CREDENTIALS_RESULT, {instance_id = instance_id,
+                        launch_token = saved.launch_token, execution_generation = saved.execution_generation,
+                        previous_launch_token = saved.previous_launch_token,
+                        previous_execution_generation = saved.previous_execution_generation}))
                 else
                     assert(process.send(recipient, CREDENTIALS_RESULT, {instance_id = instance_id, error = "credentials unavailable"}))
                 end
             end
+        elseif selected.channel == access_revocations then
+            local recipient = tostring(selected.value:from())
+            local value = object(selected.value:payload():data())
+            local instance_id = value and bounds.id(value.instance_id)
+            local saved = instance_id and saved_credentials[instance_id] or nil
+            if not instance_id or not saved or saved.execution_pid ~= recipient then
+                error("access revocation sender is not the current application execution")
+            end
+            local entry = assert(registry.get("bee:application_admission"))
+            local data = object(entry.data)
+            local bindings = data and data.bindings
+            if type(bindings) ~= "table" then error("application admission bindings are unavailable") end
+            local found = false
+            for _, raw in ipairs(bindings :: {unknown}) do
+                local binding = object(raw)
+                if binding and binding.definition_id == APPLICATION then
+                    binding.thread_access = "none"; found = true
+                end
+            end
+            if not found then error("journey application admission is unavailable") end
+            local changes = registry.snapshot():changes()
+            assert(changes:update(entry))
+            local applied, apply_error = changes:apply()
+            if not applied then error("revoke application access: " .. tostring(apply_error)) end
+            assert(process.send(recipient, ACCESS_REVOKE_RESULT, {instance_id = instance_id, ok = true}))
         else
             local recipient = tostring(selected.value:from())
             local value = object(selected.value:payload():data())
@@ -360,6 +394,7 @@ local function main()
     process.unlisten(signals)
     process.unlisten(credentials)
     process.unlisten(credential_requests)
+    process.unlisten(access_revocations)
     process.registry.unregister(NAME, process.registry.LOCAL)
 end
 

@@ -7939,3 +7939,21 @@ including an exited replacement, while the existing coordinator finishes
 membership cleanup independently. Strict lint, all 1,172 unit tests and the full
 source/packed App Journey pass. Compatible-replacement token/generation evidence
 remains the next bounded slice. Global Bee remains unchanged.
+
+## 2026-09-20 — running application policy withdrawal proved live
+
+The source App Journey now changes the surviving application's protected host
+admission from `thread_access: observe_post` to `none` while its current
+execution remains live. The application requests the change through an
+authenticated fixture message; it never receives registry access. The trusted
+fixture operator verifies the sender is that instance's current execution and
+updates the host-owned binding.
+
+The same execution's next ordinary facade read returns `DENIED`. Durable
+evidence requires the application/thread binding to reach `revoked` with cleanup
+complete and the exact Threads membership to become inactive at a newer
+revision. The process remains visible until normal close, after which its
+checkpoint is absent. A cold restart shows `No applications open`, the Start
+catalog remains responsive and omits the revoked application, and the normal
+sub-second shutdown budget still passes after startup settles. The complete
+source and packed App Journey passes. Global Bee remains unchanged.

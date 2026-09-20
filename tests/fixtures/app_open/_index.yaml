@@ -79,7 +79,8 @@ entries:
 - name: operator_policy
   kind: security.policy
   policy:
-    actions: [process.registry.register, process.registry.unregister, process.listen, process.send, process.monitor]
+    actions: [process.registry.register, process.registry.unregister, process.listen, process.send, process.monitor,
+      registry.get, registry.apply, registry.update.registry.entry]
     resources: '*'
     effect: allow
 - name: operator_call_policy
@@ -121,7 +122,7 @@ entries:
   kind: process.lua
   source: file://operator.lua
   method: main
-  modules: [process, channel, time, funcs, json]
+  modules: [process, channel, time, funcs, json, registry]
   imports:
     bounds: bee.threads.records:bounds
     thread_binding: bee.applications:thread_binding

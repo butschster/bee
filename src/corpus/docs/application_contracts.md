@@ -46,6 +46,9 @@ existing execution. Removing a binding blocks new opens. An invalid declaration
 or unavailable policy clears future admission until a valid replacement can be
 loaded, without terminating existing instances. Replaying an already completed
 open may still focus that existing instance; it does not create a new execution.
+Changing a running instance's effective `thread_access` from `observe_post` to
+`none` does not terminate its process. Its next thread-facade operation is
+denied and starts durable revocation through the workspace owner.
 
 Replacement has one owner-local state on the instance. Explicit close and
 workspace shutdown cancel it. A later catalog revision cannot overwrite an
@@ -114,6 +117,11 @@ durably revokes and cleans the binding, and a restart neither rejoins nor
 restores that instance; an unchanged sibling remains active and proves a fresh
 read from its new execution. An explicit close that races already-committed
 revocation proceeds without waiting for the independent membership cleanup.
+Withdrawing `observe_post` from the protected admission binding follows the same
+facade fence without giving the application registry access: the current
+execution's next request returns `DENIED`, the binding reaches `revoked` with
+cleanup complete, and the exact Threads membership becomes inactive at a newer
+revision.
 The old launch token and generation cease to authenticate across compatible
 replacement; live replacement credential acceptance remains required before
 that claim is release evidence.
@@ -370,6 +378,9 @@ capabilities are newly created. Runtime PID strings may be reused across runtime
 boots and must never serve as persistent identities. Failed/incompatible restores
 retain their checkpoint rather than deleting it. Closing a live view-owned instance
 removes its resume record after EXIT; exiting the workspace retains it.
+A matching revoked thread binding is a restore fence: the workspace removes the
+saved application record and does not recreate or advertise that instance on
+restart.
 
 Settings checkpoints its selected pane and browsing position. Its About pane
 reports the version and source/runtime/native pins embedded in the loaded Bee

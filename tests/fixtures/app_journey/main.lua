@@ -49,6 +49,7 @@ local function main(value: unknown)
     local receipts = assert(process.listen("bee.application.checkpoint_result", {message = true}))
     local thread_results = assert(process.listen("bee.application.thread.result", {message = true}))
     local rechecks = assert(process.listen("bee.app_journey_probe.recheck", {message = true}))
+    local revocations = assert(process.listen("bee.app_open_probe.access.revoke.result", {message = true}))
     local stale_status = "n/a"
     local operator: string? = nil
     for _ = 1, 100 do
@@ -272,7 +273,7 @@ local function main(value: unknown)
     end
     while true do
         local event = channel.select({input:case_receive(), lifecycle:case_receive(), receipts:case_receive(),
-            rechecks:case_receive()})
+            rechecks:case_receive(), revocations:case_receive()})
         if not event.ok then break end
         if event.channel == lifecycle then
             if event.value.kind == process.event.CANCEL then break end
@@ -284,14 +285,25 @@ local function main(value: unknown)
             end
         elseif event.channel == rechecks then
             recheck(tostring(event.value:from()))
+        elseif event.channel == revocations then
+            local revoked: unknown = event.value:payload():data()
+            if tostring(event.value:from()) ~= operator or type(revoked) ~= "table"
+                or revoked.instance_id ~= launch.instance_id or revoked.ok ~= true then
+                error("host access update failed")
+            end
+            recheck(nil)
         elseif event.value.type == "close" then checkpoint(); break
         elseif event.value.type == "resize" then width, height = event.value.width, event.value.height; paint()
         elseif event.value.type == "key" and event.value.action ~= "release" then
             if event.value.key == "r" then recheck(nil)
+            elseif event.value.key == "d" then
+                thread_status = "revoking"; paint()
+                assert(process.send(operator, "bee.app_open_probe.access.revoke", {instance_id = launch.instance_id}))
             else count = count + 1; paint(); checkpoint() end
         end
     end
     process.unlisten(rechecks)
+    process.unlisten(revocations)
     process.unlisten(thread_results)
     output:close(); tty.stop()
 end

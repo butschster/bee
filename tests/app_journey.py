@@ -605,9 +605,33 @@ def exercise():
             assert json.loads(after_application["resume_state"])["count"] == 1, after_application
             assert after_binding == before_binding and after_member == before_member, \
                 (before_binding, after_binding, before_member, after_member)
+            replacement.key(b"d")
+            replacement.wait("Access: denied", timeout=COLD_BOOT)
+            wait_binding(open_source_root, [surviving],
+                         lambda rows: surviving if rows.get(surviving) == ("revoked", 0) else None,
+                         timeout=COLD_BOOT)
+            revoked_member = thread_members(open_source_root, [before_binding[1]])[before_binding[1]]
+            assert revoked_member[1] == 0 and revoked_member[0] > before_member[0], \
+                (before_member, revoked_member)
             replacement.quit()
         finally:
             replacement.close()
+
+        revoked_restart = Desktop(open_source_root, project=project)
+        try:
+            revoked_restart.wait("No applications open", timeout=COLD_BOOT)
+            assert surviving not in saved_instances(open_source_root)
+            assert binding_rows(open_source_root, [surviving]).get(surviving) == ("revoked", 0)
+            # The empty desktop can paint before its startup services have
+            # settled. The built-in catalog is the neutral ready boundary;
+            # the revoked application must remain absent from it.
+            revoked_restart.open_start()
+            assert TITLE not in revoked_restart.text(), revoked_restart.text()
+            revoked_restart.key(b"\x1b")
+            revoked_restart.pump(.5)
+            revoked_restart.quit()
+        finally:
+            revoked_restart.close()
 
         # No application is opened from the command line: the approved
         # definition has to be selectable from the desktop's own catalog.

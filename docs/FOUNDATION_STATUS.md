@@ -175,22 +175,26 @@ exits while both applications remain live. Each application uses only its
 broker-bound facade to subscribe, post, read, page and acknowledge a page on the
 originating thread; the host supplies the stable application actor and binding
 identity. The UI reaches `Access: active`, checkpoint mutation reaches `Count: 1 /
-Saved: 1`, and cold restart restores the application state but resets access
+Saved: 1`, and cold restart restores an actively bound application's state but resets access
 evidence to pending until a fresh facade read succeeds. The workspace host
 uses the originating agent view's display assignment, so tool arguments cannot
 choose a foreign workspace, display, thread or application actor. Source and
 packed outcomes match. A live source recovery case pauses the workspace host
 after the durable revoke commit and before the broker can issue Threads leave:
 the application remains visible at the fence, a process crash follows, and the
-next boot completes cleanup without restoring the revoked checkpoint. The tool
-journey also has the real thread owner remove one of two application members.
+next boot completes cleanup without restoring the revoked checkpoint. Separately,
+the tool journey has the real thread owner remove one of two application members.
 That app's next ordinary read is denied and its binding is durably revoked;
 the sibling reads successfully, retains the exact membership revision, and
 performs another fresh read after restart while the removed instance stays
 inactive and absent. A compatible replacement race now returns `UNCERTAIN` to
 the retiring producer without revoking valid delegation, and explicit close no
-longer waits on already-durable independent cleanup. Live replacement token and
-generation acceptance remains unfinished. The tool
+longer waits on already-durable independent cleanup. The source journey also
+withdraws `observe_post` from the surviving running app's protected admission
+binding. Its next ordinary read is denied, the binding reaches `revoked` with
+cleanup complete, its membership becomes inactive at a newer revision, and its
+checkpoint is absent; restart shows no application and Start omits it. Live
+replacement token and generation acceptance remains unfinished. The tool
 remains host-admitted rather than enabled in every profile. Global Bee is
 unchanged.
 
