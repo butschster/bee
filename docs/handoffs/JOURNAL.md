@@ -8015,3 +8015,19 @@ proposal, and records the broker-created
 is consumed. The companion scope test proves a sibling application sees
 nothing, request-supplied definition metadata is rejected, and only the
 authenticated host-selected `bee.inbox:app` definition selector is eligible.
+
+## 2026-09-20 — cleanup and private Approvals proof installed globally
+
+Source `8f0756a` is installed as executable SHA-256 `fbc7cce04840`, retaining
+runtime renewal `b476104e` and native Bee
+`v0.0.0-20260919180600-ff9810fea081`. Strict lint, 1,175 units, source and packed
+private-actor Approvals acceptance, standalone native applications, the complete
+five-profile selector and loopback-only offline cold/restart/reconnect pass.
+Warm attachment measured 0.216 seconds; the installed picker passed editing,
+unavailable launch, refresh, F12 and close without creating thread work.
+
+The six-file installer proved rollback before replacement, stopped the one
+exact prior owner on SIGTERM, preserved its complete artifact set at
+`bee-evidence/0920/global-before-cleaned-8f0756a`, and installed only verified
+artifacts. Receipt: `bee-evidence/0920/global-cleaned-8f0756a-install.json`.
+Application and Bee state databases were not copied, removed or reset.
