@@ -62,6 +62,7 @@ entries:
     arguments: bee.application:arguments
     contract: bee.protocol:application
     decode: bee.protocol:decode
+    bounds: bee.threads.records:bounds
 - name: thread_protocol
   kind: library.lua
   source: file://thread_protocol.lua
