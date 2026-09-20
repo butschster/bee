@@ -8049,3 +8049,26 @@ sibling-forgery request through the current wire decoder. `TestHiveSupervisors`,
 under the renewal runtime. The complete feed journey also passed three
 additional consecutive runs. This closes the stale-fixture failure recorded by
 the production duplication audit; production behavior is unchanged.
+
+## 2026-09-20 — governed application admission contract established
+
+Governance now owns one pure canonical contract for host-selected application
+admission carried by a governed overlay. It accepts only a definition ID, at
+most 16 distinct policy IDs and optional `none` or `observe_post` thread access;
+all other application authority remains unavailable. Bindings and policies are
+sorted, duplicate or sparse lists are refused, empty lists retain their JSON
+array shape, and one reserved registry ID is derived deterministically from the
+overlay owner.
+
+The measured record binds workspace, source, overlay owner, exact portable
+artifact digest, exact external-policy digest and normalized bindings. The
+module is pure: it reads no registry state, applies no overlay and grants no
+capability. The activation resolver will create this value from its already
+pinned registry snapshot; later milestones will freeze it in the existing
+intent, apply it atomically beside the artifact and let the application catalog
+trust only the host-owned derived record.
+
+Renewal-runtime strict lint passes with the existing desktop-lifecycle warning.
+All 1,181 unit cases pass, including five focused contract cases. Commit
+`610402f` is on `main`. The global executable remains unchanged until the
+complete dynamic admission path and its end-to-end application journey pass.
