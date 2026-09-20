@@ -29,7 +29,7 @@ hit testing across every bundled theme, and the source and packed application
 pass real terminal navigation, selection reveal, resize and singleton reopen.
 This is reference source rather than a new widget framework.
 
-This reference is installed globally from source `9c9c94a` as executable
+This reference was installed globally from source `9c9c94a` as executable
 SHA-256 `8f35ebfeaca7`. Its provenance pins runtime PR #789 at `b476104e63`
 and native Bee `v0.0.0-20260919180600-ff9810fea081`. Strict lint, all
 1,142 unit cases, the four focused stylebook cases, every-theme geometry,
@@ -153,7 +153,7 @@ the accepted append-only migration slice and its database/dependency limits.
 Its prior 1,110-test checkpoint and production pack passed; the migration
 extension is covered by the newer acceptance record above. Global Bee is unchanged.
 
-The September 19 runtime-application cut is installed globally from Bee
+The September 19 runtime-application cut was installed globally from Bee
 `c5b1dd7` as executable SHA-256 `6f4c1d074c00`. It uses runtime PR #787 at
 `3d9926aa`, which additionally migrates verified immutable artifacts
 from the runner's previous `artifact-cache/vendor` layout. This closes a real
@@ -331,7 +331,7 @@ race/vet proof passes. The candidate is not installed globally and still awaits
 the post-cut Agent and promotion gates. See
 [the runtime gate](handoffs/STATUS_RUNTIME_GATE.md).
 
-The September 13 Train A build is installed globally from production commit
+The September 13 Train A build was installed globally from production commit
 `414c03b` with executable SHA `4692e267`. The exact pinned `make check` passed
 883 Lua tests plus storage, source/pack desktop, recovery and bundled-app
 acceptance. The rebuilt executable passed native Modules/About/four-profile
@@ -739,7 +739,7 @@ actor isolation and replay using the persisted request. Source/pack application
 acceptance covers cold recovery without a local plan, cancellation, confirmation,
 status refresh, F12 and compact layouts. Strict lint and 68 focused Hub tests
 pass. The original migration source full regression also passes; the combined
-history source regression remains pending. The UI is installed globally as
+history source regression remains pending. The UI was installed globally as
 `2f3f8e5a`, preserving Agent recovery and optional machine login. Native desktop,
 Modules, Agent and real empty-history/F12 checks pass. Running nodes were retained.
 
@@ -973,7 +973,7 @@ saved-selection hints so another node cannot inherit its desktop selection. Reti
 removes the manager's cached row, catalog and session presentation; saved display
 layouts and application processes are untouched. Refresh is every five seconds
 when its directory worker is idle, so cleanup may occur later than 60 seconds.
-This change is installed globally as application source `6b2da06`; 516 Lua tests
+This change was installed globally as application source `6b2da06`; 516 Lua tests
 and native client/binary checks pass. The intermittent startup/expired-mount
 failure remains unresolved. See [current global build](handoffs/GLOBAL_BUILD.md).
 
@@ -1326,7 +1326,7 @@ It requires no upstream changes or Keeper dependency. Migration execution,
 interrupted-operation recovery and complete Modules confirmation/apply UI
 acceptance remain incomplete. Uninstalled embedded-resource listing, chunked reads
 and unchanged registry history pass against a public artifact. Basic Modules search, parameter input, F12 and
-resize pass from source and pack; this backend milestone is installed globally. See
+resize pass from source and pack; this backend milestone was installed globally. See
 [Hub installation and package reads](HUB.md) for the current contract and evidence.
 
 The shell remains the delivery focus. Hub installation, authorized overlay editing,
@@ -1377,7 +1377,7 @@ fails on the old presenter and passes on fixed source/pack; the original Process
 Manager scenario also passes. This does not fix or explain the separate retained
 node's intermittent mesh disconnection. The protected desktop storage methods and
 this presenter fix passed their combined full gate (486 tests, 519 entries) and
-are installed globally. The actual-user smoke reached the desktop in 1.568s
+were installed globally. The actual-user smoke reached the desktop in 1.568s
 cold, 0.222s on warm reconnect, and 0.219s through `bee observe`; all three
 detached in under 100 ms. See the global build handoff for exact evidence.
 
@@ -1400,7 +1400,7 @@ supplied by the trusted retained-supervisor bootstrap; unreported legacy session
 show "Not reported". This is not remote-peer health or a physical-client identity.
 The presenter performs no discovery or networking. Source/pack tests cover mouse,
 Escape, F12 and a 42×12 terminal. Hive Manager keeps readiness in view at narrow
-widths and moves addresses and full IDs to Details. The native UI build is installed globally and its executable acceptance passes,
+widths and moves addresses and full IDs to Details. The native UI build was installed globally and its executable acceptance passes,
 including stable display identity after reconnect. Hive Manager recognizes explicit
 native client-role metadata as display clients and does not query them as Bee
 services. This metadata grants no authority; names alone never establish roles.

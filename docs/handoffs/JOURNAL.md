@@ -7979,3 +7979,21 @@ The exact installed executable launched from `/mnt/c/Users/Wolfy-J`, restored
 workspace `Gentle Ember`, and opened the Agent picker with all five profiles and
 seven configured scoped tools. Escape closed the picker and Ctrl+Q detached
 cleanly without launching a provider or submitting a model turn.
+
+## 2026-09-20 — production duplication audit closed
+
+Promptmap scanned 566 production Lua and YAML files for duplicated and
+unnecessarily indirect implementation. Manual review rejected seven proposed
+policy consolidations: the similar expressions bind different principals,
+functions or execution scopes, so merging them would broaden authority. Muse's
+`gateway_tools` paths are also distinct by design: the launch decoder validates
+the carrier value while the configure method renders protected provider state.
+No byte-identical production Lua or YAML files remain.
+
+The audit found two unreachable production modules for focused deletion: the
+unindexed harness activation decoder superseded by `bee.driver:resolver`, and
+the unindexed fixed-list Hive feed admission worker superseded by catalog-driven
+policy admission. Historical global-build sections were relabeled as previous
+installs and their installation statements changed to past tense, leaving only
+the active `ca8a6cd` build described as current. The untracked registry-planner
+work remains untouched.
