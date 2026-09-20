@@ -7957,3 +7957,25 @@ checkpoint is absent. A cold restart shows `No applications open`, the Start
 catalog remains responsive and omits the revoked application, and the normal
 sub-second shutdown budget still passes after startup settles. The complete
 source and packed App Journey passes. Global Bee remains unchanged.
+
+## 2026-09-20 — live application policy release installed globally
+
+Source `ca8a6cd` is installed as executable SHA-256 `c6bbca9356c2`, using
+runtime renewal `b476104e` and native Bee
+`v0.0.0-20260919180600-ff9810fea081`. Strict production lint, 1,175 units, the
+source and packed App Journey, corpus integrity, production pack, exact
+standalone native binary and five-profile Agent selector, and offline
+cold/restart/reconnect acceptance pass. Offline warm attachment measured 0.230
+seconds.
+
+The six-file installer proved its post-replacement rollback path, stopped the
+one exact prior owner on SIGTERM, preserved its complete artifact set at
+`bee-evidence/0920/global-before-live-policy-ca8a6cd`, and installed only the
+verified binary and sidecars. Receipt:
+`bee-evidence/0920/global-live-policy-ca8a6cd-install.json`. Application and Bee
+state databases were not copied, removed or reset.
+
+The exact installed executable launched from `/mnt/c/Users/Wolfy-J`, restored
+workspace `Gentle Ember`, and opened the Agent picker with all five profiles and
+seven configured scoped tools. Escape closed the picker and Ctrl+Q detached
+cleanly without launching a provider or submitting a model turn.

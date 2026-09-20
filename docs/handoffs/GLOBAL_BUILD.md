@@ -1,5 +1,41 @@
 # Global Bee build — September 20, 2026
 
+## Current install: live application replacement and policy withdrawal
+
+Source `ca8a6cd`, executable SHA-256
+`c6bbca9356c2b31b369c254c2695808364238f9336e867b9adf591dd93c1a484`,
+is installed globally with its matching license, Go module, provenance and
+runtime-patch sidecars. It pins runtime PR #789 at `b476104e63` and native Bee
+`v0.0.0-20260919180600-ff9810fea081`.
+
+The source App Journey proves compatible replacement under the same logical
+instance, view, actor, thread, membership revision and checkpoint while the
+execution generation advances and launch token rotates. It then changes that
+running app's protected admission from `thread_access: observe_post` to `none`.
+The next facade read is denied, durable cleanup removes its exact membership and
+checkpoint, and restart leaves the desktop empty and omits the app from Start.
+
+Strict lint covers 496 production entries with only the documented
+desktop-lifecycle fixpoint warning; all 1,175 units, the source and packed App
+Journey, the 163-document offline corpus and production pack pass. The exact
+standalone passes embedded Desktop, Settings, Terminal, Modules and About, the
+five-profile Agent selector, and loopback-only cold boot, restart and retained
+reconnect. Offline acceptance measured a 0.230-second warm attach.
+
+The installer verified all six artifacts and the runtime patch archive, proved
+post-replacement rollback against a disposable set, stopped one exact prior
+owner cleanly on SIGTERM, backed up the previous global set at
+`/home/wolfy-j/wippy/bee-evidence/0920/global-before-live-policy-ca8a6cd`, and
+atomically replaced sidecars before the executable. Receipt:
+`/home/wolfy-j/wippy/bee-evidence/0920/global-live-policy-ca8a6cd-install.json`.
+Databases, profiles, conversations, workspaces, displays, credentials and
+migration ledgers were preserved.
+
+From `/mnt/c/Users/Wolfy-J`, the installed executable opened retained workspace
+`Gentle Ember`. Start opened Agent with Antigravity, Claude, Codex, Grok and Muse
+profiles and reported seven configured scoped tools. Escape closed the picker
+and Ctrl+Q detached cleanly without launching a provider or submitting a turn.
+
 ## Current install: agent-authored application delivery across Hive
 
 Source `be31299`, executable SHA-256

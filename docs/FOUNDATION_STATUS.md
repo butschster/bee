@@ -1,15 +1,21 @@
 # Foundation status
 
-Bee source `be31299` is installed globally as executable SHA-256
-`ff0113bb4674`, pinned to runtime PR #789 at `b476104e63`. The release includes
-the exact-artifact Hive application journey described below. The fresh
-standalone candidate passed embedded Settings, Terminal, Modules and About,
-all five default Agent profiles, and loopback-only cold boot, restart and
-retained-client reconnect. The installed executable itself passed the embedded
-desktop, Settings and Terminal smoke. Its six-file installer proved rollback
-before replacement and preserved the previous set at
-`bee-evidence/0920/global-before-agent-hive-be31299`; receipt:
-`bee-evidence/0920/global-agent-hive-be31299-install.json`. No application or
+Bee source `ca8a6cd` is installed globally as executable SHA-256
+`c6bbca9356c2`, pinned to runtime PR #789 at `b476104e63`. The release includes
+compatible live application replacement and per-agent thread-access withdrawal:
+the running execution observes the changed protected policy on its next facade
+call, durable revocation removes membership and its checkpoint, and restart does
+not restore or advertise the app. Strict lint, all 1,175 unit cases, source and
+packed App Journey, the 163-document corpus, production pack, embedded Settings,
+Terminal, Modules and About, all five default Agent profiles, and loopback-only
+cold boot, restart and retained-client reconnect pass. From
+`/mnt/c/Users/Wolfy-J`, the installed executable opened retained workspace
+`Gentle Ember`; Start opened Agent with all five profiles and reported seven
+configured scoped tools, then Escape and Ctrl+Q closed and detached cleanly
+without a model turn. Its six-file installer proved rollback before replacement
+and preserved the previous set at
+`bee-evidence/0920/global-before-live-policy-ca8a6cd`; receipt:
+`bee-evidence/0920/global-live-policy-ca8a6cd-install.json`. No application or
 Bee state database was copied, removed or reset.
 
 Bee now ships one canonical terminal visual language and a runnable reference.
