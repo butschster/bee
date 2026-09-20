@@ -102,11 +102,13 @@ binding store.
 Explicit close first commits the durable revoke fence and disables the facade,
 then removes the execution while membership cleanup may continue. Recovery
 treats unavailable membership state as unknown rather than absent and never
-adopts or removes a different membership revision. Compatible execution
-replacement retains the logical delegation, while the old launch token and
-generation cease to authenticate. Live crash-between-fence-and-cleanup and
-replacement credential acceptance remain required before those recovery claims
-are release evidence.
+adopts or removes a different membership revision. Live acceptance pauses the
+host after the revoke row commits and before its broker reply, observes the old
+application still present, crashes the runtime, and proves the next boot
+completes cleanup without restoring the revoked checkpoint. Compatible
+execution replacement retains the logical delegation, while the old launch
+token and generation cease to authenticate; live replacement credential
+acceptance remains required before that claim is release evidence.
 
 The admitted icon is copied into the window's presentation state. Settings can
 select compact icon tabs; the taskbar clips icons to two terminal cells and falls

@@ -178,9 +178,11 @@ identity. The UI reaches `Thread: ok`, checkpoint mutation reaches `Count: 1 /
 Saved: 1`, and cold restart restores the application state. The workspace host
 uses the originating agent view's display assignment, so tool arguments cannot
 choose a foreign workspace, display, thread or application actor. Source and
-packed outcomes match. Lifecycle recovery after a crash between the durable
-revoke fence and Threads cleanup remains a separate live acceptance gate. The
-tool remains host-admitted rather than enabled in every profile. Global Bee is
+packed outcomes match. A live source recovery case pauses the workspace host
+after the durable revoke commit and before the broker can issue Threads leave:
+the application remains visible at the fence, a process crash follows, and the
+next boot completes cleanup without restoring the revoked checkpoint. The tool
+remains host-admitted rather than enabled in every profile. Global Bee is
 unchanged.
 
 The agent-requested MCP access backend is implemented: host-declared gated

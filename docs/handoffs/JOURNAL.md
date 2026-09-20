@@ -7893,3 +7893,22 @@ best-effort send to the monitored broker, so an already exited broker cannot
 hide the original failure. Lifecycle recovery across the durable revoke fence
 is still awaiting its separate live acceptance; this entry does not claim it.
 Global Bee remains unchanged.
+
+## 2026-09-20 — revoke crash recovery proved live
+
+The source App Journey now injects one failure only into its disposable copied
+host: after `begin_revoke` commits the durable row and before the host replies to
+the broker, the host actor pauses. The test observes `revoked` with cleanup
+pending while the application remains visible, then crashes the runtime. On the
+next unmodified boot, the reducer completes Threads cleanup and the revoked
+instance is absent from the durable workspace checkpoint.
+
+The first run exposed a real recovery defect: cleanup finished, but the older
+application checkpoint was restored as a new execution. The workspace host now
+reconciles checkpoint records against immutable thread-binding tombstones before
+starting its broker. A matching revoked binding removes the checkpoint
+durably; a binding whose thread or definition differs from the checkpoint is
+treated as corruption. Ordinary unbound checkpoints remain unchanged. The
+source and packed governed agent journey, including the new source-only crash
+injection, passes. Changed-membership and compatible-replacement live cases are
+still separate acceptance work. Global Bee remains unchanged.

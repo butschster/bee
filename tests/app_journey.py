@@ -280,6 +280,74 @@ def copy_activation(source, destination):
                 origin.backup(target)
 
 
+def binding_rows(root, instance_ids):
+    with sqlite3.connect(Path(root) / "workspace.db") as db:
+        rows = db.execute(
+            "SELECT instance_id, state, cleanup_pending FROM workspace_application_thread_bindings "
+            f"WHERE instance_id IN ({','.join('?' for _ in instance_ids)}) ORDER BY instance_id",
+            tuple(instance_ids)).fetchall()
+    return {instance_id: (state, cleanup_pending)
+            for instance_id, state, cleanup_pending in rows}
+
+
+def wait_binding(root, instance_ids, predicate, timeout=5):
+    deadline = time.monotonic() + timeout
+    while True:
+        rows = binding_rows(root, instance_ids)
+        selected = predicate(rows)
+        if selected is not None:
+            return selected
+        assert time.monotonic() < deadline, rows
+        time.sleep(.02)
+
+
+def saved_instances(root):
+    with sqlite3.connect(Path(root) / "workspace.db") as db:
+        row = db.execute("SELECT value FROM workspace_state WHERE singleton = 1").fetchone()
+    assert row, "workspace checkpoint is missing"
+    return {item["instance_id"] for item in json.loads(row[0])["applications"]}
+
+
+def revoke_crash_recovery(project, source_root, report, destination):
+    """Crash after the durable revoke fence and before Threads leave.
+
+    The pause exists only in this disposable source copy. Production receives
+    no test switch or timing branch.
+    """
+    shutil.copytree(source_root, destination)
+    host = project / "src/core/host/main.lua"
+    original = host.read_text()
+    anchor = "            value, operation_error = database.thread_bindings:begin_revoke(request.value)\n"
+    assert original.count(anchor) == 1
+    host.write_text(original.replace(
+        anchor,
+        anchor + "            if value and not operation_error then while true do time.sleep(\"1s\") end end\n"))
+    instance_ids = [report["first_instance"], report["second_instance"]]
+    ui = Desktop(destination, project=project)
+    try:
+        ui.wait("APP JOURNEY DELIVERED", timeout=COLD_BOOT)
+        assert all(value == ("active", 0) for value in binding_rows(destination, instance_ids).values())
+        ui.window_control("×")
+        revoked = wait_binding(
+            destination, instance_ids,
+            lambda rows: next((instance_id for instance_id, value in rows.items()
+                               if value == ("revoked", 1)), None))
+        assert ui.process.poll() is None and "APP JOURNEY DELIVERED" in ui.text(), ui.text()
+    finally:
+        ui.close()
+        host.write_text(original)
+
+    restarted = Desktop(destination, project=project)
+    try:
+        restarted.wait("APP JOURNEY DELIVERED", timeout=COLD_BOOT)
+        wait_binding(destination, instance_ids,
+                     lambda rows: revoked if rows.get(revoked) == ("revoked", 0) else None)
+        assert revoked not in saved_instances(destination)
+        restarted.quit()
+    finally:
+        restarted.close()
+
+
 def exercise():
     with tempfile.TemporaryDirectory(prefix="bee-app-journey-") as directory, \
             patch.dict(os.environ, {"WIPPY_NODE_ID": Path(directory).name}):
@@ -311,6 +379,9 @@ def exercise():
         open_source_root.mkdir()
         copy_activation(folder, open_source_root)
         open_source = run_open_probe(project, open_source_root)
+
+        revoke_crash_recovery(project, open_source_root, open_source,
+                              folder / "open-revoke-crash")
 
         # No application is opened from the command line: the approved
         # definition has to be selectable from the desktop's own catalog.
