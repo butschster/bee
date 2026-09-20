@@ -1,5 +1,17 @@
 # Foundation status
 
+Bee source `be31299` is installed globally as executable SHA-256
+`ff0113bb4674`, pinned to runtime PR #789 at `b476104e63`. The release includes
+the exact-artifact Hive application journey described below. The fresh
+standalone candidate passed embedded Settings, Terminal, Modules and About,
+all five default Agent profiles, and loopback-only cold boot, restart and
+retained-client reconnect. The installed executable itself passed the embedded
+desktop, Settings and Terminal smoke. Its six-file installer proved rollback
+before replacement and preserved the previous set at
+`bee-evidence/0920/global-before-agent-hive-be31299`; receipt:
+`bee-evidence/0920/global-agent-hive-be31299-install.json`. No application or
+Bee state database was copied, removed or reset.
+
 Bee now ships one canonical terminal visual language and a runnable reference.
 The authored UI brand book defines semantic appearance roles, cell spacing,
 hierarchy, responsive behavior, feedback, keyboard/mouse parity and external

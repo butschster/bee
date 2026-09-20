@@ -7602,3 +7602,36 @@ while the receiver decoded it as a list and rejected the digest. All 1,142 unit
 cases, strict lint, the unchanged two-version Hive delivery/restart/update/
 rollback regression, and the combined agent-app Hive gate pass on the renewal
 runtime. The global Bee has not yet been refreshed from this source.
+
+### 2026-09-20 Codex: exact-artifact Hive application release installed
+
+The complete managed-application Hive proof is committed and pushed at
+`be31299`. It composes the retained real-Agy v2 authoring artifact, digest
+`332c8bd7f1e919c976d5f51c313286b2c7ebba7c4f72ad2a0e9aaf329acfa817`,
+with a source-only production publisher. The receiving Bee starts without the
+artifact or definition, receives immutable bytes over Hive, performs its own
+review, approval and overlay activation, opens **Agent App** through Start,
+checkpoints `Count: 1 / Saved: 1`, and cold-restores `Count: 1` with the source
+offline and the same logical view and instance identities. Retained evidence:
+`.wippy/evidence/agent-app-hive-20260920-011207`. The proof does not claim that
+the original authoring process remains the live publishing node.
+
+The first standalone attempt used `BEE_BUNDLE_MANIFEST` as though it selected
+the runtime; that variable names only the generated output. The successful
+release uses an isolated `BEE_BUILD_MANIFEST` whose only change from the checked
+in manifest is runtime `b476104e63`, with `.wippy/bin/bee-wippy-renewal` as the
+pack toolchain. The canonical release manifest remains unchanged. The candidate
+SHA-256 is
+`ff0113bb46741837aba5c8286742c78def7d8ba834438c2c38a626bed8f65863`.
+Standalone Settings, Terminal, Modules, About, all five default Agent profiles,
+and loopback-only cold boot/restart/reconnect pass. The exact globally installed
+binary also passes the embedded desktop, Settings and Terminal smoke.
+
+The six-file installer proved rollback before replacement, stopped one exact
+old owner cleanly, backed it up at
+`bee-evidence/0920/global-before-agent-hive-be31299`, and installed source
+`be31299` with runtime `b476104e63`. Receipt:
+`bee-evidence/0920/global-agent-hive-be31299-install.json`. No database, profile,
+conversation, workspace, display, credential or migration ledger was copied,
+removed or reset. The unrelated untracked `modules/bee-registry-planner/`
+directory remains untouched.
