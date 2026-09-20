@@ -20,7 +20,10 @@ local function define_tests()
         test.it("derives the stable actor and exact authority calls", function()
             test.eq(binding.actor(WORKSPACE, "app-1"), "bee.application:" .. WORKSPACE .. ":app-1")
             test.is_nil(binding.actor("workspace", "app-1"))
-            test.eq(binding.get_request(value(), WORKSPACE), {thread_id = "thread-1"})
+            local get = assert(binding.get_request(value(), WORKSPACE))
+            test.eq(get.thread_id, "thread-1")
+            local get_fields = 0; for _ in pairs(get) do get_fields = get_fields + 1 end
+            test.eq(get_fields, 1)
             test.eq(binding.join_request(value(), WORKSPACE, "join-1", 7), {thread_id = "thread-1", idempotency_key = "join-1",
                 member_id = "bee.application:" .. WORKSPACE .. ":app-1", role = "participant", expected_revision = 7})
             test.eq(binding.leave_request(value(), WORKSPACE, "leave-1", 8), {thread_id = "thread-1", idempotency_key = "leave-1",
