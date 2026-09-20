@@ -35,6 +35,18 @@ changes to `AGENT APP UPDATED` while retaining `Count: 1`, and a host restart
 restores both v2 and that state. Evidence is in
 `.wippy/evidence/agent-app-20260919-225922`.
 
+That exact real-Agy v2 artifact now also passes the cross-node desktop journey.
+The source-only fixture recreates it through production artifact measurement
+and refuses any digest other than `332c8bd7f1e9`; Hive makes it available on a
+second Bee that begins without its bytes or definition. The receiving Bee uses
+its own fixed policy, public destination operations and Approvals owner before
+applying the overlay. With the source stopped, the destination opens **Agent
+App** from Start, checkpoints `Count: 1 / Saved: 1`, and cold-restores `Count:
+1` under the same workspace, view and instance identities. Evidence is in
+`.wippy/evidence/agent-app-hive-20260920-010634`. This composes the previously
+proved authoring result with an exact-artifact fixture publisher; it does not
+claim the original authoring process remained the live publishing node.
+
 Runtime PR #789 at `b476104e63` supplies generation-fenced viewport renewal on
 top of the open application-model PR #787 at `3d9926aa`; Rodrigo is requested on
 #787. Bee keeps replacement state on each instance, shares one typed execution

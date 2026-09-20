@@ -7572,3 +7572,33 @@ Tools → Learn → UI Guide, navigated to Components, preserved the selected Na
 sample through 40×12 and 20×6 resize, closed the application and detached the
 desktop. The unrelated untracked `modules/bee-registry-planner/` remains
 untouched.
+
+### 2026-09-20 Codex: agent-authored application crosses Hive into a desktop
+
+The exact updated artifact produced by the real managed-Agy journey now passes
+one combined cross-node acceptance. Production `artifact.create` recreates the
+source-only bytes and requires the authoring digest
+`332c8bd7f1e919c976d5f51c313286b2c7ebba7c4f72ad2a0e9aaf329acfa817`.
+The destination proves that neither the replica nor effective definition exists
+before publication, receives it through automatic Hive distribution, and uses
+its own fixed capability ceiling, public destination calls and local Approvals
+owner to review, select, approve and apply it. No approval or overlay authority
+crosses Hive.
+
+Both headless nodes then stop. With the source offline, the destination desktop
+opens **Agent App** from Start, renders `AGENT APP UPDATED` and `Count: 0`, and
+acknowledges `x` as `Count: 1 / Saved: 1`. A full destination restart restores
+`Count: 1` with workspace `b7f6bce4e9a7148dbb50f96e7e543e3f` and identical
+view/instance identities. The retained receipt, source artifact, Hive transcript
+and five UI frames are in
+`.wippy/evidence/agent-app-hive-20260920-010634`. The combined gate took 59.544
+seconds. It republishes the exact agent-authored artifact from a fixture source
+runtime; it does not claim the original authoring process stayed alive as the
+publisher.
+
+The empty top-level Hive call input now retains its object allocation across
+native transport. Before this correction the sender measured `{}` as an object
+while the receiver decoded it as a list and rejected the digest. All 1,142 unit
+cases, strict lint, the unchanged two-version Hive delivery/restart/update/
+rollback regression, and the combined agent-app Hive gate pass on the renewal
+runtime. The global Bee has not yet been refreshed from this source.
