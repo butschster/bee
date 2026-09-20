@@ -8072,3 +8072,21 @@ Renewal-runtime strict lint passes with the existing desktop-lifecycle warning.
 All 1,181 unit cases pass, including five focused contract cases. Commit
 `610402f` is on `main`. The global executable remains unchanged until the
 complete dynamic admission path and its end-to-end application journey pass.
+
+## 2026-09-20 — governed admission projected from pinned activation state
+
+Activation profiles may now select bounded application bindings. Both private
+overlay and Hub resolution derive the canonical admission record from the same
+pinned registry capture used for destination preflight. Every selected
+definition must be an exact `process.lua` application in the portable artifact;
+every selected policy must be an external security policy outside both the
+candidate and selected overlay. Complete canonical policy definitions are
+measured, so policy-body drift changes the projection and candidate-controlled
+metadata cannot grant application authority.
+
+The projection remains separate from portable artifact bytes and is not yet
+materialized or consumed by the application catalog. The next bounded milestone
+freezes its optional bytes and digest into the existing activation intent and
+approval evidence. Renewal-runtime strict lint passes with the existing
+desktop-lifecycle warning, all 1,185 unit cases pass, and `git diff --check`
+passes. Commit `0e8f527` is on `main`; the global executable remains unchanged.
