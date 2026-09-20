@@ -7544,3 +7544,31 @@ navigation, compact selection reveal, narrow/wide resize, clean shutdown,
 Tools → Learn discovery and singleton reopen. Pack, the 163-document corpus
 check and the admitted offline docs-agent source/pack proof pass. The unrelated
 untracked `modules/bee-registry-planner/` directory remains untouched.
+
+### 2026-09-20 Codex: UI reference installed globally
+
+The brand book/reference commit `9c9c94a8b855e2cbdc640c90997f50bff69d5e4b`
+is pushed and installed globally. The exact executable SHA-256 is
+`8f35ebfeaca7e18bf1e47d3c52b8de31c75fa9114301053f1e203288043c19cc`;
+provenance pins runtime `b476104e63b62c9679df78a585727b7f64d48d02` and
+native Bee `v0.0.0-20260919180600-ff9810fea081`.
+
+The fresh candidate passed the standalone desktop, Terminal, Settings, Modules,
+About and five-profile Agent selector; offline cold boot, restart and retained
+reconnect passed with a 0.104-second warm attach. The exact candidate UI Guide
+also passed direct admitted launch, keyboard navigation, selected-row reveal
+and narrow/wide resize from disposable state.
+
+The six-file installer verified provenance and patch contents, proved injected
+post-replacement rollback, backed up the prior global set at
+`bee-evidence/0919/global-before-ui-guide-9c9c94a`, and atomically replaced
+sidecars before the executable. Receipt:
+`bee-evidence/0919/global-ui-guide-9c9c94a-install.json`. Two exact old Bee
+processes exited cleanly on SIGTERM. No database, profile, conversation,
+workspace, display, credential or migration ledger was removed or copied.
+
+The installed executable then launched from `/mnt/c/Users/Wolfy-J`, opened
+Tools → Learn → UI Guide, navigated to Components, preserved the selected Name
+sample through 40×12 and 20×6 resize, closed the application and detached the
+desktop. The unrelated untracked `modules/bee-registry-planner/` remains
+untouched.

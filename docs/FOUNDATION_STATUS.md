@@ -11,6 +11,19 @@ hit testing across every bundled theme, and the source and packed application
 pass real terminal navigation, selection reveal, resize and singleton reopen.
 This is reference source rather than a new widget framework.
 
+This reference is installed globally from source `9c9c94a` as executable
+SHA-256 `8f35ebfeaca7`. Its provenance pins runtime PR #789 at `b476104e63`
+and native Bee `v0.0.0-20260919180600-ff9810fea081`. Strict lint, all
+1,142 unit cases, the four focused stylebook cases, every-theme geometry,
+source and packed UI journeys, the 163-document corpus, the complete native
+application/Agent gate and offline cold/restart/reconnect acceptance pass.
+The exact installed executable was launched from `/mnt/c/Users/Wolfy-J` and
+opened **Tools → Learn → UI Guide**; navigation, selected-row reveal, `40×12`
+and `20×6` resize, close and detach passed. The six-file installer proved its
+rollback path before replacement, stopped two exact prior processes cleanly
+and preserved all application state. Receipt:
+`bee-evidence/0919/global-ui-guide-9c9c94a-install.json`.
+
 Managed application updates now pass the complete agent-to-UI journey in the
 source candidate. One real managed Agy authors v1 through Governance, a person
 reviews and approves it in App Delivery and Approvals, and the same durable
@@ -29,7 +42,7 @@ start path, and lets explicit close and workspace shutdown win. Strict lint,
 1,138/1,138 units, App Delivery's delayed-response UI regression, managed
 windows 5/5, source and packed App Journey, Governance workspace restart,
 production pack, and the 162-document agent corpus pass against the combined
-runtime candidate. Source `9fb90d7` is installed globally as executable
+runtime candidate. Source `9fb90d7` was the preceding global executable
 SHA-256 `3d95c4d2ffe4`. The exact installed binary starts the retained
 `Gentle Ember` workspace from `/mnt/c/Users/Wolfy-J`; `bee agy` reaches the
 managed Antigravity terminal with the inherited account and project directory,
