@@ -12,6 +12,7 @@ M.SCHEMA = "bee.governance-application-admission@1"
 M.MAX_BINDINGS = 64
 M.MAX_POLICIES = 16
 M.MAX_BYTES = 65536
+M.MAX_POLICY_BYTES = 262144
 M.RESERVED_PREFIX = "bee.governance:admission."
 
 type Object = {[string]: unknown}
@@ -20,7 +21,7 @@ type Binding = {definition_id: string, policies: {string}, thread_access: Thread
 type Record = {schema_revision: string, workspace_id: string, overlay_owner: string,
     source_node: string, source_workspace: string, artifact_digest: string,
     policy_digest: string, bindings: {Binding}}
-type Measurement = {record: Record, bytes: string, digest: string}
+type Measurement = {id: string, record: Record, bytes: string, digest: string}
 
 local function sha(value: unknown): string?
     if type(value) ~= "string" or #value ~= 64 or not value:match("^[0-9a-f]+$") then return nil end
@@ -136,7 +137,90 @@ function M.measure(raw: unknown): (Measurement?, string?)
     if not bytes then return nil, tostring(encode_error or "encode application admission") end
     local digest, digest_error = hash.sha256(bytes)
     if not digest then return nil, tostring(digest_error or "measure application admission") end
-    return {record = record, bytes = bytes, digest = digest}, nil
+    local id, id_error = M.id(record.overlay_owner)
+    if not id then return nil, id_error end
+    return {id = id, record = record, bytes = bytes, digest = digest}, nil
+end
+
+-- Derive admission only from one resolver capture. Artifact definitions and
+-- external policy definitions are separate inputs so a candidate can never
+-- satisfy its own authority declaration.
+function M.project(raw: unknown): (Measurement?, string?)
+    local value = bounds.object(raw)
+    if not value then return nil, "application admission projection must be an object" end
+    local extra = bounds.fields(value, {"workspace_id", "overlay_owner", "source_node", "source_workspace",
+        "artifact_digest", "bindings", "artifact_entries", "registry_entries", "overlay_ids"})
+    if extra then return nil, "application admission projection: " .. extra end
+    local bindings, bindings_error = M.bindings(value.bindings)
+    if not bindings then return nil, bindings_error end
+    if #bindings == 0 then return nil, nil end
+    local artifact_rows, artifact_count, artifact_error = dense(value.artifact_entries,
+        "application artifact entries", 512)
+    local registry_rows, registry_count, registry_error = dense(value.registry_entries,
+        "application registry entries", 4096)
+    if not artifact_rows or artifact_count == nil or not registry_rows or registry_count == nil then
+        return nil, artifact_error or registry_error
+    end
+    if value.overlay_ids ~= nil and type(value.overlay_ids) ~= "table" then
+        return nil, "application overlay identities are malformed"
+    end
+    local overlay_ids = type(value.overlay_ids) == "table" and value.overlay_ids :: table or {}
+    local artifacts: {[string]: Object} = {}
+    for index = 1, artifact_count do
+        local entry = bounds.object(artifact_rows[index])
+        local id = entry and registry_id(entry.id) or nil
+        if not entry or not id or artifacts[id] then return nil, "application artifact entry is invalid or duplicated" end
+        artifacts[id] = entry
+    end
+    local captured: {[string]: Object} = {}
+    for index = 1, registry_count do
+        local entry = bounds.object(registry_rows[index])
+        local id = entry and registry_id(entry.id) or nil
+        if not entry or not id or captured[id] then return nil, "application registry entry is invalid or duplicated" end
+        captured[id] = entry
+    end
+    local selected_policies: {[string]: boolean} = {}
+    for _, selected in ipairs(bindings) do
+        local definition = artifacts[selected.definition_id]
+        local meta = definition and bounds.object(definition.meta) or nil
+        if not definition or definition.kind ~= "process.lua" or not meta or meta.type ~= "bee.application" then
+            return nil, "admitted application is not an exact artifact application: " .. selected.definition_id
+        end
+        for _, policy in ipairs(selected.policies) do
+            if artifacts[policy] then return nil, "application policy is supplied by the candidate: " .. policy end
+            if overlay_ids[policy] then return nil, "application policy belongs to the selected overlay: " .. policy end
+            selected_policies[policy] = true
+        end
+    end
+    local policy_count = 0
+    for _ in pairs(selected_policies) do policy_count = policy_count + 1 end
+    local capacity: integer = policy_count
+    if capacity < 1 then capacity = 1 end
+    local policies: {Object} = table.create(capacity, 0)
+    for policy in pairs(selected_policies) do
+        local definition = captured[policy]
+        if not definition or (definition.kind ~= "security.policy" and definition.kind ~= "security.policy.expr") then
+            return nil, "application policy is not an external security policy: " .. policy
+        end
+        local clean: Object = {}
+        for field, item in pairs(definition) do if field ~= "registry" then clean[field] = item end end
+        if clean.meta == nil or (type(clean.meta) == "table" and next(clean.meta :: table) == nil) then
+            clean.meta = table.create(0, 1)
+        end
+        policies[#policies + 1] = clean
+    end
+    table.sort(policies, function(left: Object, right: Object): boolean
+        return tostring(left.id) < tostring(right.id)
+    end)
+    local policy_bytes, policy_error = canonical.encode({schema_revision = "bee.governance-application-policies@1",
+        policies = policies}, M.MAX_POLICY_BYTES)
+    if not policy_bytes then return nil, tostring(policy_error or "encode application policies") end
+    local policy_digest, policy_digest_error = hash.sha256(policy_bytes)
+    if not policy_digest then return nil, tostring(policy_digest_error or "measure application policies") end
+    return M.measure({schema_revision = M.SCHEMA, workspace_id = value.workspace_id,
+        overlay_owner = value.overlay_owner, source_node = value.source_node,
+        source_workspace = value.source_workspace, artifact_digest = value.artifact_digest,
+        policy_digest = policy_digest, bindings = bindings})
 end
 
 return M

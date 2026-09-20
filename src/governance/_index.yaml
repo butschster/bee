@@ -226,6 +226,7 @@ entries:
     artifact: bee.governance:artifact
     canonical: bee.sync:canonical
     bounds: bee.threads.records:bounds
+    application_admission: bee.governance:governed_application_admission
 - name: overlay_resolver
   kind: library.lua
   source: file://overlay_resolver.lua
@@ -234,6 +235,7 @@ entries:
     artifact: bee.governance:artifact
     canonical: bee.sync:canonical
     bounds: bee.threads.records:bounds
+    application_admission: bee.governance:governed_application_admission
 - name: activation_owner
   kind: library.lua
   source: file://activation_owner.lua
@@ -274,6 +276,7 @@ entries:
     materializer: bee.governance:materializer
     migration_effect: bee.governance:migration_effect
     migration_runner: bee.hub:migration_runner
+    application_admission: bee.governance:governed_application_admission
     preflight: bee.governance:preflight
 - name: delivery_contract
   kind: contract.definition

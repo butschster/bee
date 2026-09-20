@@ -15,6 +15,18 @@ local function record(): {[string]: unknown}
         }}
 end
 
+local function projection(): {[string]: unknown}
+    return {workspace_id = "workspace-a", overlay_owner = "bee.apps:workspace-a",
+        source_node = "node-source", source_workspace = "vendor/app", artifact_digest = DIGEST,
+        bindings = {{definition_id = "vendor.app:first", policies = {"bee:ordinary-policy"},
+            thread_access = "observe_post"}},
+        artifact_entries = {{id = "vendor.app:first", kind = "process.lua",
+            meta = {type = "bee.application"}, data = {source = "return true"}}},
+        registry_entries = {{id = "bee:ordinary-policy", kind = "security.policy",
+            policy = {actions = {"funcs.call"}, resources = {"bee.app:read"}, effect = "allow"},
+            registry = {owner = "bee/host"}}}, overlay_ids = {}}
+end
+
 local function define_tests()
     test.describe("governed application admission contract", function()
         test.it("normalizes bindings, policies and default thread access", function()
@@ -87,6 +99,40 @@ local function define_tests()
             value = record()
             value.overlay_owner = "bad\nowner"
             test.is_nil(admission.measure(value))
+        end)
+
+        test.it("measures exact external policy bodies for an artifact application", function()
+            local value = projection()
+            local first, first_error = admission.project(value)
+            if not first then error(tostring(first_error)) end
+            test.eq(first.record.bindings[1].thread_access, "observe_post")
+            local registry_entries = value.registry_entries :: {{[string]: unknown}}
+            local policy = registry_entries[1].policy :: {[string]: unknown}
+            policy.comment = "changed"
+            local changed = assert(admission.project(value))
+            test.is_true(changed.record.policy_digest ~= first.record.policy_digest)
+            test.is_true(changed.digest ~= first.digest)
+        end)
+
+        test.it("requires exact artifact applications and external policies", function()
+            local value = projection()
+            local artifact_entries = value.artifact_entries :: {{[string]: unknown}}
+            artifact_entries[1].kind = "function.lua"
+            test.is_nil(admission.project(value))
+            artifact_entries[1].kind = "process.lua"
+            local meta = artifact_entries[1].meta :: {[string]: unknown}
+            meta.type = "ordinary"
+            test.is_nil(admission.project(value))
+            meta.type = "bee.application"
+            local registry_entries = value.registry_entries :: {{[string]: unknown}}
+            registry_entries[1].kind = "function.lua"
+            test.is_nil(admission.project(value))
+            registry_entries[1].kind = "security.policy"
+            value.overlay_ids = { ["bee:ordinary-policy"] = true }
+            test.is_nil(admission.project(value))
+            value.overlay_ids = {}
+            artifact_entries[2] = registry_entries[1]
+            test.is_nil(admission.project(value))
         end)
     end)
 end
