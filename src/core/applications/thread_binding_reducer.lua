@@ -8,7 +8,7 @@ type HostOperation = "prepare" | "activate" | "refresh_join" | "begin_revoke" | 
 type Principal = "owner" | "application"
 type Purpose = "join" | "after_join" | "after_unknown_join" | "active_recovery"
     | "cleanup" | "join_refresh" | "cleanup_refresh"
-type Terminal = "active" | "fenced" | "cleanup_pending" | "failed"
+type Terminal = "active" | "fenced" | "cleanup_pending" | "retry" | "failed"
 type Outstanding =
     {kind: "host", op: HostOperation, value: {[string]: unknown}}
     | {kind: "membership", principal: Principal, purpose: Purpose}
@@ -159,8 +159,11 @@ local function membership_result(state: State, event: MembershipEvent): Result
     end
     if event.state == "unknown" then
         if state.intent == "revoke" then return begin_revoke(state) end
-        if event.purpose == "active_recovery" then return begin_revoke(state) end
+        -- Recovery uncertainty preserves the durable delegation. The broker
+        -- retries it and must not acknowledge startup reconciliation yet.
+        if event.purpose == "active_recovery" then return finish(state, "retry") end
         if event.purpose == "cleanup" then return finish(state, "cleanup_pending") end
+        if event.purpose == "after_unknown_join" then return finish(state, "retry") end
         return finish(state, "failed")
     end
     if event.purpose == "cleanup" then
