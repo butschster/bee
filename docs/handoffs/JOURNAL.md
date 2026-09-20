@@ -7635,3 +7635,55 @@ old owner cleanly, backed it up at
 conversation, workspace, display, credential or migration ledger was copied,
 removed or reset. The unrelated untracked `modules/bee-registry-planner/`
 directory remains untouched.
+
+### 2026-09-20 Codex: continuous managed-agent application Hive proof done
+
+The original authoring Bee now completes the entire source side before
+publishing. A real managed Agy authored Agent App `1.0.2` on `node-1` after the
+first attempt's missing frozen-digest finding was returned through its durable
+thread; the same
+Bee reviewed, approved, applied, opened, checkpointed and cold-restored it,
+then production Governance recovery restored the authorized overlay and the
+read-only publication facade published its exact bytes. Hive delivered them to
+a distinct workspace that began without the artifact or definition. The
+destination reviewed, approved and applied locally, opened **Agent App**,
+checkpointed `Count: 1 / Saved: 1`, and cold-restored `Count: 1` after the
+source stopped. Destination view `01a0bd9c-d1a6-7838-8528-bb5abfd5b133` and
+instance `01a0bd9c-d1a6-783a-9a70-6907a0d9118c` remained stable.
+
+Evidence is `.wippy/evidence/agent-app-hive-e2e-strict2-20260920`; artifact
+digest `01b7629eb9addf5f1bb4f10422f920fb9448df8d5f3326f369f155aadec508ec`.
+The provider rounds took 24.570 and 181.680 seconds, the Hive bridge 35.660
+seconds, destination desktop and cold restart 15.661 seconds, and the Hive half
+52.952 seconds. The bridge transcript records absence, publication,
+availability, staging, apply, both nodes stopped and `PASS
+TestHiveSupervisorAgentSource` in order. Source workspace
+`46190940e2c71a0e9c58bf0ba5734df3` retained composition digest
+`a38854959535f48e18d95e77d228bd84508816c8265a467dd8c8f7e37e1d462d`
+before and after the bridge; destination workspace is
+`a2ef02432baea4beb988fb4757326154`.
+
+The proof exposed three boundary defects in its fixtures: empty policy lists
+must retain Lua list shape with `table.create(1, 0)` so cold-restart digests are
+stable; facade faults are under `reply.error.code/message`; and a successful
+publication facade reply already places the publication value in `reply.value`.
+Source recovery now runs before guarded publication. Publication remains
+read-only and verifies the locally reviewed/applied overlay. The fixture policy
+carries overlay read for destination verification and no overlay-write action.
+
+Strict lint passes with only the known `bee.launch:desktop_lifecycle` fixpoint
+warning. `make agent-app-hive-e2e-check`, the existing no-inference
+`make agent-app-hive-check`, the synthetic two-version
+`make governance-hive-delivery-check`, and all 1,142 unit tests pass against
+`.wippy/bin/bee-wippy-renewal`. The earlier failed two-version local update in
+`.wippy/evidence/agent-app-hive-e2e-20260920-013223/source` remains a separate
+follow-up; this acceptance intentionally proves one continuous immutable
+version. Production `src/` is unchanged, so the globally installed `be31299`
+binary has not been rebuilt. The unrelated untracked
+`modules/bee-registry-planner/` remains untouched.
+
+Both managed-provider command boots still log a three-second runtime supervisor
+shutdown timeout after the Agy child exits 0 and placement records cleanup
+complete. The command exits 0 and the later source restart, recovery and
+publication pass, but this is retained as a separate headless runtime shutdown
+defect; the evidence is not described as a clean shutdown proof.
