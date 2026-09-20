@@ -7708,3 +7708,52 @@ Details. Hostile control text stays inert and every row and hit remains bounded.
 and the complete candidate-runtime unit gate passes 1,145/1,145 cases with only
 the two known interprocedural fixpoint warnings. The unrelated untracked
 `modules/bee-registry-planner/` directory remains untouched.
+
+### 2026-09-20 Codex: application principals and focused Delivery UI landed
+
+Broker-launched applications now run as stable host-issued actors derived from
+workspace and logical instance. Launch metadata records the admitted definition,
+definition revision and execution generation; app input cannot select the actor.
+Compatible producer replacement preserves the logical actor while advancing the
+generation. The broker alone holds the exact actor-creation authority and starts
+the application through `process.with_actor`. This is the identity prerequisite
+for a later bound thread facade; applications still have no raw thread service
+grant. Commit `748f9c1` is pushed.
+
+App Delivery now has Available, Staged and Review panes, mouse hit handling,
+compact application/status-first rows and one contextual primary action. Advanced
+status, recovery, rejection and apply inspection remain under Details; review,
+approval and activation authority remain separate. The continuous destination
+journey proves blocked plans remain non-actionable, an accepted plan proceeds
+through local approval, and the activated entry runs on a later boot. Strict lint,
+the real `delivery-review-check`, and the complete candidate-runtime suite pass;
+the latter reports 1,148/1,148. Commit `2398f2c` is not yet pushed or installed
+globally at the time of this entry.
+
+The live application persistence model was corrected before implementation.
+State is app-owned data in a host-bound database resource, not a physical database
+per app. Governance already freezes a logical migration target to a host-selected
+database ID and optional prefix, but that binding neither grants live SQL access
+nor confines arbitrary SQL. Running apps must use bounded typed owner operations
+that authenticate the current app binding and inject the workspace/application
+partition; they must not receive `db.get`, raw SQL, caller-selected database IDs,
+prefixes, table names or ownership predicates. Node-local SQL state remains at its
+authoritative owner. Hive distributes governed overlays, immutable artifacts and
+typed Sync descriptions; it does not replicate arbitrary SQLite rows.
+
+One shared-resource hazard is now explicit: the physical `_migrations` ledger is
+currently keyed only by migration ID. Two workspace installations of one component
+into different prefixes on the same physical resource may cause the second schema
+to be skipped as already applied. The first supported contract should therefore
+use one component schema per bound physical resource and host-injected
+workspace/application partition keys in rows. Separate schemas per installation
+require an installation-qualified physical ledger and acceptance proof. Overlay
+removal retains committed state and migration history; data deletion or destructive
+schema rollback is a separate reviewed owner operation.
+
+One node can host multiple independent workspaces today, but the active desktop
+does not yet offer a complete create/switch journey. The later focused UX milestone
+must list local and Hive workspaces, create from a selected folder, switch the
+current display without restarting Bee, and restore each workspace's retained
+display layout. The header workspace control remains informational until that
+acceptance exists.
