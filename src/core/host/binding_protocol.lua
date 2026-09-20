@@ -51,6 +51,11 @@ type Binding = {
 type Fault = {code: string, message: string}
 type Reply = {version: 1, workspace_id: string, request_id: string, op: Operation,
     ok: boolean, binding: Binding?, error: Fault?}
+-- The host sends this once to its freshly spawned broker. It is a bounded
+-- recovery projection, never a query surface: only unfinished work reaches
+-- the broker after a workspace restart.
+type Recovery = {version: 1, workspace_id: string, items: {Binding}}
+type Recovered = {version: 1, workspace_id: string}
 
 local M = {}
 local MAX_REQUEST_ID = 80
@@ -66,6 +71,7 @@ local MAX_GATEWAY_APPROVAL_ID = 160
 local MAX_FAULT_CODE = 160
 local MAX_FAULT_MESSAGE = 4096
 local MAX_REVISION = 9007199254740990
+local MAX_RECOVERY_ITEMS = 256
 
 local function object(value: unknown): Object?
     if type(value) ~= "table" then return nil end
@@ -255,6 +261,32 @@ function M.binding(value: unknown, expected_workspace_id: string?): Binding?
         gateway_proposal_digest = gateway_proposal_digest, access = "observe_post",
         join_expected_revision = join_expected_revision, membership_revision = membership_revision,
         cleanup_pending = cleanup_state, cleanup_expected_revision = cleanup_expected_revision}
+end
+
+function M.recovery(value: unknown, expected_workspace_id: string): Recovery?
+    local input = object(value)
+    if not input or not exact(input, {"version", "workspace_id", "items"}) or input.version ~= 1
+        or not workspace(input.workspace_id, expected_workspace_id) or type(input.items) ~= "table" then return nil end
+    local items = input.items :: {unknown}
+    local result: {Binding} = {}
+    local seen: {[string]: boolean} = {}
+    for index, value in ipairs(items) do
+        if index > MAX_RECOVERY_ITEMS then return nil end
+        local binding = M.binding(value, expected_workspace_id)
+        if not binding or seen[binding.instance_id]
+            or (binding.state == "revoked" and binding.cleanup_pending ~= 1) then return nil end
+        seen[binding.instance_id] = true
+        result[#result + 1] = binding
+    end
+    if #result ~= #items then return nil end
+    return {version = 1, workspace_id = expected_workspace_id, items = result}
+end
+
+function M.recovered(value: unknown, expected_workspace_id: string): Recovered?
+    local input = object(value)
+    if not input or not exact(input, {"version", "workspace_id"}) or input.version ~= 1
+        or not workspace(input.workspace_id, expected_workspace_id) then return nil end
+    return {version = 1, workspace_id = expected_workspace_id}
 end
 
 function M.fault(value: unknown): Fault?
