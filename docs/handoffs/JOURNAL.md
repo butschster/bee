@@ -7990,10 +7990,13 @@ functions or execution scopes, so merging them would broaden authority. Muse's
 the carrier value while the configure method renders protected provider state.
 No byte-identical production Lua or YAML files remain.
 
-The audit found two unreachable production modules for focused deletion: the
+The audit found and removed two unreachable production modules: the
 unindexed harness activation decoder superseded by `bee.driver:resolver`, and
 the unindexed fixed-list Hive feed admission worker superseded by catalog-driven
 policy admission. Historical global-build sections were relabeled as previous
 installs and their installation statements changed to past tense, leaving only
 the active `ca8a6cd` build described as current. The untracked registry-planner
-work remains untouched.
+work remains untouched. Renewal-runtime strict lint and all 1,175 units pass.
+The broad Hive supervisor gate remains independently red because its frozen
+fixture omits `replica_admission` and does not create the approvals database
+directory; neither failure resolves or references either removed module.
