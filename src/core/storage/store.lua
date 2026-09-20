@@ -90,10 +90,27 @@ ON workspace_display_transfer_receipts (view_id, instance_id)
 WHERE phase = 'prepared';
 ]]
 
+-- The workspace owner keeps one immutable logical application/thread binding.
+-- Runtime execution details and thread membership remain owned by their
+-- respective authorities and are deliberately absent from this table.
+local APPLICATION_THREAD_BINDINGS_TABLE_SQL = [[
+CREATE TABLE workspace_application_thread_bindings (
+    instance_id TEXT PRIMARY KEY CHECK (length(CAST(instance_id AS BLOB)) BETWEEN 1 AND 80 AND instance_id NOT GLOB '*[^ -~]*'),
+    thread_id TEXT NOT NULL CHECK (length(CAST(thread_id AS BLOB)) BETWEEN 1 AND 160 AND thread_id NOT GLOB '*[^ -~]*'),
+    definition_id TEXT NOT NULL CHECK (length(CAST(definition_id AS BLOB)) BETWEEN 1 AND 160 AND definition_id NOT GLOB '*[^ -~]*'),
+    actor_id TEXT NOT NULL CHECK (length(CAST(actor_id AS BLOB)) BETWEEN 1 AND 160 AND actor_id NOT GLOB '*[^ -~]*'),
+    role TEXT NOT NULL CHECK (role = 'participant'),
+    binding_revision INTEGER NOT NULL CHECK (binding_revision >= 1 AND binding_revision <= 9007199254740990),
+    state TEXT NOT NULL CHECK (state IN ('pending', 'active', 'revoked')),
+    idempotency_key TEXT NOT NULL UNIQUE CHECK (length(CAST(idempotency_key AS BLOB)) BETWEEN 1 AND 160 AND idempotency_key NOT GLOB '*[^ -~]*')
+);
+]]
+
 local migrations: {Migration} = {
     {id = 1, name = "workspace_state_v1", sql = STATE_TABLE_SQL},
     {id = 2, name = "workspace_identity_v1", sql = IDENTITY_TABLE_SQL},
     {id = 3, name = "workspace_display_assignments_v1", sql = DISPLAY_ASSIGNMENTS_TABLE_SQL},
+    {id = 4, name = "workspace_application_thread_bindings_v1", sql = APPLICATION_THREAD_BINDINGS_TABLE_SQL},
 }
 
 local function error_text(prefix: string, err: unknown): string

@@ -225,6 +225,134 @@ end
 return {main = main}
 '''
 
+THREAD_BINDING_PREPARE = r'''local storage = require("store")
+local thread_bindings = require("thread_bindings")
+local function main()
+    local workspace = assert(storage.open())
+    local bindings = assert(thread_bindings.open(workspace))
+    local invalid = {
+        {},
+        {instance_id = "instance", thread_id = string.char(195, 169), definition_id = "definition", actor_id = "actor", role = "participant", idempotency_key = "key"},
+        {instance_id = "instance", thread_id = "thread", definition_id = "definition", actor_id = "actor", role = "observer", idempotency_key = "key"},
+        {instance_id = "instance", thread_id = "thread\nvalue", definition_id = "definition", actor_id = "actor", role = "participant", idempotency_key = "key"},
+        {instance_id = "instance", thread_id = "thread", definition_id = "definition", actor_id = "actor", role = "participant", idempotency_key = string.rep("k", 161)},
+        {instance_id = "instance", thread_id = "thread", definition_id = "definition", actor_id = "actor", role = "participant", idempotency_key = "key", extra = "refused"},
+    }
+    for _, input in ipairs(invalid) do
+        local value, value_error = bindings:prepare(input)
+        assert(not value and value_error)
+    end
+
+    local request = {instance_id = "bound-instance", thread_id = "bound-thread", definition_id = "app:one",
+        actor_id = "bee.application:actor", role = "participant", idempotency_key = "bind-once"}
+    local prepared = assert(bindings:prepare(request))
+    assert(prepared.instance_id == request.instance_id and prepared.thread_id == request.thread_id
+        and prepared.definition_id == request.definition_id and prepared.actor_id == request.actor_id
+        and prepared.role == "participant" and prepared.binding_revision == 1 and prepared.state == "pending"
+        and prepared.idempotency_key == request.idempotency_key)
+    local replay = assert(bindings:prepare(request))
+    assert(replay.binding_revision == 1 and replay.state == "pending")
+    local conflict, conflict_error = bindings:prepare({instance_id = request.instance_id, thread_id = "other-thread",
+        definition_id = request.definition_id, actor_id = request.actor_id, role = request.role,
+        idempotency_key = request.idempotency_key})
+    assert(not conflict and conflict_error and conflict_error:find("conflicts"))
+    local key_conflict, key_error = bindings:prepare({instance_id = "other-instance", thread_id = request.thread_id,
+        definition_id = request.definition_id, actor_id = request.actor_id, role = request.role,
+        idempotency_key = request.idempotency_key})
+    assert(not key_conflict and key_error and key_error:find("idempotency"))
+    local current = assert(bindings:get({instance_id = request.instance_id}))
+    assert(current.thread_id == request.thread_id and current.state == "pending")
+    local listed = assert(bindings:list())
+    assert(#listed == 1 and listed[1].instance_id == request.instance_id)
+    assert(workspace:close())
+end
+return {main = main}
+'''
+
+THREAD_BINDING_ACTIVE = r'''local storage = require("store")
+local thread_bindings = require("thread_bindings")
+local function main()
+    local workspace = assert(storage.open())
+    local bindings = assert(thread_bindings.open(workspace))
+    local before = assert(bindings:get("bound-instance"))
+    assert(before.binding_revision == 1 and before.state == "pending")
+    local stale, stale_error = bindings:activate({instance_id = "bound-instance", expected_revision = 2, expected_state = "pending"})
+    assert(not stale and stale_error and stale_error:find("changed"))
+    local active = assert(bindings:activate({instance_id = "bound-instance", expected_revision = 1, expected_state = "pending"}))
+    assert(active.binding_revision == 2 and active.state == "active")
+    local stale_again, stale_again_error = bindings:activate({instance_id = "bound-instance", expected_revision = 1, expected_state = "pending"})
+    assert(not stale_again and stale_again_error and stale_again_error:find("changed"))
+    local immutable, immutable_error = bindings:prepare({instance_id = "bound-instance", thread_id = before.thread_id,
+        definition_id = before.definition_id, actor_id = "another-actor", role = "participant", idempotency_key = before.idempotency_key})
+    assert(not immutable and immutable_error and immutable_error:find("conflicts"))
+    local replay = assert(bindings:prepare({instance_id = "bound-instance", thread_id = before.thread_id,
+        definition_id = before.definition_id, actor_id = before.actor_id, role = "participant", idempotency_key = before.idempotency_key}))
+    assert(replay.binding_revision == 2 and replay.state == "active")
+    assert(workspace:close())
+end
+return {main = main}
+'''
+
+THREAD_BINDING_REVOKE = r'''local storage = require("store")
+local thread_bindings = require("thread_bindings")
+local function main()
+    local workspace = assert(storage.open())
+    local bindings = assert(thread_bindings.open(workspace))
+    local before = assert(bindings:get("bound-instance"))
+    assert(before.binding_revision == 2 and before.state == "active")
+    local stale, stale_error = bindings:revoke({instance_id = "bound-instance", expected_revision = 1, expected_state = "active"})
+    assert(not stale and stale_error and stale_error:find("changed"))
+    local revoked = assert(bindings:revoke({instance_id = "bound-instance", expected_revision = 2, expected_state = "active"}))
+    assert(revoked.binding_revision == 3 and revoked.state == "revoked")
+    local second, second_error = bindings:revoke({instance_id = "bound-instance", expected_revision = 3, expected_state = "revoked"})
+    assert(not second and second_error and second_error:find("pending or active"))
+    local unrevoked, unrevoked_error = bindings:activate({instance_id = "bound-instance", expected_revision = 3, expected_state = "revoked"})
+    assert(not unrevoked and unrevoked_error and unrevoked_error:find("pending state"))
+    local replay = assert(bindings:prepare({instance_id = "bound-instance", thread_id = before.thread_id,
+        definition_id = before.definition_id, actor_id = before.actor_id, role = "participant", idempotency_key = before.idempotency_key}))
+    assert(replay.binding_revision == 3 and replay.state == "revoked")
+    local listed = assert(bindings:list())
+    assert(#listed == 0)
+
+    -- Revoked rows are retained tombstones and do not block recovery listing or
+    -- a later logical instance from consuming the live binding capacity.
+    for index = 1, 256 do
+        local instance_id = "old-" .. tostring(index)
+        assert(bindings:prepare({instance_id = instance_id, thread_id = "thread-" .. tostring(index),
+            definition_id = "app:old", actor_id = "actor:old:" .. tostring(index), role = "participant",
+            idempotency_key = "old-key-" .. tostring(index)}))
+        assert(bindings:revoke({instance_id = instance_id, expected_revision = 1, expected_state = "pending"}))
+    end
+    assert(#assert(bindings:list()) == 0)
+    local fresh = assert(bindings:prepare({instance_id = "fresh-instance", thread_id = "fresh-thread",
+        definition_id = "app:fresh", actor_id = "fresh-actor", role = "participant", idempotency_key = "fresh-key"}))
+    assert(fresh.state == "pending" and fresh.binding_revision == 1)
+    assert(workspace:close())
+end
+return {main = main}
+'''
+
+THREAD_BINDING_RESTART = r'''local storage = require("store")
+local thread_bindings = require("thread_bindings")
+local function main()
+    local workspace = assert(storage.open())
+    local bindings = assert(thread_bindings.open(workspace))
+    local revoked = assert(bindings:get("bound-instance"))
+    assert(revoked.thread_id == "bound-thread" and revoked.definition_id == "app:one"
+        and revoked.actor_id == "bee.application:actor" and revoked.binding_revision == 3 and revoked.state == "revoked")
+    local fresh = assert(bindings:get("fresh-instance"))
+    assert(fresh.state == "pending" and fresh.binding_revision == 1)
+    local active_count = 0
+    for _, value in ipairs(assert(bindings:list())) do
+        active_count = active_count + 1
+        assert(value.instance_id == "fresh-instance" and value.state == "pending")
+    end
+    assert(active_count == 1)
+    assert(workspace:close())
+end
+return {main = main}
+'''
+
 
 def run_probe(project, folder, expect_success=True):
     environment = database_environment(folder)
@@ -270,6 +398,35 @@ def assignment_acceptance(project, probe, folder):
         assert db.execute("SELECT count(*) FROM workspace_display_assignments WHERE view_id='history-view' AND instance_id='history-instance'").fetchone() == (0,)
 
 
+def thread_binding_acceptance(project, probe, folder):
+    """Exercise immutable application/thread bindings through restarts."""
+    def phase(source):
+        (probe / "main.lua").write_text(source)
+        run_probe(project, folder)
+
+    folder.mkdir()
+    phase(THREAD_BINDING_PREPARE)
+    phase(THREAD_BINDING_ACTIVE)
+    phase(THREAD_BINDING_REVOKE)
+    phase(THREAD_BINDING_RESTART)
+    database = folder / "workspace.db"
+    with sqlite3.connect(database) as db:
+        columns = [row[1] for row in db.execute("PRAGMA table_info(workspace_application_thread_bindings)")]
+        assert columns == [
+            "instance_id", "thread_id", "definition_id", "actor_id", "role",
+            "binding_revision", "state", "idempotency_key",
+        ]
+        assert not set(columns) & {
+            "pid", "launch_token", "mount", "scope", "execution_generation", "database_id", "app_data",
+        }
+        assert db.execute(
+            "SELECT state, binding_revision FROM workspace_application_thread_bindings WHERE instance_id='bound-instance'"
+        ).fetchone() == ("revoked", 3)
+        assert db.execute(
+            "SELECT count(*) FROM workspace_application_thread_bindings WHERE state IN ('pending', 'active')"
+        ).fetchone() == (1,)
+
+
 def main():
     with tempfile.TemporaryDirectory(prefix="bee-storage-") as temporary:
         folder = Path(temporary)
@@ -290,7 +447,7 @@ def main():
                 "source": "file://main.lua",
                 "method": "main",
                 "modules": ["process"],
-                "imports": {"store": "bee.storage:store", "assignments": "bee.storage:assignments"},
+                "imports": {"store": "bee.storage:store", "assignments": "bee.storage:assignments", "thread_bindings": "bee.storage:thread_bindings"},
                 "meta": {"command": {"name": "storage-probe", "short": "storage probe"}},
                 "security": {"policies": ["bee:workspace_storage_policy"]},
             }],
@@ -306,7 +463,7 @@ def main():
             migration = connection.execute(
                 "SELECT id, name, checksum FROM workspace_schema_migrations"
             ).fetchall()
-            assert len(migration) == 3 and [row[0] for row in migration] == [1, 2, 3]
+            assert len(migration) == 4 and [row[0] for row in migration] == [1, 2, 3, 4]
             checksum = migration[0][2]
             state = connection.execute(
                 "SELECT generation, value FROM workspace_state WHERE singleton = 1"
@@ -334,12 +491,12 @@ def main():
         with sqlite3.connect(database) as connection:
             connection.execute(
                 "INSERT INTO workspace_schema_migrations (id, name, checksum, applied_at) "
-                "VALUES (4, 'future_schema', 'future', 'now')"
+                "VALUES (5, 'future_schema', 'future', 'now')"
             )
             connection.commit()
         assert "newer than this Bee build" in run_probe(project, folder, expect_success=False)
         with sqlite3.connect(database) as connection:
-            connection.execute("DELETE FROM workspace_schema_migrations WHERE id = 4")
+            connection.execute("DELETE FROM workspace_schema_migrations WHERE id = 5")
             connection.commit()
         run_probe(project, folder)
 
@@ -369,6 +526,7 @@ def main():
         assert identity(fresh / "workspace.db") != original_id, "Fresh workspaces share identity"
 
         assignment_acceptance(project, probe, folder / "assignment-acceptance")
+        thread_binding_acceptance(project, probe, folder / "thread-binding-acceptance")
 
         # Upgrade a real migration-1 database. The old SQL/checksum must stay exact.
         legacy = folder / "legacy"
@@ -400,7 +558,7 @@ def main():
         with sqlite3.connect(legacy / "workspace.db") as db:
             assert db.execute("SELECT generation, value FROM workspace_state").fetchone() == (7, '{"version":1,"probe":"legacy"}')
             assert db.execute("SELECT checksum FROM workspace_schema_migrations WHERE id=1").fetchone()[0] == checksum
-            assert [row[0] for row in db.execute("SELECT id FROM workspace_schema_migrations ORDER BY id")] == [1, 2, 3]
+            assert [row[0] for row in db.execute("SELECT id FROM workspace_schema_migrations ORDER BY id")] == [1, 2, 3, 4]
         assert len(identity(legacy / "workspace.db")) == 32
 
         # An applied identity migration cannot silently mint another ID.
@@ -413,7 +571,7 @@ def main():
             db.execute("INSERT INTO workspace_identity VALUES (1, 'malformed')")
         assert "identity is invalid" in run_probe(project, folder, expect_success=False)
 
-    print("Storage: WAL, migration ledger integrity/newer-version rejection, generation CAS, close behavior, stable identity, legacy upgrade/rollback, relocation, fresh identity and corrupt identity denial")
+    print("Storage: WAL, migration ledger integrity/newer-version rejection, generation CAS, close behavior, stable identity, legacy upgrade/rollback, relocation, fresh identity and corrupt identity denial; immutable application/thread binding replay, CAS transitions, restart recovery and revoked tombstones")
 
 
 def client_storage():
