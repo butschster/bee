@@ -1104,7 +1104,9 @@ func savedProfileLaunch(binary string) error {
 	if err := ui.waitFor("Name: Antigravity", 5*time.Second); err != nil {
 		return err
 	}
-	if err := ui.send("\x15Saved Launch\t\x15" + guidance + "\t\x1b[C\x1b[C\x1b[C\t \t \t \t "); err != nil {
+	// Tool rows are alphabetical. Preserve overlay while turning off the
+	// components, delivery, docs and thread_message rows.
+	if err := ui.send("\x15Saved Launch\t\x15" + guidance + "\t\x1b[C\x1b[C\x1b[C\t \t \t \t\t "); err != nil {
 		return err
 	}
 	_, before, _ := ui.snapshot()
@@ -1142,7 +1144,7 @@ func savedProfileLaunch(binary string) error {
 		mcpResult.ReadStatus != http.StatusOK || mcpResult.WaitStatus != http.StatusOK || mcpResult.MessageStatus != http.StatusOK ||
 		!mcpResult.ReadOK || !mcpResult.WaitOK || !mcpResult.MessageRefusedOK || !mcpResult.NoAppendOK ||
 		!mcpResult.ReadAnnotationOK || !mcpResult.WaitAnnotationOK || mcpResult.MessageWriteOK ||
-		strings.Join(mcpResult.Tools, ",") != "thread_read,thread_wait,workspace" {
+		strings.Join(mcpResult.Tools, ",") != "overlay,thread_read,thread_wait" {
 		return fmt.Errorf("saved profile MCP report did not prove gateway access: %q", string(mcpData))
 	}
 	if err := ui.quit(); err != nil {
@@ -2237,7 +2239,7 @@ func runMCPProbe(provider, reportPath string, args []string) int {
 	}
 	sort.Strings(report.Tools)
 	if subset {
-		if strings.Join(report.Tools, ",") != "thread_read,thread_wait,workspace" ||
+		if strings.Join(report.Tools, ",") != "overlay,thread_read,thread_wait" ||
 			!report.ReadAnnotationOK || !report.WaitAnnotationOK || report.MessageWriteOK {
 			return 1
 		}
@@ -2331,7 +2333,7 @@ func runMCPProbe(provider, reportPath string, args []string) int {
 		report.WaitOK = true
 		return 0
 	}
-	if strings.Join(report.Tools, ",") != "components,delivery,docs,thread_message,thread_read,thread_wait,workspace" ||
+	if strings.Join(report.Tools, ",") != "components,delivery,docs,overlay,thread_message,thread_read,thread_wait" ||
 		!report.ReadAnnotationOK || !report.WaitAnnotationOK || !report.MessageWriteOK {
 		return 1
 	}
@@ -2851,7 +2853,7 @@ func managedLaunch(binary, provider string, machineLogin bool, customConfig ...b
 		mcpResult.ReadStatus != http.StatusOK || mcpResult.WaitStatus != http.StatusOK || mcpResult.MessageStatus != http.StatusOK ||
 		!mcpResult.ReadOK || !mcpResult.WaitOK || !mcpResult.MessageOK || !mcpResult.MessageReplayOK ||
 		!mcpResult.ReadAnnotationOK || !mcpResult.WaitAnnotationOK || !mcpResult.MessageWriteOK ||
-		strings.Join(mcpResult.Tools, ",") != "components,delivery,docs,thread_message,thread_read,thread_wait,workspace" {
+		strings.Join(mcpResult.Tools, ",") != "components,delivery,docs,overlay,thread_message,thread_read,thread_wait" {
 		return fmt.Errorf("managed MCP report did not prove gateway access: %q", string(mcpData))
 	}
 	retained, err = ownerChild(ui.cmd.Process.Pid, binary, state, 10*time.Second)
