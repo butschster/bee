@@ -1,6 +1,40 @@
 # Global Bee build — September 21, 2026
 
-## Current install: managed Muse driver and exact recovery
+## Current install: governed authoring reference
+
+Source `9e28a8b`, executable SHA-256
+`e7b8e8a576495b4c0565633a86d6c4ba68f6d5c72cd85a8b4e5cac3c51d93b94`,
+is installed globally with its matching license, Go module, provenance and
+runtime-patch sidecars. It pins runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`.
+
+The governed authoring guide now carries a real Bee-quality Counter App rather
+than an unstyled protocol sketch. Its exact MCP-returned source uses semantic
+appearance, responsive terminal geometry, keyboard/mouse parity, authenticated
+appearance updates and request-correlated checkpoint receipts. Source and packed
+App Journey acceptance authors and freezes that overlay through Governance,
+reviews and approves it through Overlays and Approvals, opens it from Start,
+resizes it, changes the workspace appearance, invokes Enter and the matching
+mouse action, then reopens it with `Count: 2 / Saved: 2`.
+
+Strict lint covers 498 production entries with the documented desktop-lifecycle
+warning; all 1,208 unit cases, the 163-document corpus, repository checks,
+production pack and the complete source/packed App Journey pass. The standalone
+passes embedded Desktop, Settings, Terminal, Modules and About, the five-profile
+Agent selector, and loopback-only offline cold boot/restart/reconnect; warm
+attachment measured 0.105 seconds. The installed executable independently
+passed the embedded desktop, Settings and Terminal smoke.
+
+The six-file installer verified the candidate and runtime patch archive, proved
+post-replacement rollback against a disposable set, stopped one exact prior Bee
+owner cleanly on SIGTERM, backed up the previous set at
+`/home/wolfy-j/wippy/bee-evidence/0921/global-before-guide-9e28a8b`, and
+atomically replaced sidecars before the executable. Receipt:
+`/home/wolfy-j/wippy/bee-evidence/0921/global-guide-9e28a8b-install.json`.
+Databases, profiles, conversations, workspaces, displays, credentials and
+migration ledgers were preserved.
+
+## Previous install: managed Muse driver and exact recovery
 
 Source `de9c5d0`, executable SHA-256
 `5e8d3f608e571660edcd2376cac6c3a242f046827ad2604bdfe3005f27190dfb`,

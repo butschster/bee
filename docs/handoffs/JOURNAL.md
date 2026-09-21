@@ -8331,3 +8331,28 @@ removed or reset.
 From `/mnt/c/Users/Wolfy-J`, installed `bee muse` reached Muse's own workspace
 trust screen. Escape closed the agent and Ctrl+Q detached with exit 0. The
 user's Muse auth and settings hashes were identical before and after the smoke.
+
+### 2026-09-21 Codex: governed authoring reference installed globally
+
+A repository-wide organization and UI review found no evidence for package
+moves, namespace renames, a widget framework or production deletion. Source
+`9e28a8b` instead fixes the bounded gaps: the MCP authoring guide now returns a
+responsive, semantic Counter App with keyboard/mouse parity, authenticated
+appearance updates and correlated checkpoint receipts; the offline corpus
+embeds that exact source; public overlay error copy and current Governance status
+are accurate; and Process Manager geometry covers both tabs across the canonical
+responsive matrix.
+
+The exact source and packed App Journey authors, freezes, reviews, approves and
+applies the Guide overlay through production facades and UI, then proves resize,
+Enter, mouse, live appearance change and durable `Count: 2 / Saved: 2` reopen.
+All 1,208 unit cases, strict lint, corpus, repository, pack, standalone embedded
+applications, five-profile Agent selector and offline boot/restart/reconnect pass.
+
+The verified global executable SHA-256 is
+`e7b8e8a576495b4c0565633a86d6c4ba68f6d5c72cd85a8b4e5cac3c51d93b94`,
+with runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`. The guarded installer proved rollback,
+stopped one exact prior owner cleanly and preserved every Bee state class.
+Backup: `bee-evidence/0921/global-before-guide-9e28a8b`. Receipt:
+`bee-evidence/0921/global-guide-9e28a8b-install.json`.

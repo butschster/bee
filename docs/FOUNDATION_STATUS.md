@@ -1,6 +1,33 @@
 # Foundation status
 
-## Current global install: Muse driver integration (September 21, 2026)
+## Current global install: governed authoring reference (September 21, 2026)
+
+Bee source `9e28a8b` is installed globally as executable SHA-256
+`e7b8e8a57649`, pinned to runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`. The repository organization review kept
+the existing package and namespace ownership intact and removed only verified
+public vocabulary and documentation drift.
+
+The exact application source returned by Governance's MCP guide now follows the
+Bee UI contract: semantic appearance, responsive layout, keyboard/mouse parity,
+authenticated appearance updates and request-correlated checkpoint receipts.
+The source and packed App Journey reads that guide through the public facade,
+authors and freezes its overlay, reviews and approves it through the UI, opens
+the resulting Counter App, resizes it, changes appearance, invokes both input
+routes and restores `Count: 2 / Saved: 2` from its durable checkpoint. The
+offline corpus embeds that exact source and validates its provenance.
+
+Strict lint covers 498 production entries with only the known desktop-lifecycle
+warning; all 1,208 unit cases, the 163-document corpus, repository checks,
+production pack and source/packed App Journey pass. The clean standalone passes
+the embedded applications, complete five-profile Agent selector and loopback-only
+offline cold boot/restart/reconnect; warm attachment measured 0.105 seconds.
+The six-file installer proved rollback before replacement, stopped one prior
+owner cleanly and preserved all Bee state. Backup:
+`bee-evidence/0921/global-before-guide-9e28a8b`; receipt:
+`bee-evidence/0921/global-guide-9e28a8b-install.json`.
+
+## Previous global install: Muse driver integration (September 21, 2026)
 
 The current globally installed source composes managed Muse 1.3.0 through the shared
 driver, credential and native-placement boundaries. Its window and batch
