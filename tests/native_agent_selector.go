@@ -2175,11 +2175,11 @@ func runMCPProbe(provider, reportPath string, args []string) int {
 	// The endpoint always appends the two protocol tools that carry no
 	// annotation. They are not part of the launch policy's admitted ceiling, so
 	// probe them separately and assert the exact admitted policy list below.
-	expected := []string{"thread_read", "thread_wait", "thread_message", "workspace", "delivery", "docs", "components"}
+	expected := []string{"thread_read", "thread_wait", "thread_message", "overlay", "delivery", "docs", "components"}
 	if subset {
 		// The saved-profile form starts from the reviewed default and toggles
 		// components, delivery, docs and thread_message off.
-		expected = []string{"thread_read", "thread_wait", "workspace"}
+		expected = []string{"thread_read", "thread_wait", "overlay"}
 	}
 	if json.Unmarshal(listReply.Result, &listed) != nil {
 		return 1
@@ -2205,7 +2205,7 @@ func runMCPProbe(provider, reportPath string, args []string) int {
 			report.WaitAnnotationOK = *tool.Annotations.ReadOnlyHint
 		case "thread_message":
 			report.MessageWriteOK = !*tool.Annotations.ReadOnlyHint
-		case "workspace":
+		case "overlay":
 			if *tool.Annotations.ReadOnlyHint {
 				return 1
 			}

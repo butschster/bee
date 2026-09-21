@@ -2,12 +2,12 @@
 
 A real managed Agy attempt is launched through the production launch definition,
 admission, carrier, placement and gateway with a brief and host instructions. It
-authors one application into its own Governance workspace through the scoped MCP
-workspace tool and freezes it. The host lints the frozen source, publishes it,
+authors one application into its own Governance overlay through the scoped MCP
+overlay tool and freezes it. The host lints the frozen source, publishes it,
 stages it into the desktop's own workspace and reads the destination's preflight
 verdict; a refusal returns to the agent as a record on its bound thread and it
 repairs, bounded to a small number of rounds. The person then reviews the plan in
-App Delivery, approves it in Approvals, and the activation owner applies it. The
+Overlays, approves it in Approvals, and the activation owner applies it. The
 application appears in the start menu, opens as a window with the content the
 agent authored, and comes back with its state after a full host restart.
 
@@ -40,12 +40,12 @@ DEFINITION_ID = "bee.agent_app_demo:app"
 TITLE = "Agent App"
 MARKER = "AGENT APP READY"
 UPDATE_MARKER = "AGENT APP UPDATED"
-DELIVERY = "App Delivery"
+DELIVERY = "Overlays"
 APPROVALS = "Approvals"
 OVERLAY_OWNER = "bee.agent_app_probe:activation_overlay"
 SOURCE_WORKSPACE = "agent-app-source"
 AUTHORING_THREAD = "agent-app-authoring"
-ADMITTED_TOOLS = ["app_docs", "thread_message", "thread_read", "workspace"]
+ADMITTED_TOOLS = ["app_docs", "overlay", "thread_message", "thread_read"]
 ACTIVE_TRAITS = ["app:author", "app:read"]
 MATERIAL = {"contract": "tests/fixtures/agent_app/CONTRACT.md", "client": "src/ui/application/client.lua",
             "example": "src/apps/timeline/app.lua", "view": "src/apps/timeline/view.lua"}
@@ -95,7 +95,8 @@ def configure_continuous_source(project, workspace_id):
     approvals_path = project / "src/approvals/_index.yaml"
     approvals = yaml.safe_load(approvals_path.read_text())
     policies = next(item for item in approvals["entries"] if item["name"] == "approver_policies")
-    policies["policies"] = [{"name": "local-agent-app-delivery", "approvers": ["bee.local"],
+    policies["policies"] = [{"name": "local-agent-app-delivery",
+                             "approvers": [{"definition_id": "bee.inbox:app"}],
                              "max_ttl_ms": 600000}]
     approvals_path.write_text(yaml.safe_dump(approvals, sort_keys=False))
 
@@ -388,7 +389,7 @@ def review_contract_check():
 def open_plan(ui, label, version):
     """Read one exact staged version's plan."""
     for index in range(8):
-        ui.wait("STAGED PLANS", timeout=20)
+        ui.wait("Read review", timeout=20)
         for _ in range(index):
             ui.key(b"j")
         boundary = frame_boundary(ui)
@@ -423,12 +424,12 @@ def open_admitted(ui, timeout):
 
 def open_delivery(ui):
     """Enter through the ordinary desktop catalog. This also focuses the
-    retained App Delivery instance when another restored application is on top."""
+    retained Overlays instance when another restored application is on top."""
     boundary = frame_boundary(ui)
     ui.open_start()
     ui.choose("Tools")
     ui.choose(DELIVERY)
-    wait_frame(ui, boundary, "APP DELIVERY", timeout=COLD_BOOT)
+    wait_frame(ui, boundary, "OVERLAYS", timeout=COLD_BOOT)
     return boundary
 
 
@@ -453,7 +454,6 @@ def open_activation_approval(ui, staged, proposal):
                 ui.key(b"t")
                 wait_frame(ui, boundary, "Digest " + proposal, timeout=20)
             wait_frame(ui, boundary, "artifact_digest: " + staged["artifact_digest"], timeout=20)
-            wait_frame(ui, boundary, "version: " + staged["version"], timeout=20)
             return boundary
         ui.key(b"j")
     raise AssertionError("exact activation approval is absent\n" + ui.text())
@@ -489,15 +489,15 @@ def review_and_apply(folder, project, staged, change, exercise_app, evidence, ph
         record_seconds(folder, evidence, "local_ui_seconds", phase + ".open_delivery", started)
         maximize_boundary = frame_boundary(ui)
         ui.window_control("□")
-        wait_frame(ui, maximize_boundary, "APP DELIVERY", timeout=20)
-        # App Delivery checkpoints its active tab. A retained instance may
-        # already be on Staged plans, so select by the visible tab instead of
-        # blindly toggling back to Available.
+        wait_frame(ui, maximize_boundary, "OVERLAYS", timeout=20)
+        # Overlays checkpoints its active tab. A retained instance may be on
+        # any pane, so select Staged by its contextual primary action. The
+        # compact UI labels the tab "Staged" instead of using a pane heading.
         for _ in range(3):
-            if "STAGED PLANS" in ui.text():
+            if "Read review" in ui.text() and "REVIEW " not in ui.text():
                 break
             ui.key(b"\t")
-        ui.wait("STAGED PLANS", timeout=20)
+        ui.wait("Read review", timeout=20)
         started = time.monotonic()
         review_boundary = open_plan(ui, staged["source_workspace"], staged["version"])
         wait_frame(ui, review_boundary, "Verdict ready", "No diagnostics and no pending migrations",
@@ -550,12 +550,14 @@ def review_and_apply(folder, project, staged, change, exercise_app, evidence, ph
         ui.wait("APPROVALS", timeout=COLD_BOOT)
         ui.window_control("□")
         ui.pump(.4)
+        ui.key(b"r")
         ui.wait("bee.governance:establish-overlay", timeout=COLD_BOOT)
         started = time.monotonic()
         approval_boundary = open_activation_approval(ui, staged, proposed.group(1))
         record_seconds(folder, evidence, "local_ui_seconds", phase + ".open_exact_approval", started)
         capture_frame(folder, evidence, ui, phase + "-approval-details", approval_boundary,
-                      "version: " + staged["version"], "artifact_digest: " + staged["artifact_digest"])
+                      "Asked: Establish and recover " + staged["source_workspace"] + " version " + staged["version"],
+                      "artifact_digest: " + staged["artifact_digest"])
         confirmation_boundary = frame_boundary(ui)
         ui.key(b"a")
         wait_frame(ui, confirmation_boundary, "Approve this request?", timeout=20)
@@ -565,7 +567,7 @@ def review_and_apply(folder, project, staged, change, exercise_app, evidence, ph
         approved_boundary = frame_boundary(ui)
         ui.key(b"\t")
         ui.key(b"\r")
-        wait_frame(ui, approved_boundary, "approved by bee.local", timeout=COLD_BOOT)
+        wait_frame(ui, approved_boundary, "approved by bee.application:", timeout=COLD_BOOT)
         record_seconds(folder, evidence, "local_ui_seconds", phase + ".approve", started)
 
         delivery_boundary = frame_boundary(ui)
@@ -786,7 +788,7 @@ def exercise():
         "application_identity": {"view_id": initial_identity[0], "instance_id": initial_identity[1]},
         "entries": updated["entries"]}, indent=2))
     print("Agent-authored application: a live managed Agy attempt authored " + DEFINITION_ID
-          + " through the scoped Governance MCP workspace tool and froze it as "
+          + " through the scoped Governance MCP overlay tool and froze it as "
           + report["snapshot_digest"][:12] + " (artifact " + report["artifact_digest"][:12]
           + "), typed lint passed, the destination staged it as plan " + staged["plan_digest"][:12]
           + " with a ready preflight, a person reviewed, selected, prepared and approved it, "
