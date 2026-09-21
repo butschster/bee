@@ -22,7 +22,6 @@ generator when the corpus is intentionally updated.
 | Runtime integration and upstream boundaries | [Runtime integration](RUNTIME_UPSTREAM.md) |
 | Release artifacts and publication | [Releasing](RELEASING.md) |
 | GitHub protections and repository settings | [GitHub setup](GITHUB.md) |
-| System ownership and package boundaries | [System map](SYSTEM_MAP.md), [package boundaries](PACKAGE_BOUNDARIES.md) |
 | Hub package inspection and local installation | [Hub](HUB.md) |
 | Managed harness gateway, hooks, and MCP configuration | [Gateway](GATEWAY.md), [gateway hooks](GATEWAY_HOOKS.md), [MCP configuration](MCP_CONFIGURATION.md) |
 | Governed application delivery | [Distributed app delivery](DISTRIBUTED_APP_DELIVERY.md) |

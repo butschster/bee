@@ -915,9 +915,9 @@
       "topic": "platform"
     },
     {
-      "bytes": 3082,
+      "bytes": 2963,
       "id": "docs/readme",
-      "sha256": "42fd9d09ba278e667b34b0f7fa7820f8c4d6a6dbbb531316f26a9fde485836e9",
+      "sha256": "7c3880f1617599228be6c025f25dbd04070698697cd585f59a437cebc601fa65",
       "source": "docs/README.md",
       "title": "Documentation map",
       "topic": "platform"
@@ -1150,7 +1150,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding repository process and design pages. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 1242219,
+    "bytes": 1242100,
     "documents": 143
   }
 }
