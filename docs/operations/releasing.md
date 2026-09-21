@@ -148,10 +148,10 @@ through the normal update path.
 
 ## Distribution access
 
-Both repositories are currently private. GitHub releases inherit repository
-visibility: anonymous downloads and the documented public installer command
-require a public Bee repository. Builder action sharing is enabled for the Wippy
-organization. Decide public visibility before announcing an OSS release.
+Bee is public, so published GitHub release assets and the documented installer
+are available anonymously. The pinned Builder action must also be resolvable by
+public Bee workflows; organization-only action sharing is insufficient while
+Builder remains private. Verify that dependency before creating a release tag.
 
 The repository uses the organization code of conduct, local contribution and
 security policies, issue forms, and CODEOWNERS. The documentation lives in `docs/`;
