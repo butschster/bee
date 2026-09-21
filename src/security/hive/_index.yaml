@@ -139,7 +139,7 @@ entries:
 - name: hive_supervisor_spawn_deny
   kind: security.policy
   meta:
-    comment: Attached by the supervisor lane to ordinary application and launch scopes
+    comment: Attached by the supervisor to ordinary application and launch scopes
   policy:
     actions:
     - process.spawn

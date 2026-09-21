@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="docs/README.md">Documentation</a> ·
-  <a href="docs/FOUNDATION_STATUS.md">Current status</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="LICENSE">MIT license</a> ·
   <a href="https://github.com/wippyai/runtime">Wippy</a>
@@ -36,10 +35,8 @@ bee muse
 ```
 
 The named commands open a managed profile fullscreen through the same admission
-path as the Agent picker. The harness must be installed and admitted by the host.
-Saved profiles select reviewed options, instructions, MCP scope, hooks, placement,
-and recovery behavior; see [saved profiles](docs/handoffs/SAVED_AGENT_PROFILES.md).
-Managed Docker launch remains unfinished.
+path as the Agent picker. The host admits the selected profile, its reviewed
+options, instructions, MCP scope, hooks, placement, and recovery behavior.
 
 Run `bee observe` in another terminal for a read-only view of the retained local
 desktop. Typing cannot control its apps. Ctrl+Q or Ctrl+] detaches that display,
@@ -69,9 +66,9 @@ controller while admitted applications keep running.
 
 Press **F1** for Start, **Alt+Tab** to switch apps, **F11** to maximize, and
 **Ctrl+Q** to detach. Drag windows by their titles and resize from their corners.
-**F12** replaces the presenter while applications keep running. Preferences and
-supported application checkpoints survive restart; a dead native terminal does
-not become a portable checkpoint.
+**F12** replaces the presenter while applications keep running. Supported
+application state survives restart; a dead native terminal does not become a
+portable application.
 
 ## Current scope
 
@@ -84,9 +81,9 @@ domain state.
 Local desktop/client attachment, observation, Hub installation, governed app
 overlays, managed agents, and policy-routed Hive operations are implemented.
 Public Hive enrollment and discovery, remote workspace composition, destination
-Hub transfer/install, and managed headless/Docker launch remain unfinished. The
-current Hive Manager shows admitted catalog state; it does not imply general
-remote control.
+Hub transfer/install, and managed headless launch remain unfinished. The current
+Hive Manager shows admitted catalog state; it does not imply general remote
+control.
 
 ## Install from source
 
@@ -112,8 +109,8 @@ workspace state; see [native distribution](docs/NATIVE_DISTRIBUTION.md) and
 
 Start with the [agent guide](docs/AGENT_GUIDE.md) and
 [development conventions](docs/DEVELOPMENT.md). Production loads only `src/`;
-tests and the historical POC are not runtime dependencies. Run `make check` for
-typed Lua, permissions, persistence, packaging, and real terminal acceptance.
+tests and development tools are not runtime dependencies. Run `make check` for
+typed Lua, permissions, persistence, packaging, and real terminal checks.
 
 | Code | Purpose |
 |---|---|

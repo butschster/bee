@@ -332,9 +332,6 @@ executable or reconnecting a presenter does not upgrade those running applicatio
 Settings → About reports the loaded bundle; use a fresh owner to inspect a newly
 installed build without interrupting existing terminals.
 
-The [completion audit](handoffs/HUB_COMPLETION.md) maps the requested Kickside-like
-workflow to current APIs, UI acceptance and remaining application-admission work.
-
 ### Read-only Contents browser
 
 Modules package details expose Contents (C), alongside README, Versions and

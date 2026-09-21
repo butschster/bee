@@ -8408,3 +8408,25 @@ tracking configuration and ignored release, fixture and Python-cache output;
 the retained `.wippy` directory remains developer/runtime state. The stale
 generated-bundle leak exemption and obsolete native-distribution Test Status
 description were removed.
+
+### 2026-09-21 Codex: native runtime boundary reduction in progress
+
+The cleanup now removes Bee's parallel native Hive, client, Docker, background
+launch, private-file and promotion machinery. Native code is being reduced to
+the filesystem event component and one application host that selects a
+project-specific default state and exposes bounded read-only host facts. The
+host neither opens nor locks state, creates compatibility receipts, manages
+processes, nor implements Hive.
+
+Runtime PR #819 adds `Plan.DefaultState` on top of #789/#787: an explicit
+`--state` wins, an empty host default preserves the executable default, and a
+relative host default resolves from the original launch directory. Bee pins the
+reviewed patch by digest until the runtime stack merges. Rodrigo has approved
+#787 at its current head.
+
+Upgrade persistence is not yet claimed. The prior two-binary gate proves
+workspace identity, migrations, settings and application visibility; a new
+acceptance is in progress for a real Hub dependency change plus a reviewed,
+approved Governance overlay, application checkpoint, executable replacement,
+boot recovery and reopen from the same explicit state. Global installation is
+held until that gate and the standalone/project-node checks pass.

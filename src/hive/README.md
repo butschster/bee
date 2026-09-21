@@ -1,6 +1,6 @@
 # bee.hive
 
-The cross-node protocol of Bee, as agreed in `docs/HIVE_PROTOCOL.md`. Six
+The cross-node protocol of Bee, as defined by the runtime Hive owner. Six
 terms: Principal, Owner, Operation, Request, Grant, Session. Every call passes
 the caller's supervisor and, when remote, the destination supervisor; the owner
 decides; a grant may open a direct session.
