@@ -54,7 +54,7 @@ See [the build sequence](BUILD_SEQUENCE.md) for implemented driver and gateway
 components and their remaining public activation gates. Do not route new
 authority through the desktop merely because it is the visible client.
 
-The current source candidate also contains the Muse 1.3.0 driver integration.
+The globally installed Bee contains the Muse 1.3.0 driver integration.
 Managed Muse uses a retained private `HOME` with `XDG_CONFIG_HOME` absent. The
 host admits and snapshots the user's Muse auth/settings, then placement builds
 a fresh settings file that preserves the provider/model/TUI, unrelated MCP
@@ -66,7 +66,10 @@ recalls the token without tools or prompt replay, keeps the retained HOME,
 project, application and thread, and creates a fresh attempt, gateway binding
 and hook-token path. Source auth/settings/project state remain unchanged. The
 test wrapper disables Muse's experimental skill, goal and verification reminder agents only for
-this exact-session acceptance. Muse is not globally installed yet.
+this exact-session acceptance. Source `de9c5d0` is installed globally as
+executable SHA-256 `5e8d3f608e57`; its installed `bee muse` route reaches Muse's
+native workspace trust screen from the caller's project directory and detaches
+cleanly without changing the user's Muse auth or settings.
 
 The shared source currently needs the candidate runtime described in
 [the runtime gate](handoffs/STATUS_RUNTIME_GATE.md); historical standalone

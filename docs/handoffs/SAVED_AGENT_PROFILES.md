@@ -4,7 +4,7 @@ Installed in global Bee at production source `dc86273`. Saved-profile resolution
 admission and the picker/form workflow have native acceptance; remaining limits
 are listed below.
 
-The current source candidate adds the managed Muse 1.3.0 route. Its retained
+The globally installed `de9c5d0` release adds the managed Muse 1.3.0 route. Its retained
 private `HOME` leaves `XDG_CONFIG_HOME` unset. Host-admitted Muse auth/settings
 are snapshotted, and each attempt receives a fresh settings file that preserves
 provider/model/TUI values, unrelated MCP servers and user hooks, then inserts
@@ -15,7 +15,9 @@ recalls the exact session token without tools or prompt replay, retains the
 private HOME/project/application/thread, creates a fresh attempt/gateway and
 hook-token path, and leaves source auth/settings/project state unchanged. The
 test wrapper disables Muse's experimental skill, goal and verification reminder agents only for
-this exact-session check. The candidate is not globally installed.
+this exact-session check. The installed `bee muse` route also reaches Muse's
+native workspace trust screen from the caller's project directory and detaches
+without changing the user's Muse auth or settings.
 
 A saved profile selects a reviewed launch definition and stores a title, scalar
 options, MCP tool identifiers and appended instructions. The definition selects

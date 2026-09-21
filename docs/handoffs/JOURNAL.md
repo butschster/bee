@@ -8306,3 +8306,28 @@ cleanly. Source auth, settings and project tree remained unchanged. The wrapper
 disabled Muse's experimental skill, goal and verification reminder agents only for this
 exact-session acceptance, so those provider-owned reminder turns were outside
 the proof. This source candidate has not been installed globally.
+
+### 2026-09-21 — managed Muse release installed globally
+
+Source `de9c5d0` is installed globally as executable SHA-256
+`5e8d3f608e571660edcd2376cac6c3a242f046827ad2604bdfe3005f27190dfb`,
+with runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`. The clean candidate passed strict lint
+(498 entries, one known desktop-lifecycle warning), all 1,205 unit cases, the
+163-document corpus, managed Muse login/MCP/lifecycle, the complete five-profile
+selector, loopback-only offline cold boot/restart/reconnect, and two independent
+real Muse exact-session recovery runs in 106.24 and 107.79 seconds.
+
+The guarded six-file installer first refused an obsolete native-version
+assertion before touching the installed set. After the assertion was aligned
+with the candidate's two declared native entries, it proved post-replacement
+rollback on a disposable set and atomically installed the verified artifacts.
+Two exact prior owners stopped cleanly on SIGTERM. Backup:
+`bee-evidence/0921/global-before-muse-de9c5d0`. Receipt:
+`bee-evidence/0921/global-muse-de9c5d0-install.json`. No database, profile,
+conversation, workspace, display, credential or migration ledger was copied,
+removed or reset.
+
+From `/mnt/c/Users/Wolfy-J`, installed `bee muse` reached Muse's own workspace
+trust screen. Escape closed the agent and Ctrl+Q detached with exit 0. The
+user's Muse auth and settings hashes were identical before and after the smoke.

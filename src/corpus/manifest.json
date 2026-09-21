@@ -835,9 +835,9 @@
       "topic": "terminal"
     },
     {
-      "bytes": 11275,
+      "bytes": 11493,
       "id": "docs/agent_guide",
-      "sha256": "d594ef4f4729e13ce47d1f06bd2d264aef7e6c06e99a845ce2cbcc16e7c0d08d",
+      "sha256": "2fcefedda673dc09223d9d878188779af4db275da2c987fa86d92d266aee9215",
       "source": "docs/AGENT_GUIDE.md",
       "title": "Working on Bee",
       "topic": "platform"
@@ -1310,7 +1310,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, hive, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding the pages docs/README.md labels historical or proposed. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 2170501,
+    "bytes": 2170719,
     "documents": 163
   }
 }
