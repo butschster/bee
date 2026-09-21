@@ -127,6 +127,7 @@
       "namespaces": [
         "bee.hive",
         "bee.hive.desktop",
+        "bee.hive.host",
         "bee.hive.supervisor",
         "bee.hive.telemetry"
       ]

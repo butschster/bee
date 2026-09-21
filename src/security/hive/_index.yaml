@@ -162,7 +162,9 @@ entries:
     - process.registry.lookup
     - process.registry.unregister
     - process.registry.unregister.eventual
-    resources: '*'
+    resources:
+    - bee.hive.supervisor
+    - 'bee.hive.supervisor/*'
     effect: allow
 - name: hive_advertise_policy
   kind: security.policy
