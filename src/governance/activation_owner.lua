@@ -10,14 +10,16 @@ local approval = require("approval")
 local preflight = require("preflight")
 local json = require("json")
 local migration_work = require("migration_work")
+local artifact = require("artifact")
+local application_admission = require("application_admission")
 
 local M = {}
 type Object = {[string]: unknown}
 type Result = transaction.Result
 type Resolver = {resolve: (Resolver, unknown) -> (preflight.Candidate?, preflight.Context?, string?)}
 type Executor = approval.Executor
-type Apply = (string, unknown) -> ({[string]: unknown}?, string?)
-type Observe = (string, unknown) -> (boolean?, string?)
+type Apply = (string, unknown, unknown?) -> ({[string]: unknown}?, string?)
+type Observe = (string, unknown, unknown?) -> (boolean?, string?)
 type Config = {plans: plans.Store, activations: activations.Store, resolver: Resolver,
     approvals: Executor, actor_id: string, consumer_id: string, overlay_owner: string,
     approval_policy: string, apply: Apply, matches: Observe, migrations: any}
@@ -92,6 +94,33 @@ local function admission_owner(config: Config, facts: Object): Result?
         return failure("CONFLICT", "application admission does not match the activation overlay owner")
     end
     return nil
+end
+
+-- Effects replay from durable intent, never from a newly resolved candidate.
+-- The optional admission record is decoded independently from the portable
+-- artifact and checked against every identity that ties it to this owner.
+local function desired_intent(config: Config, intent: Object): ({unknown}?, Object?, Result?)
+    local entries, artifact_error = artifact.decode(intent.artifact_bytes, intent.artifact_digest)
+    if not entries then return nil, nil, failure("CONFLICT", tostring(artifact_error or "decode immutable artifact")) end
+    for _, entry in ipairs(entries) do
+        if application_admission.reserved(entry.id) then
+            return nil, nil, failure("CONFLICT", "portable artifact entry uses a reserved application admission identity")
+        end
+    end
+    local bytes, digest = intent.application_admission_bytes, intent.application_admission_digest
+    if bytes == nil and digest == nil then return entries :: {unknown}, nil, nil end
+    if type(bytes) ~= "string" or type(digest) ~= "string" then
+        return nil, nil, failure("CONFLICT", "immutable application admission blob is incomplete")
+    end
+    local measured, admission_error = application_admission.decode(bytes, digest)
+    if not measured then return nil, nil, failure("CONFLICT", tostring(admission_error)) end
+    local record = measured.record
+    if record.workspace_id ~= intent.workspace_id or record.overlay_owner ~= config.overlay_owner
+        or record.overlay_owner ~= intent.overlay_owner or record.source_node ~= intent.source_node
+        or record.source_workspace ~= intent.source_workspace or record.artifact_digest ~= intent.artifact_digest then
+        return nil, nil, failure("CONFLICT", "immutable application admission does not match activation identity")
+    end
+    return entries :: {unknown}, {bytes = measured.bytes, digest = measured.digest}, nil
 end
 
 local function composed_base_diagnostic(intent: Object, current: Object): string?
@@ -362,6 +391,8 @@ function M.step(raw_config: Config, intent_raw: unknown, receipt_raw: unknown): 
         end
         local spec, measurement_error = remeasure_progress(config, intent)
         if not spec then return measurement_error :: Result end
+        local desired_entries, desired_admission, desired_error = desired_intent(config, intent)
+        if not desired_entries then return desired_error :: Result end
         local function uncertain(diagnostics: string): Result
             local outcome_key = key(prefix, "outcome-uncertain-" .. tostring(intent.revision))
             if not outcome_key then return failure("INVALID", "activation receipt key is too long") end
@@ -371,12 +402,12 @@ function M.step(raw_config: Config, intent_raw: unknown, receipt_raw: unknown): 
             if not recorded.ok then return recorded end
             return failure("UNCERTAIN", diagnostics, object(recorded.value))
         end
-        local matches, observe_error = config.matches(config.overlay_owner, spec.entries)
+        local matches, observe_error = config.matches(config.overlay_owner, desired_entries, desired_admission)
         if matches == nil then return failure("UNAVAILABLE", tostring(observe_error)) end
         if not matches then
-            local applied, apply_error = config.apply(config.overlay_owner, spec.entries)
+            local applied, apply_error = config.apply(config.overlay_owner, desired_entries, desired_admission)
             if not applied then return uncertain(tostring(apply_error)) end
-            local observed, applied_observe_error = config.matches(config.overlay_owner, spec.entries)
+            local observed, applied_observe_error = config.matches(config.overlay_owner, desired_entries, desired_admission)
             if observed ~= true then
                 return uncertain(observed == nil and tostring(applied_observe_error)
                     or "overlay apply completed without an exact observed match")
@@ -401,12 +432,14 @@ function M.step(raw_config: Config, intent_raw: unknown, receipt_raw: unknown): 
     if intent.phase == "settled" and intent.outcome == "applied" then
         local superseded = require_desired(config, intent)
         if superseded then return superseded end
-        local spec, measurement_error = remeasure_progress(config, intent)
-        if not spec then return measurement_error :: Result end
-        local matches, observe_error = config.matches(config.overlay_owner, spec.entries)
+        local _, measurement_error = remeasure_progress(config, intent)
+        if measurement_error then return measurement_error end
+        local desired_entries, desired_admission, desired_error = desired_intent(config, intent)
+        if not desired_entries then return desired_error :: Result end
+        local matches, observe_error = config.matches(config.overlay_owner, desired_entries, desired_admission)
         if matches == nil then return failure("UNAVAILABLE", tostring(observe_error)) end
         if matches then return transaction.success(intent, true) end
-        local restored, restore_error = config.apply(config.overlay_owner, spec.entries)
+        local restored, restore_error = config.apply(config.overlay_owner, desired_entries, desired_admission)
         if restored then
             local result: Object = {}
             for field, value in pairs(intent) do result[field] = value end

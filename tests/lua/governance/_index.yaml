@@ -172,6 +172,7 @@ entries:
     test: wippy.test:test
     materializer: bee.governance:materializer
     artifact: bee.governance:artifact
+    application_admission: bee.governance:governed_application_admission
 - name: approval_test
   kind: function.lua
   source: file://approval_test.lua

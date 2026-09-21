@@ -77,6 +77,16 @@ local function define_tests()
             candidate.migrations = {}
             test.is_nil(measure.measure(plan, candidate, context))
         end)
+        test.it("refuses a portable artifact that forges an admission identity", function()
+            local plan, candidate, context = facts()
+            local forged = assert(artifact.create({{id = admission.RESERVED_PREFIX .. "forged",
+                kind = "function.lua", data = {source = "return true"}}}))
+            plan.artifact_bytes, plan.artifact_digest = forged.bytes, forged.digest
+            local entry_bytes = assert(canonical.encode(forged.entries[1]))
+            candidate.entries[1].id = forged.entries[1].id :: string
+            candidate.entries[1].digest = assert(hash.sha256(entry_bytes))
+            test.is_nil(measure.measure(plan, candidate, context))
+        end)
         test.it("seals pending migration work for an existing admitted database", function()
             local definition = {id = "demo:001", kind = "function.lua",
                 meta = {type = "migration", target_db = "host:db", ordinal = 1},

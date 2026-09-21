@@ -335,10 +335,10 @@ local function owner_config(config: Configuration, profile_value: Profile, plan_
     return {plans = plan_store, activations = activation_store, resolver = resolved :: owner.Resolver,
         approvals = executor :: owner.Executor, actor_id = ACTOR, consumer_id = ACTOR,
         overlay_owner = profile_value.overlay_owner, approval_policy = profile_value.approval_policy,
-        apply = function(overlay_owner: string, entries: unknown): ({[string]: unknown}?, string?)
-            return materializer.reconcile(overlay_owner, entries)
-        end, matches = function(overlay_owner: string, entries: unknown): (boolean?, string?)
-            return materializer.matches(overlay_owner, entries)
+        apply = function(overlay_owner: string, entries: unknown, admission: unknown?): ({[string]: unknown}?, string?)
+            return materializer.reconcile_composed(overlay_owner, entries, admission)
+        end, matches = function(overlay_owner: string, entries: unknown, admission: unknown?): (boolean?, string?)
+            return materializer.matches_composed(overlay_owner, entries, admission)
         end, migrations = migration_adapter}, nil
 end
 

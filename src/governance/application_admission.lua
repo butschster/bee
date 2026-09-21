@@ -5,6 +5,7 @@
 local canonical = require("canonical")
 local hash = require("hash")
 local bounds = require("bounds")
+local json = require("json")
 
 local M = {}
 
@@ -22,6 +23,7 @@ type Record = {schema_revision: string, workspace_id: string, overlay_owner: str
     source_node: string, source_workspace: string, artifact_digest: string,
     policy_digest: string, bindings: {Binding}}
 type Measurement = {id: string, record: Record, bytes: string, digest: string}
+type Entry = {id: string, kind: string, data: Record}
 
 local function sha(value: unknown): string?
     if type(value) ~= "string" or #value ~= 64 or not value:match("^[0-9a-f]+$") then return nil end
@@ -128,6 +130,41 @@ function M.id(owner_raw: unknown): (string?, string?)
     local digest, digest_error = hash.sha256(owner)
     if not digest then return nil, tostring(digest_error or "measure application admission owner") end
     return M.RESERVED_PREFIX .. digest, nil
+end
+
+-- Admission records live under an owner-derived private identity.  Treat the
+-- whole prefix as reserved, including malformed suffixes: a portable artifact
+-- must never get to claim a present or future admission identity.
+function M.reserved(raw: unknown): boolean
+    return type(raw) == "string" and (raw :: string):sub(1, #M.RESERVED_PREFIX) == M.RESERVED_PREFIX
+end
+
+-- Decode the immutable byte handoff exactly as it was measured.  JSON only
+-- parses the input; remeasurement rejects a valid-looking noncanonical body.
+function M.decode(bytes_raw: unknown, digest_raw: unknown): (Measurement?, string?)
+    if type(bytes_raw) ~= "string" or #bytes_raw == 0 or #bytes_raw > M.MAX_BYTES then
+        return nil, "application admission bytes exceed bound"
+    end
+    local digest = sha(digest_raw)
+    if not digest then return nil, "application admission digest is malformed" end
+    local actual, actual_error = hash.sha256(bytes_raw)
+    if not actual then return nil, tostring(actual_error or "measure application admission") end
+    if actual ~= digest then return nil, "application admission digest does not match bytes" end
+    local raw, decode_error = json.decode(bytes_raw)
+    if decode_error then return nil, "application admission bytes are malformed" end
+    local measured, measure_error = M.measure(raw)
+    if not measured or measured.bytes ~= bytes_raw or measured.digest ~= digest then
+        return nil, tostring(measure_error or "application admission bytes are not canonical")
+    end
+    return measured, nil
+end
+
+-- This record is deliberately outside the portable artifact envelope.  It is
+-- a registry entry only after the destination has measured and frozen it.
+function M.entry(bytes_raw: unknown, digest_raw: unknown): (Entry?, string?)
+    local measured, measure_error = M.decode(bytes_raw, digest_raw)
+    if not measured then return nil, measure_error end
+    return {id = measured.id, kind = "registry.entry", data = measured.record}, nil
 end
 
 function M.measure(raw: unknown): (Measurement?, string?)

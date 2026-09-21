@@ -5,7 +5,6 @@ local artifact = require("artifact")
 local preflight = require("preflight")
 local canonical = require("canonical")
 local hash = require("hash")
-local json = require("json")
 local bounds = require("bounds")
 local migration_work = require("migration_work")
 local application_admission = require("application_admission")
@@ -33,16 +32,9 @@ local function admission_blob(raw: unknown): (Admission?, string?)
         or #value.digest ~= 64 or not value.digest:match("^[0-9a-f]+$") then
         return nil, "application admission measurement is invalid"
     end
-    local bytes, measured = value.bytes :: string, value.digest :: string
-    local actual, actual_error = digest(bytes)
-    if not actual or actual ~= measured then return nil, actual_error or "application admission digest does not match bytes" end
-    local decoded, decode_error = json.decode(bytes)
-    if decode_error then return nil, "application admission bytes are malformed" end
-    local remeasured, measure_error = application_admission.measure(decoded)
-    if not remeasured or remeasured.bytes ~= bytes or remeasured.digest ~= measured then
-        return nil, tostring(measure_error or "application admission bytes are not canonical")
-    end
-    return {bytes = bytes, digest = measured, record = remeasured.record}, nil
+    local decoded, decode_error = application_admission.decode(value.bytes, value.digest)
+    if not decoded then return nil, decode_error end
+    return {bytes = decoded.bytes, digest = decoded.digest, record = decoded.record}, nil
 end
 
 function M.measure(plan_raw: unknown, candidate: preflight.Candidate,
@@ -67,6 +59,9 @@ function M.measure(plan_raw: unknown, candidate: preflight.Candidate,
     if not entries then return nil, artifact_error end
     local measured_entries: {[string]: string} = {}
     for _, entry in ipairs(entries) do
+        if application_admission.reserved(entry.id) then
+            return nil, "portable artifact entry uses a reserved application admission identity"
+        end
         if entry.kind == "ns.dependency" then
             return nil, "dependency directives cannot be activated in a process-local overlay"
         end
