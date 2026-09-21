@@ -84,6 +84,16 @@ local function measured(config: Config, spec: Object): (Object?, Result?)
     return result, nil
 end
 
+local function admission_owner(config: Config, facts: Object): Result?
+    local admission = object(facts.application_admission)
+    if not admission then return nil end
+    local record = object(admission.record)
+    if not record or record.overlay_owner ~= config.overlay_owner then
+        return failure("CONFLICT", "application admission does not match the activation overlay owner")
+    end
+    return nil
+end
+
 local function composed_base_diagnostic(intent: Object, current: Object): string?
     local prior = type(intent.resolution_bytes) == "string"
         and object(json.decode(intent.resolution_bytes :: string)) or nil
@@ -98,7 +108,8 @@ end
 
 local function unchanged(intent: Object, current: Object): Result?
     local fields = {"owner_node", "workspace_id", "source_node", "source_workspace", "version",
-        "plan_digest", "artifact_digest", "resolution_digest", "preflight_digest", "migration_work_digest"}
+        "plan_digest", "artifact_digest", "resolution_digest", "preflight_digest", "migration_work_digest",
+        "application_admission_digest"}
     for _, field in ipairs(fields) do
         if intent[field] ~= current[field] then
             if field == "resolution_digest" then
@@ -162,6 +173,8 @@ function M.prepare(raw_config: Config, raw: unknown): Result
     if not plan then return plan_error :: Result end
     local facts, facts_error = measured(config, plan)
     if not facts then return facts_error :: Result end
+    local admission_error = admission_owner(config, facts)
+    if admission_error then return admission_error end
     local prepared = activations.call(config.activations, config.actor_id, {operation = "prepare_activation",
         intent_id = intent_id, expected_revision = 0, idempotency_key = prepare_key,
         overlay_owner = config.overlay_owner, source_node = facts.source_node,
@@ -169,7 +182,7 @@ function M.prepare(raw_config: Config, raw: unknown): Result
         plan_digest = facts.plan_digest, plan_revision = facts.plan_revision,
         selection_revision = facts.selection_revision, artifact = facts.artifact,
         resolution = facts.resolution, preflight = facts.preflight,
-        migration_work = facts.migration_work})
+        migration_work = facts.migration_work, application_admission = facts.application_admission})
     if not prepared.ok then return prepared end
     local intent = object(prepared.value)
     if not intent then return failure("INTERNAL", "activation store returned no prepared intent") end
@@ -188,12 +201,16 @@ local function remeasure_selected(config: Config, intent: Object): Result?
     if not plan then return plan_error :: Result end
     local current, measurement_error = measured(config, plan)
     if not current then return measurement_error :: Result end
+    local admission_error = admission_owner(config, current)
+    if admission_error then return admission_error end
     return unchanged(intent, current)
 end
 
 local function remeasure_authorized(config: Config, intent: Object): (Object?, Result?)
     local current, measurement_error = measured(config, approved_spec(intent))
     if not current then return nil, measurement_error end
+    local admission_error = admission_owner(config, current)
+    if admission_error then return nil, admission_error end
     local changed = unchanged(intent, current)
     if changed then return nil, changed end
     return current, nil
@@ -205,8 +222,10 @@ end
 local function remeasure_progress(config: Config, intent: Object): (Object?, Result?)
     local current, measurement_error = measured(config, approved_spec(intent))
     if not current then return nil, measurement_error end
+    local admission_error = admission_owner(config, current)
+    if admission_error then return nil, admission_error end
     for _, field in ipairs({"owner_node", "workspace_id", "source_node", "source_workspace", "version",
-        "plan_digest", "artifact_digest", "resolution_digest"}) do
+        "plan_digest", "artifact_digest", "resolution_digest", "application_admission_digest"}) do
         if intent[field] ~= current[field] then
             if field == "resolution_digest" then
                 local named = composed_base_diagnostic(intent, current)

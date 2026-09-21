@@ -193,11 +193,12 @@ entries:
 - name: activation_measure
   kind: library.lua
   source: file://activation_measure.lua
-  modules: [hash]
+  modules: [hash, json]
   imports:
     artifact: bee.governance:artifact
     preflight: bee.governance:preflight
     migration_work: bee.governance:migration_work
+    application_admission: bee.governance:governed_application_admission
     canonical: bee.sync:canonical
     bounds: bee.threads.records:bounds
 - name: migration_work
