@@ -126,6 +126,6 @@ make hub-manage-check
 make hub-recovery-check
 ```
 
-See [package boundaries](PACKAGE_BOUNDARIES.md),
-[distributed overlay delivery](DISTRIBUTED_APP_DELIVERY.md) and
-[MCP configuration](MCP_CONFIGURATION.md).
+See [package boundaries](../development/package-boundaries.md),
+[distributed overlay delivery](overlays.md) and
+[MCP configuration](agents/mcp.md).

@@ -15,8 +15,8 @@ must keep unreviewed changes and credentials out of ordinary pull-request jobs.
 | External actions | Pinned to a full commit SHA |
 | Security | Secret scanning, push protection, dependency alerts and security updates enabled |
 
-`CODEOWNERS`, the repository templates, [contribution guidance](../CONTRIBUTING.md),
-the organization code of conduct and [security policy](../SECURITY.md) define
+`CODEOWNERS`, the repository templates, [contribution guidance](../../CONTRIBUTING.md),
+the organization code of conduct and [security policy](../../SECURITY.md) define
 the corresponding review and reporting paths.
 
 ## Hub credential boundary
@@ -43,7 +43,7 @@ bodies.
 
 Release tags must be on `main` and use the documented semantic version format.
 The release workflow creates draft releases only after its required platform
-checks succeed. See [releasing](RELEASING.md) for artifact and publication
+checks succeed. See [releasing](../operations/releasing.md) for artifact and publication
 procedures.
 
 Use the repository check while changing workflow or security configuration:

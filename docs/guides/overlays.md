@@ -76,6 +76,6 @@ is not supplied by ordinary overlay activation. Public Hive enrollment and
 discovery, remote workspace composition, destination Hub package transfer and
 installation, and managed headless launch remain separate boundaries.
 
-For the surrounding contracts, see [application contracts](APPLICATION_CONTRACTS.md),
-[approvals](APPROVALS.md), [sync and inbox](SYNC_AND_INBOX.md),
-[Hub](HUB.md) and [MCP configuration](MCP_CONFIGURATION.md).
+For the surrounding contracts, see [application contracts](../reference/applications.md),
+[approvals](../reference/approvals.md), [sync and inbox](../reference/sync-and-inbox.md),
+[Hub](hub.md) and [MCP configuration](agents/mcp.md).

@@ -122,6 +122,6 @@ A grant lasts only for its binding and is still subject to expiry, credential
 rotation and revocation. An agent cannot approve itself, publish arbitrary
 registry state or rely on an application ID in context as target authorization.
 
-For listener, credential and hook behavior, see [Gateway](GATEWAY.md) and
-[Gateway hooks](GATEWAY_HOOKS.md). For the application-authoring path, see
-[distributed overlay delivery](DISTRIBUTED_APP_DELIVERY.md).
+For listener, credential and hook behavior, see [Gateway](../../reference/agents/gateway.md) and
+[Gateway hooks](../../reference/agents/hooks.md). For the application-authoring path, see
+[distributed overlay delivery](../overlays.md).

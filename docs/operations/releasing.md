@@ -37,7 +37,7 @@ The generated `dist/bee.bundle.build.json` records the selected version and ever
 pack hash. Review `build/modules.json` for ownership and the generated
 bundle's `ownership.json` for entry coverage. Packing leaves the input runtime
 manifest unchanged.
-See [native distribution](NATIVE_DISTRIBUTION.md) for prerequisites and update
+See [native distribution](native.md) for prerequisites and update
 semantics. Local builds create no Git tags or GitHub releases.
 
 ## Pull requests and release tags
@@ -90,7 +90,7 @@ restricted secret storage; never attach them to releases or embed them in packs.
 Hub updates can replace compatible Lua application packs after publication;
 native module changes require a new Bee binary.
 
-See [dependency notices](DEPENDENCY_NOTICES.md) for the release inventory and
+See [dependency notices](dependencies.md) for the release inventory and
 notice requirements.
 
 ## Binary installer
@@ -155,5 +155,5 @@ organization. Decide public visibility before announcing an OSS release.
 
 The repository uses the organization code of conduct, local contribution and
 security policies, issue forms, and CODEOWNERS. The documentation lives in `docs/`;
-there is no separate GitHub Pages site. See [repository setup](GITHUB.md) for
+there is no separate GitHub Pages site. See [repository setup](../development/github.md) for
 settings and credential boundaries.

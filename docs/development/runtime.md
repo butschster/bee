@@ -1,7 +1,7 @@
 # Runtime integration
 
 Bee builds Wippy from the repository and commit recorded in
-[`wippy.build.json`](../wippy.build.json). The same manifest records Bee's Go
+[`wippy.build.json`](../../wippy.build.json). The same manifest records Bee's Go
 version, build tags and the exact patch bytes applied to the runtime. Bee does
 not vendor a runtime source directory.
 

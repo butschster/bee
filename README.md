@@ -94,13 +94,13 @@ install -m755 dist/bee "$HOME/.local/bin/bee"
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-See [native distribution](docs/NATIVE_DISTRIBUTION.md) and
-[releasing](docs/RELEASING.md) for installation and release procedures.
+See [native distribution](docs/operations/native.md) and
+[releasing](docs/operations/releasing.md) for installation and release procedures.
 
 ## Development
 
-Start with the [agent guide](docs/AGENT_GUIDE.md) and
-[development conventions](docs/DEVELOPMENT.md). Production loads only `src/`;
+Start with the [agent guide](docs/development/agent-guide.md) and
+[development conventions](docs/development/conventions.md). Production loads only `src/`;
 tests and development tools are not runtime dependencies.
 
 ```sh
@@ -121,9 +121,9 @@ make standalone
 | [src/threads](src/threads) | Durable records, subscriptions and delivery |
 | [tests](tests) | Model, source/pack and native acceptance |
 
-[Application contracts](docs/APPLICATION_CONTRACTS.md) ·
-[Package boundaries](docs/PACKAGE_BOUNDARIES.md) ·
-[System map](docs/SYSTEM_MAP.md)
+[Application contracts](docs/reference/applications.md) ·
+[Package boundaries](docs/development/package-boundaries.md) ·
+[System map](docs/development/ownership.md)
 
 ## License
 
