@@ -8108,3 +8108,24 @@ desktop-lifecycle warning, the governance workspace migration acceptance passes
 both boots with its eight-row ledger, and all 1,189 unit cases pass. Commit
 `8722f7d` is on `main`; materialization and catalog consumption remain the next
 milestones, so the global executable remains unchanged.
+
+## 2026-09-20 — governed admission materializes atomically
+
+Activation apply and recovery now reconstruct the complete desired overlay from
+the immutable intent: the original portable artifact plus its optional derived
+application-admission entry. Portable artifacts cannot claim any reserved
+admission identity. The materializer validates the two parts independently,
+then stages creates, updates and removals in one existing overlay changeset; a
+full 512-entry artifact remains valid with the derived entry beside it, and the
+reported artifact digest remains the portable digest.
+
+Publication verifies that complete composed overlay, rereads the desired intent
+as a fence, and transfers only the original artifact bytes and digest. The
+derived destination authority never enters replicated package content. Apply,
+uncertain recovery and settled cold recovery all use the same three-argument
+owner contract, with no compatibility adapter or additional lifecycle.
+
+Strict lint passes with the existing desktop-lifecycle warning, all 1,196 unit
+cases pass, and `git diff --check` passes. Commit `f00f1a0` is on `main`.
+Catalog consumption and the real managed-agent journey remain next, so the
+global executable remains unchanged.
