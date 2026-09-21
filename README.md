@@ -26,7 +26,8 @@ Bee turns a terminal into a durable desktop. Shells, managed coding agents,
 standalone applications, approvals, and threads share one workspace while
 remaining separate processes with explicit authority. The executable embeds
 the desktop and its default apps, so an existing installation can start
-offline; Hub access is optional.
+offline; Hub access is optional. Run one Bee on its own, or join multiple Bees
+into a Hive to coordinate work across workstations, servers, and compute nodes.
 
 <p align="center">
   <a href="https://bee.wippy.ai/">
