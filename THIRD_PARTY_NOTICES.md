@@ -1,3 +1,7 @@
+# Third-party notices
+
+## github.com/syncthing/notify
+
 The MIT License (MIT)
 
 Copyright (c) 2014-2015 The Notify Authors
