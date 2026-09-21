@@ -383,7 +383,7 @@ func reportLaunch(client *httpClient, url, authorization string, report object, 
 	call := func(name string, args object, id int) object {
 		return outcome(rpc(client, url, authorization, "tools/call", object{"name": name, "arguments": args}, id))
 	}
-	launched := call("thread_launch", object{"definition_ref": definition, "brief": brief, "idempotency_key": "fixture-launch-1"}, 30)
+	launched := call("thread_launch", object{"definition_ref": definition, "brief": brief, "idempotency_key": "k"}, 30)
 	report["launch_ok"] = launched != nil && launched["ok"] == true
 	value := mustObject(launched["value"])
 	if value == nil {
