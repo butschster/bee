@@ -6,8 +6,12 @@ design thread `01a077f7-3266-7280-8dd5-a6c7b1cf35ea`), fourth round after
 [the component layout](COMPONENT_LAYOUT.md). It answers one question: how a new
 harness, transport, delivery channel, observation type, approval presentation,
 native agent or tool becomes an applied set of registry entries, delivered by a
-Hub module or a registry overlay, with no change to core code. Nothing here is
-implemented.
+Hub module or a registry overlay, with no change to core code. The broader
+extension/publication model and `bee:publish` vocabulary below remain design
+proposals. Implemented adjacent slices include driver/profile discovery,
+governed overlay authoring and owner-local activation/recovery, and scoped
+read-only MCP catalogs; those slices do not make `bee:publish` callable or grant
+agents registry publication authority.
 
 ## The rule
 

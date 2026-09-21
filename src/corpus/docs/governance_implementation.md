@@ -1,11 +1,14 @@
 # Bee governance implementation plan
 
 Status: source authoring, immutable transfer-candidate identity, exact resolved
-registry artifact encoding, Hive replica transfer, the internal destination plan
-store, destination resolver/service, activation owner/recovery worker and overlay
-materializer are implemented. The public overlay author/review/apply path and its
-accepted restart restoration are implemented; durable registry installation and
-plugin dispatch remain unimplemented. See
+registry artifact encoding, generic Hive replica transfer, the internal
+destination plan store, and the owner-local destination resolver/service,
+activation owner/recovery worker and overlay materializer are implemented. The
+public overlay author/review/apply path and its accepted restart restoration are
+implemented. This local path does not provide public enrollment, headless-node
+launch or destination Hub package transfer/install. A governance-owned durable
+registry publication adapter and plugin dispatch remain unimplemented; this does
+not describe the existing local Hub installer. See
 [distributed delivery](DISTRIBUTED_APP_DELIVERY.md) for the staged destination-owned flow.
 
 The internal `bee.governance:preflight` library now checks a host-resolved closure
@@ -21,10 +24,11 @@ candidate, host policy and applied-migration baseline. A reference is the
 candidate's to answer for when the candidate defines the entry holding it, or
 when the candidate removes the target; a destination whose base already points
 at an entry its host supplies out of band is not blamed on the plan. It has no write capability.
-The destination resolver/service, activation owner and auto-start recovery worker
-consume this library for destination-local overlay activation; the optional
-durable registry installer remains unimplemented. The context supplied to this
-internal library must never be accepted as authority from a remote peer.
+For destination-local overlay activation, the destination resolver/service,
+activation owner and auto-start recovery worker consume this library; they are
+not a public package installer or node-enrollment path. The optional durable
+registry installer remains unimplemented. The context supplied to this internal
+library must never be accepted as authority from a remote peer.
 
 `bee.governance:activation_measure` now turns a host-resolved candidate and
 current context into exact local execution evidence. It requires an accepted
@@ -58,6 +62,8 @@ canonical application-version envelope, requires its frozen candidate to name th
 opened destination node/workspace, and constructs the revision-zero stage request
 itself. A transferred source preflight report is retained as review evidence; its
 `ready` field grants no destination authority and cannot skip the later local check.
+This internal replica bridge is not public enrollment, a headless-node launch
+profile or a destination Hub package installer.
 
 The internal `bee.governance:workspace` helper also freezes bounded trusted file
 records using per-file content hashes and a deterministic manifest, binding the

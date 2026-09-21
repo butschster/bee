@@ -33,16 +33,17 @@ must be reconstructible from those owners.
 | Subsystem | Responsibility and boundary | Current reference / remaining work |
 |---|---|---|
 | Native runtime | Processes, supervision, topology, authenticated transport, storage, terminal surfaces, filesystem events and lifecycle | Generic Wippy capabilities; reconcile parallel runtime work before integration. No Bee mesh sidecar. |
-| Node supervisor and Hive admission | Enrollment, named-node discovery, operation routing, permission checks, remote sessions and revocation | [Hive protocol](HIVE_PROTOCOL.md), [topology](HIVE_TOPOLOGY.md); public multinode acceptance remains required. |
+| Node supervisor and Hive admission | Enrollment, named-node discovery, operation routing, permission checks, remote sessions and revocation | [Hive protocol](HIVE_PROTOCOL.md), [topology](HIVE_TOPOLOGY.md); generic policy operation routing is implemented under configured principal, exposure and invoke permissions, while public enrollment, headless nodes and multinode acceptance remain required. |
 | Workspace owner | Own persistent projects, resource associations, app instances and recovery; many workspaces per Bee | [Workspace attachments](WORKSPACE_ATTACHMENTS.md), [client state](CLIENT_STATE.md); public management/selection must preserve the identity split. |
 | Application host and attachments | Standalone app lifetime, instance admission, view sharing, control versus observation, retained execution | [Application contracts](APPLICATION_CONTRACTS.md), [host/client split](CLIENT_HOST_SPLIT.md); remote/multiple-display composition needs acceptance. |
 | Client shell and apps | Start, node/workspace selection, windows, multiple presentations, Timeline, Inbox and Hive Manager | Presentation consumes typed owner data. It does not own execution or authorization. |
 | Registry and catalogs | Stable definition IDs, measured dependency closures, compatible bindings, versions and authorized discovery | [Registry extension](REGISTRY_EXTENSION.md); metadata describes capabilities and never grants them. |
 | Application definition service | Own editable application records stored in an application database and project admitted definitions into runtime entries | Required future contract. Service-owned application records are not interchangeable with registry-owned core/Hub definitions. |
-| Package discovery and artifact cache | Hub search, provenance, immutable artifacts, dependency cache and platform/runtime requirements | [Package boundaries](PACKAGE_BOUNDARIES.md), [native distribution](NATIVE_DISTRIBUTION.md); cached is not installed or authorized. |
-| Installation/change planner | Resolve a complete proposed change against a known owner/registry revision and explain its effects | Required Keeper-style plan/validate/approve/apply workflow; detail below. Reuse or extend generic runtime planning where available. |
-| Governance and publication | Authorize exact candidates, enforce namespace/grant ceilings, apply through the owning service, record receipts | [Registry extension](REGISTRY_EXTENSION.md); no direct agent registry publication or overlay activation. |
-| Registry overlay lifecycle | Stage, validate, activate, reconcile, recover and retire registry overlays under governance | Proposal. Reserve “registry overlay” for this mechanism; ordinary application records and view state are not overlays. |
+| Package discovery and artifact cache | Hub search, provenance, immutable artifacts, dependency cache and platform/runtime requirements | [Package boundaries](PACKAGE_BOUNDARIES.md), [native distribution](NATIVE_DISTRIBUTION.md); local reads/planning/apply exist, while cached content is not installed or authorized and destination transfer/install remains future. |
+| Installation/change planner | Resolve a complete proposed change against a known owner/registry revision and explain its effects | Local Hub plan/apply and the governed overlay path are implemented; durable/public destination installation remains a separate gate. |
+| Governance and publication | Authorize exact candidates, enforce namespace/grant ceilings, apply through the owning service, record receipts | [Registry extension](REGISTRY_EXTENSION.md); managed Agents have scoped authoring/read-only component inspection, while activation remains owner-controlled and durable registry publication remains future. |
+| Governed overlay path | Author/freeze, destination resolve/preflight, review/approval, owner apply and restart recovery for a host-selected overlay | [Governance implementation](GOVERNANCE_IMPLEMENTATION.md); implemented locally. It does not make a component a durable registry publication or a public enrollment path. |
+| Durable registry publication and alternate overlay lifecycle | Publish durable registry changes and add broader or federated overlay lifecycle alternatives under governance | [Governance implementation](GOVERNANCE_IMPLEMENTATION.md); future. Ordinary application records and view state are not registry overlays. |
 | Durable approvals owner | Own proposal-bound requests, eligible approvers, decisions, deadlines, withdrawal, effect consumption and delivery outbox | [Approvals](APPROVALS.md), `bee.approvals`; local owner/application exist, federation remains separate. |
 | Durable waits and continuations | Owner-persisted wait state and typed function/args/context/security bindings; race-safe wakeup, bounded inbox budgets and recovery | [Reusable wait/wakeup contract](APPROVALS.md#required-reusable-wait-and-wakeup-contract); proposal, separate from approval decision authority. |
 | Distributed inbox projection | Discover visible approval sources and aggregate owner-qualified requests into one user-facing inbox | Proposal; any connected authorized client can present the aggregate. It never becomes a central approval authority. |
@@ -159,24 +160,42 @@ a workspace database. Client display layouts are not portable execution snapshot
 
 ## Sequence and acceptance
 
-This map expands the destination, not the active implementation scope. Continue
-[BUILD_SEQUENCE.md](BUILD_SEQUENCE.md); do not start overlays/Hub/MCP just because
-this map records them. The runtime monitor/transport ownership reconciliation
+The local Hub plan/apply and governed overlay path are current implementation;
+this map still expands the destination beyond them. Continue
+[BUILD_SEQUENCE.md](BUILD_SEQUENCE.md); do not infer public enrollment, headless
+node launch or destination package installation just because this map records
+those future boundaries. The runtime monitor/transport ownership reconciliation
 remains an explicit prerequisite for the related Hive integration work.
 
 1. Finish the coherent local runtime build and public client/retained-desktop
    foundation, including recovery, strict lint and honest release instructions.
-2. Prove native Hive admission and remote attachment. Establish the operation and
-   approval-source interfaces early so local components need no authority retrofit.
+2. Keep the implemented generic Hive policy route on configured principal,
+   exposure and invoke permissions, then prove native admission and remote
+   attachment. Establish the operation and approval-source interfaces early so
+   local components need no authority retrofit.
 3. Federate approval sources with per-owner subscriptions and authorization; prove
    two clients racing one decision, disconnect/reconnect and visibility revocation.
-4. Implement the governed planner/publication lane locally before distributing
-   installation. Prove stale-plan rejection, crash reconciliation, migrations and
-   lifecycle-specific recovery with a harmless application change.
-5. Add Hub/package installation and registry overlay activation as clients of that
-   lane. Prove one extension installs without a core edit and cannot expand its grants.
+A bounded future acceptance milestone starts with two already-admitted Bee nodes
+and one ordinary governed Hub component. Each destination receives the exact
+package request, resolves its own host-selected permissions/resources, approves
+and installs it, then starts one component service. The two services exchange one
+authenticated component-owned message, and an operation or UI reports both
+instances. The gate also proves destination refusal, duplicate-request
+reconciliation, restart recovery and revocation. One node's approval or receipt
+cannot authorize the other, and Bee core does not interpret the component's
+domain or protocol. Use a migration-free component until service/migration
+ordering has its own acceptance. The agent `components` MCP surface remains
+read-only; public enrollment and headless-node launch are prerequisites.
+
+4. Continue the local Hub plan/apply and governed overlay lane. Prove stale-plan
+   rejection, crash reconciliation, migrations and lifecycle-specific recovery
+   with a harmless component change.
+5. Add public enrollment, headless-node launch and destination-owned Hub package
+   transfer/install as separate gates. Prove that each destination resolves exact
+   definitions against its own host-selected permissions and resources.
 6. Add export/import and cross-node sharing with destination-owned plans. Prove
-   relocation without copied secrets or accidental authority transfer.
+   relocation without copied secrets or accidental authority transfer, then assess
+   durable registry publication and other overlay alternatives separately.
 7. Only after those gates, demonstrate governed self-modification and publish an
    honest GIF of the actual workflow. GPU-cluster and other domain capabilities
    become optional application plugins consuming the same foundations.

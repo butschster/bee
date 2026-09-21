@@ -8356,3 +8356,28 @@ with runtime `b476104e63` and native Bee
 stopped one exact prior owner cleanly and preserved every Bee state class.
 Backup: `bee-evidence/0921/global-before-guide-9e28a8b`. Receipt:
 `bee-evidence/0921/global-guide-9e28a8b-install.json`.
+
+### 2026-09-21 Codex: full-substrate component path reconciled
+
+A focused Bee/runtime audit and an Astra design review confirm that distributed
+domain systems remain ordinary Wippy components. They may define services,
+functions, owned storage and migrations, drivers, traits, agents and optional UI;
+Bee owns package planning, destination-specific authority and resources,
+lifecycle and receipts. No distributed-component framework, central component
+database, Bee-owned workload protocol or additional package layer is warranted.
+
+The implemented local boundaries remain `src/hub`, `src/governance`, `src/hive`,
+`src/resources` and `src/apps`. Documentation now distinguishes those working
+paths from public enrollment, headless-node launch and destination Hub transfer/
+install. It also records generic policy-mode Hive routing, the fact that an
+`auto_start` plan row is not service-readiness evidence, and the first bounded
+two-admitted-node acceptance milestone. Stale references to a missing private
+planner module and the pre-native-distribution feasibility phase were removed.
+
+The regenerated offline corpus contains 163 documents. Its digest check, changed
+document links, strict lint, repository action/secret checks and the real admitted
+docs-agent source/pack probe pass. The standalone candidate passes embedded Bee,
+Modules, About, all five Agent picker profiles and loopback-only offline cold
+boot/restart/reconnect; warm attachment measured 0.208 seconds. Global install
+remains at the preceding governed-authoring build until this candidate is
+committed and installed.

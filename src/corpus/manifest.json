@@ -923,9 +923,9 @@
       "topic": "gateway"
     },
     {
-      "bytes": 28131,
+      "bytes": 28552,
       "id": "docs/governance_implementation",
-      "sha256": "9007c8e6b6fb7d8419bd0b9f3a0b52dcbb5fe31170d2103b1502634beb31f7e7",
+      "sha256": "b920438c817fcb75101338c4781b48de53209cabbd597e56da581c71e8284e5a",
       "source": "docs/GOVERNANCE_IMPLEMENTATION.md",
       "title": "Bee governance implementation plan",
       "topic": "application"
@@ -995,9 +995,9 @@
       "topic": "gateway"
     },
     {
-      "bytes": 5820,
+      "bytes": 5385,
       "id": "docs/package_boundaries",
-      "sha256": "66a0bf078760c55ade4e0ac5d28ff6c150e1933897cb5f9029d009f6ef4971e3",
+      "sha256": "7b5aee37f2221ce77c5cda375d569fb31f055985d2b344ee1f7216546b2a725e",
       "source": "docs/PACKAGE_BOUNDARIES.md",
       "title": "Package boundaries",
       "topic": "platform"
@@ -1019,9 +1019,9 @@
       "topic": "platform"
     },
     {
-      "bytes": 17357,
+      "bytes": 17685,
       "id": "docs/registry_extension",
-      "sha256": "18e3ce9563abb46acea58e1f98f61b1db475c83242b9e238386b6e8a96c4dc9a",
+      "sha256": "5c877fad849d4b3d887e3e1f0a7c75846d9ad6f2021e6fc70932e75f06e83bb3",
       "source": "docs/REGISTRY_EXTENSION.md",
       "title": "Registry-driven extension of threads and drivers",
       "topic": "registry"
@@ -1043,9 +1043,9 @@
       "topic": "cluster"
     },
     {
-      "bytes": 15276,
+      "bytes": 17224,
       "id": "docs/system_map",
-      "sha256": "d533eee86be9fb84290641ae35e6cf037b7b1c21e27b4e21d1ff317ecf28aa5c",
+      "sha256": "1f139df598d75eff3c10d4ad486de3106d7ca102e9763faef764febd1841cbca",
       "source": "docs/SYSTEM_MAP.md",
       "title": "Bee system map",
       "topic": "platform"
@@ -1219,9 +1219,9 @@
       "topic": "component"
     },
     {
-      "bytes": 2388,
+      "bytes": 3207,
       "id": "component/hive",
-      "sha256": "600850e75d75376569fcadb054b5e4c68da27387e7bc09ba55efc12381c64f90",
+      "sha256": "74ba54ed7248ac7faa1ba666effc0dfa882ef68dcb1bb8ec9578a9f8ddc5048d",
       "source": "src/hive",
       "title": "bee.hive",
       "topic": "component"
@@ -1310,7 +1310,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, hive, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding the pages docs/README.md labels historical or proposed. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 2180494,
+    "bytes": 2183575,
     "documents": 163
   }
 }
