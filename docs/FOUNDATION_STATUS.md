@@ -1448,6 +1448,8 @@ changes cannot reuse an old scope without advancing durable registry history.
 The activation profile schema now has one pure decoder shared by Governance and
 the core catalog. Strict lint passes with the known desktop-lifecycle warning,
 all 1,197 unit cases pass, and the existing source/packed broker admission journey
-passes. The real managed-agent author, review, activation, open, thread and cold
-recovery journey without a separate static fixture binding remains the release
-gate. The global executable remains unchanged.
+passes. The real managed-agent fixture now selects its application and
+`observe_post` thread access in the destination activation profile; it no longer
+adds a separate static admission binding. Its live author, review, activation,
+open and cold-recovery journey remains the release gate. The global executable
+remains unchanged.

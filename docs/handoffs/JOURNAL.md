@@ -8152,3 +8152,16 @@ cases pass, and the source/packed broker admission journey passes. The complete
 managed-agent journey still needs to remove its separate static fixture binding
 and prove author, review, activation, open, thread use, restart and withdrawal.
 The global executable remains unchanged.
+
+## 2026-09-20 — managed authoring fixture uses governed admission only
+
+The real managed-agent application journey no longer mutates the shipped static
+application admission list. Its ordinary and continuous-Hive activation profiles
+select the authored definition, the existing external ordinary-app boundary and
+`observe_post` thread access. The Hive destination fixture validates that exact
+governed selection instead of checking the static host list.
+
+Strict production lint passes with the known desktop-lifecycle warning, all
+1,197 unit cases pass, and the source/packed broker admission journey passes.
+The live Agy authoring journey has not yet been repeated with this fixture
+change. The global executable remains unchanged.

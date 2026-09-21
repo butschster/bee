@@ -85,6 +85,9 @@ def configure_continuous_source(project, workspace_id):
     activation["data"] = {"profiles": [{"workspace_id": workspace_id, "source_node": "node-1",
         "source_workspace": SOURCE_WORKSPACE, "component": "bee.agent_app_demo/app", "resolver": "overlay",
         "overlay_owner": OVERLAY_OWNER, "approval_policy": "local-agent-app-delivery", "parameters": [],
+        "applications": [{"definition_id": DEFINITION_ID,
+                          "policies": ["bee:ordinary_app_subsystem_boundary"],
+                          "thread_access": "observe_post"}],
         "allow": {"packages": ["bee.agent_app_demo/app"], "namespaces": ["bee.agent_app_demo"],
                   "kinds": ["process.lua"], "databases": [], "grants": [],
                   "modules": ["tty", "process", "channel", "json"]}}]}
@@ -238,16 +241,6 @@ def admit_docs_tool(project):
     document = yaml.safe_load(index.read_text())
     endpoint = next(entry for entry in document["entries"] if entry["name"] == "mcp_http")
     endpoint["security"]["policies"].append("bee.agent_app_probe:docs_policy")
-    index.write_text(yaml.safe_dump(document, sort_keys=False))
-
-
-def bind_admission(project):
-    """The host owner admits the definition; registry metadata cannot."""
-    index = project / "src/security/_index.yaml"
-    document = yaml.safe_load(index.read_text())
-    admission = next(entry for entry in document["entries"] if entry["name"] == "application_admission")
-    admission["bindings"].append({"definition_id": DEFINITION_ID,
-                                  "policies": ["bee:ordinary_app_subsystem_boundary"]})
     index.write_text(yaml.safe_dump(document, sort_keys=False))
 
 
@@ -688,7 +681,6 @@ def exercise():
     set_variable(project, "src/driver/agy/_index.yaml", "executable", "BEE_AGENT_APP_AGY")
     set_variable(project, "src/environment/_index.yaml", "machine_home", "BEE_AGENT_APP_HOME")
     admit_docs_tool(project)
-    bind_admission(project)
     assert_overlay_authority(project)
     write_inputs(project)
     lint(project, "host")
