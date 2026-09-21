@@ -1,5 +1,28 @@
 # Foundation status
 
+## Current source checkpoint: Muse driver integration (September 21, 2026)
+
+The current source candidate composes managed Muse 1.3.0 through the shared
+driver, credential and native-placement boundaries. Its window and batch
+profiles use a retained Bee-owned private `HOME` and deliberately leave
+`XDG_CONFIG_HOME` absent. The host admits the user's Muse auth/settings and
+snapshots the settings source separately; each attempt receives a fresh
+`.config/muse/settings.json` built from that retained source.
+
+The composition preserves the provider, model and TUI choices, unrelated MCP
+servers and existing user hook groups. It inserts only Bee's scoped MCP server
+and appends Bee's selected authenticated hook groups. The driver also carries
+the Muse session reference through batch resume and strictly decodes the
+provider protocol. The real `native-muse-recovery-live-check` passes against
+`dist/bee-muse-v2` with Muse 1.3.0: the first turn completes scoped
+`thread_read`, a file read and the selected hooks; cold recovery recalls the
+exact session token without tools or prompt replay while retaining the private
+HOME, project, application and thread. Recovery creates a fresh attempt,
+gateway binding and hook-token path, retires the predecessor cleanly, and
+leaves source auth, settings and project state unchanged. The test wrapper
+disables Muse's experimental skill, goal and verification reminder agents only for this
+exact-session check. This source candidate is not globally installed.
+
 Bee source `d9e8bad` is installed globally as executable SHA-256
 `e2ce5b52fe7d`, pinned to runtime PR #789 at `b476104e63`. Public governed
 authoring is overlay-native: the MCP tool is `overlay`, requests and replies use

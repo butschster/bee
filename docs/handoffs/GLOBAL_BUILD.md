@@ -1,5 +1,21 @@
 # Global Bee build — September 20, 2026
 
+## Unreleased source checkpoint: Muse driver integration — September 21, 2026
+
+The current Muse 1.3.0 driver work remains a source candidate and has not been
+installed globally. Managed Muse uses a retained private `HOME` with
+`XDG_CONFIG_HOME` absent. Host-admitted Muse auth/settings are snapshotted;
+each attempt composes fresh settings that preserve provider/model/TUI choices,
+unrelated MCP servers and user hooks, then inserts Bee's scoped MCP and
+appends authenticated Bee hook groups. The real
+`native-muse-recovery-live-check` passes against `dist/bee-muse-v2`: its first
+turn completes scoped `thread_read`, a file read and selected hooks; cold
+recovery recalls the exact session token without tools or prompt replay, keeps
+the private HOME/project/application/thread, and creates a fresh
+attempt/gateway/hook-token path while leaving source auth/settings/project
+state unchanged. The wrapper disables Muse's experimental skill, goal and verification reminder
+agents only for this exact-session check. No global installation is claimed.
+
 ## Current install: verified private approvals and production cleanup
 
 Source `8f0756a`, executable SHA-256

@@ -75,5 +75,8 @@ entries:
   modules: [json]
   imports:
     test: wippy.test:test
+    registry: registry
     configuration: bee.driver.muse:configuration
     configure: bee.driver.muse:configure
+    placement_configuration: bee.placement.native:configuration
+    placement_types: bee.placement:types

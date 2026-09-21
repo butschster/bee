@@ -8270,3 +8270,39 @@ it copied, removed or reset no Bee state. Backup:
 `bee-evidence/0920/global-overlay-d9e8bad-install.json`. A post-install launch
 from `/mnt/c/Users/Wolfy-J` opened Overlays, Approvals and all five Agent picker
 rows, detached, and stopped the retained owner cleanly.
+
+### 2026-09-21 — Muse 1.3.0 driver source checkpoint
+
+The current source candidate extends the managed harness set with Muse 1.3.0.
+The route keeps the provider boundary declarative: managed Muse runs in a
+retained Bee-owned private `HOME` with `XDG_CONFIG_HOME` absent, while the host
+admits the user's `.config/muse/auth.json` and settings file through the
+credential setup path. The broker retains the original settings separately and
+placement regenerates a fresh `.config/muse/settings.json` for each attempt.
+
+The generated settings preserve the user's provider/model/TUI choices,
+unrelated MCP servers and existing hook groups. Bee inserts only its scoped
+`mcpServers.bee` entry and appends selected authenticated hook groups. The
+driver carries `--session-id` for batch continuation and strictly decodes the
+Muse stream protocol. Focused composition and protocol checks cover the
+bounded source contract. Exact session cold recovery and live real-provider
+MCP/hook acceptance remain pending; no global installation or live Muse turn
+is claimed by this checkpoint.
+
+### 2026-09-21 — Muse 1.3.0 real managed cold recovery passed
+
+`native-muse-recovery-live-check` passes against `dist/bee-muse-v2` with the
+real Muse 1.3.0 executable and admitted login. The first managed turn completed
+the scoped Bee `thread_read` call, a fixture file read and the selected
+SessionStart, UserPromptSubmit, PreToolUse, PostToolUse and Stop hooks. The
+retained private `HOME` was used with `XDG_CONFIG_HOME` unset; provider/model/TUI
+settings, the unrelated user MCP server and user hook survived composition.
+
+After the Bee owner restart, Muse resumed the exact provider session and
+recalled the token without tools or replaying the first prompt. The project,
+application, thread and retained HOME stayed stable while the new attempt,
+gateway binding and private hook-token path were fresh; the predecessor retired
+cleanly. Source auth, settings and project tree remained unchanged. The wrapper
+disabled Muse's experimental skill, goal and verification reminder agents only for this
+exact-session acceptance, so those provider-owned reminder turns were outside
+the proof. This source candidate has not been installed globally.
