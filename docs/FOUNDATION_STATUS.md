@@ -1435,3 +1435,19 @@ is now in the installed global build. Alt+F9 minimize and plain-F9 status pass
 source/pack and executable checks. The corrected safety checkpoint has passed its full repository check
 (493 Lua tests, 525 registry entries); the later session-identity follow-up is
 being validated separately.
+
+Governed application admission is now consumed by the source catalog. The broker
+passes its trusted workspace into both sides of the catalog refresh fence. Shipped
+static bindings remain available everywhere; destination activation profiles may
+add only their measured workspace-local bindings, with privileged static-only
+flags defaulting off. Missing, stale or withdrawn profile selections contribute
+nothing. Duplicate definition claims and a combined count above 64 fail closed.
+Accepted admission digests remain in the broker's cached selection, so overlay
+changes cannot reuse an old scope without advancing durable registry history.
+
+The activation profile schema now has one pure decoder shared by Governance and
+the core catalog. Strict lint passes with the known desktop-lifecycle warning,
+all 1,197 unit cases pass, and the existing source/packed broker admission journey
+passes. The real managed-agent author, review, activation, open, thread and cold
+recovery journey without a separate static fixture binding remains the release
+gate. The global executable remains unchanged.

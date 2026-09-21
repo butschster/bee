@@ -8129,3 +8129,26 @@ Strict lint passes with the existing desktop-lifecycle warning, all 1,196 unit
 cases pass, and `git diff --check` passes. Commit `f00f1a0` is on `main`.
 Catalog consumption and the real managed-agent journey remain next, so the
 global executable remains unchanged.
+
+## 2026-09-20 — governed admission enters the workspace catalog
+
+The application broker now reads governed admission for its authenticated
+workspace. One shared pure decoder normalizes activation profiles for both the
+destination service and catalog. The catalog preserves shipped static bindings,
+remeasures each selected reserved record against the current profile and external
+policy definitions in one pinned snapshot, defaults privileged operation flags
+off, refuses duplicate claims and enforces the existing combined capacity.
+
+Accepted derived record digests are retained in catalog equality. This is needed
+because overlay application does not advance durable registry history; without
+that evidence a changed artifact or policy could reuse an old scope. Profile
+withdrawal or stale projection contributes no dynamic binding, while the broker's
+existing refresh, recovery and thread-facade fencing remain the lifecycle owners.
+The protected activation materializer and reserved writer remain the trust root;
+registry module provenance is not misdescribed as overlay ownership.
+
+Strict lint passes with the existing desktop-lifecycle warning, all 1,197 unit
+cases pass, and the source/packed broker admission journey passes. The complete
+managed-agent journey still needs to remove its separate static fixture binding
+and prove author, review, activation, open, thread use, restart and withdrawal.
+The global executable remains unchanged.

@@ -843,9 +843,9 @@
       "topic": "platform"
     },
     {
-      "bytes": 32061,
+      "bytes": 33089,
       "id": "docs/application_contracts",
-      "sha256": "ce04d50a43952de2ee79aa2fe9aee37506476fa39bd8dc3585306348fc496948",
+      "sha256": "a832cddc2a50b011ae008ad2b31a743233ec7e3aa0ccac6fd3654ed4a0196b38",
       "source": "docs/APPLICATION_CONTRACTS.md",
       "title": "Application contracts (development version 1)",
       "topic": "application"
@@ -1310,7 +1310,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, hive, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding the pages docs/README.md labels historical or proposed. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 2165005,
+    "bytes": 2166033,
     "documents": 163
   }
 }
