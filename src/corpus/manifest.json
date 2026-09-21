@@ -939,9 +939,9 @@
       "topic": "harness"
     },
     {
-      "bytes": 19216,
+      "bytes": 19118,
       "id": "docs/hive_bootstrap",
-      "sha256": "04ff9ce6ea7bc6abb7ac726f23420201b55b6914a8e67de115fd5b7b95b9abbf",
+      "sha256": "37904475706897bb90866d804201f832c0ffb64dd8dc8730f0790392bd521bf7",
       "source": "docs/HIVE_BOOTSTRAP.md",
       "title": "Hive startup",
       "topic": "cluster"
@@ -963,9 +963,9 @@
       "topic": "cluster"
     },
     {
-      "bytes": 30223,
+      "bytes": 30179,
       "id": "docs/hive_supervisor",
-      "sha256": "7f8d1a8bbb4e0b7cf6795fcd5b5f344e2f90807c87f313a1c5d4620075f59960",
+      "sha256": "e709c7572cc3174531b03d07deb44b1dd235d25694493d8946df46c618847ccf",
       "source": "docs/HIVE_SUPERVISOR.md",
       "title": "Supervisor implementation boundary",
       "topic": "cluster"
@@ -1310,7 +1310,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, hive, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding the pages docs/README.md labels historical or proposed. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 2170719,
+    "bytes": 2170577,
     "documents": 163
   }
 }
