@@ -261,13 +261,20 @@ entries:
     type: bee.governance.activation_profiles
     comment: Host-selected destination mappings and capability ceilings; remote artifacts cannot edit this entry
   data: {profiles: []}
-- name: destination_service
+- name: activation_profile_decoder
   kind: library.lua
-  source: file://destination_service.lua
-  modules: [registry, security, system, funcs, hash]
+  source: file://activation_profiles.lua
+  modules: [hash]
   imports:
     bounds: bee.threads.records:bounds
     canonical: bee.sync:canonical
+    application_admission: bee.governance:governed_application_admission
+- name: destination_service
+  kind: library.lua
+  source: file://destination_service.lua
+  modules: [registry, security, system, funcs]
+  imports:
+    bounds: bee.threads.records:bounds
     transaction: bee.persist:transaction
     resources: bee.governance:staging_resources
     sync_resources: bee.sync:resources
@@ -282,7 +289,7 @@ entries:
     materializer: bee.governance:materializer
     migration_effect: bee.governance:migration_effect
     migration_runner: bee.hub:migration_runner
-    application_admission: bee.governance:governed_application_admission
+    activation_profiles: bee.governance:activation_profile_decoder
     preflight: bee.governance:preflight
 - name: delivery_contract
   kind: contract.definition
