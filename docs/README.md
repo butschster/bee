@@ -12,7 +12,6 @@ existing generator; do not maintain a second authored copy.
 | Contributions, reviews and community standards | [Contributing](../CONTRIBUTING.md) |
 | Vulnerabilities and credential handling | [Security](../SECURITY.md) |
 | What exists and who owns it | [Foundation status](FOUNDATION_STATUS.md) |
-| Ordered path from the current checkpoint to Bee v1 | [Finish plan](FINISH_PLAN.md) |
 | Code style and placement | [Development conventions](DEVELOPMENT.md) |
 | Bee visual language, responsive terminal patterns and accessibility | [UI brand book](UI_BRAND_BOOK.md) |
 | App admission, launch, messages and recovery | [Application contracts](APPLICATION_CONTRACTS.md) |

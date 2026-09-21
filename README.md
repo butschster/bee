@@ -128,8 +128,7 @@ typed Lua, permissions, persistence, packaging, and real terminal acceptance.
 
 [Application contracts](docs/APPLICATION_CONTRACTS.md) ·
 [Package boundaries](docs/PACKAGE_BOUNDARIES.md) ·
-[System map](docs/SYSTEM_MAP.md) ·
-[Finish plan](docs/FINISH_PLAN.md)
+[System map](docs/SYSTEM_MAP.md)
 
 ## License
 

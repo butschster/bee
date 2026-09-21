@@ -1005,9 +1005,7 @@ driver-owned and is checked after a user selects the plan but before Bee creates
 for example, a Codex policy without its provider refuses without creating a
 thread. A named provider entry is measured into the selected plan, so changing
 its model or endpoint requires refresh and refuses a stale selection. Listing
-never executes a driver function. The host-owned
-[source fragment](../examples/agent-profiles/README.md) supplies the current
-build-time composition path for Claude Code and Codex window definitions.
+never executes a driver function.
 Installation and overlay activation remain unimplemented. Authenticated turns,
 production process-tree cleanup and scoped MCP remain open acceptance gates.
 
@@ -1461,19 +1459,6 @@ draft-release and Hub publication pipelines are implemented. A completed Hub upl
 and update proof, in-app installation and stable distribution remain pending.
 See [native distribution](NATIVE_DISTRIBUTION.md)
 for the canonical update boundary and outstanding acceptance/license limits.
-
-## Experimental computer owner
-
-The [native computer owner](../native/computer/README.md) now has isolated
-Windows VM acceptance for runtime-frame permission checks, one controller per
-seat, child restart/crash/cancellation, stale grant/frame rejection and sustained
-secure-desktop retirement. Parent and child use the same test executable.
-It is not registered in the normal Bee launcher or exposed through Lua/Hive.
-Actual login/logout recovery, execution-epoch wiring and lossless OS lifecycle
-notifications remain acceptance gates. Linux uses a transport fixture in this
-package; X11/macOS implementations are not integrated. Native race tests, vet
-and Windows build/VM checks pass. The full foundation check was attempted and
-stopped at 23 existing Lua lint errors; no passing full-suite claim is made.
 
 The installed revision includes a private durable desktop catalog in the client
 store: one default identity and up to 32 allocated identities, with no layout
