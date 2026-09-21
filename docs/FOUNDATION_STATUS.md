@@ -1,7 +1,23 @@
 # Foundation status
 
-Bee source `8f0756a` is installed globally as executable SHA-256
-`fbc7cce04840`, pinned to runtime PR #789 at `b476104e63`. The release includes
+Bee source `d9e8bad` is installed globally as executable SHA-256
+`e2ce5b52fe7d`, pinned to runtime PR #789 at `b476104e63`. Public governed
+authoring is overlay-native: the MCP tool is `overlay`, requests and replies use
+`overlay_id`, and delivery/publish use `source_overlay_id` while retaining
+`workspace_id` only for the destination workspace. The installed release passed
+the real managed-Agy author/review/apply/renew/restart journey, strict lint,
+1,198 unit cases, the 163-document corpus, production packaging, the complete
+native binary and five-profile Agent selector, and loopback-only offline cold
+boot/restart/reconnect. Its six-file installer proved exact rollback before
+replacement and preserved the prior artifact set at
+`bee-evidence/0920/global-before-overlay-d9e8bad`; receipt:
+`bee-evidence/0920/global-overlay-d9e8bad-install.json`. A post-install launch
+from `/mnt/c/Users/Wolfy-J` opened Overlays, Approvals and the five-profile Agent
+picker, then stopped its retained owner cleanly. Repository commit `e919da9`
+corrects the native selector's alphabetical tool-row gesture and stale expected
+tool names; production bytes are unchanged from `d9e8bad`.
+
+The preceding release includes
 compatible live application replacement and per-agent thread-access withdrawal:
 the running execution observes the changed protected policy on its next facade
 call, durable revocation removes membership and its checkpoint, and restart does

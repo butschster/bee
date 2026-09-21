@@ -8240,3 +8240,33 @@ restored `AGENT APP UPDATED` with the same state. Evidence is in
 `.wippy/evidence/agent-app-20260920-225906`. Strict lint still passes with the
 known desktop-lifecycle fixpoint warning. The global executable remains unchanged
 until the final candidate build and installation checks complete.
+### 2026-09-20 Codex: overlay-native global Bee installed
+
+Commit `d9e8bad` made the governed authoring surface consistently overlay-native:
+the public MCP tool is `overlay`, its exact identity field is `overlay_id`, and
+delivery/publish name the source as `source_overlay_id` while `workspace_id`
+continues to mean the destination runtime workspace. No public compatibility
+alias or fallback remains. The real managed-Agy v1/v2 authoring, human review,
+approval, live viewport renewal, state preservation and cold-restart acceptance
+passes in `.wippy/evidence/agent-app-20260920-225906`.
+
+The first assembled native gate exposed a stale positional gesture in
+`tests/native_agent_selector.go`: after `workspace` became `overlay`, alphabetical
+sorting moved the row before `thread_message`, so the fixture disabled the wrong
+tool and its child exited before printing the guidance marker. Commit `e919da9`
+skips the `overlay` row, disables `thread_message`, and expects the new exact
+discovery lists. No deadline changed. The full selector and complete
+`native-binary-check` pass against `dist/bee-overlay`; loopback-only offline cold
+boot, restart and retained-client reconnect also pass, with warm attachment at
+0.222 seconds.
+
+The six-file candidate is installed globally as SHA-256
+`e2ce5b52fe7dc1a0c20928392845891caf16c516047a6baf98e2b731c8e2f8fa`, built from
+source `d9e8bad`, runtime `b476104e63` and native
+`v0.0.0-20260919180600-ff9810fea081`. The installer injected and recovered from
+a disposable post-replacement failure before atomically replacing the real set;
+it copied, removed or reset no Bee state. Backup:
+`bee-evidence/0920/global-before-overlay-d9e8bad`. Receipt:
+`bee-evidence/0920/global-overlay-d9e8bad-install.json`. A post-install launch
+from `/mnt/c/Users/Wolfy-J` opened Overlays, Approvals and all five Agent picker
+rows, detached, and stopped the retained owner cleanly.
