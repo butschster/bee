@@ -8381,3 +8381,30 @@ Modules, About, all five Agent picker profiles and loopback-only offline cold
 boot/restart/reconnect; warm attachment measured 0.208 seconds. Global install
 remains at the preceding governed-authoring build until this candidate is
 committed and installed.
+
+### 2026-09-21 Codex: component-substrate release installed and repository audited
+
+Source `38784b7` is installed globally as executable SHA-256
+`7f1b59d5171cadb9d8903e7824df2bf7f211a8f9bc7f09258172ae29177cf6fd`,
+with runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`. Its six-file installer proved rollback
+before replacement and preserved databases, profiles, conversations, workspaces,
+displays, credentials and migration ledgers. Backup:
+`bee-evidence/0921/global-before-substrate-38784b7`; receipt:
+`bee-evidence/0921/global-substrate-38784b7-install.json`.
+
+The first real launch restored a dead Muse window without a recorded provider
+conversation. Bee correctly refused to fabricate recovery. Escape closed the
+window through the supported desktop path; the following global launch opened
+cleanly and detached normally. No database was edited or reset.
+
+A read-only repository and complete-history audit found 187 strictly linear
+commits, one local and remote `main`, one worktree, no stale refs, unreachable or
+corrupt objects, suspicious commit subjects, tracked build output, credentials,
+secret files or broken documentation links. The large reconciliation baseline,
+append-only handoff journal and generated offline corpus are intentional and do
+not justify rewriting published history. Local cleanup removed dead branch
+tracking configuration and ignored release, fixture and Python-cache output;
+the retained `.wippy` directory remains developer/runtime state. The stale
+generated-bundle leak exemption and obsolete native-distribution Test Status
+description were removed.

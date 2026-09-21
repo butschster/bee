@@ -140,11 +140,13 @@ distribution. Those remain separate runtime/application capabilities.
 
 ## Installed application and updates
 
-The embedded baseline contains the complete default desktop, Terminal, Settings,
-Process Manager and Test Status. First boot requires no Hub connection, account
-or downloaded extension. The standalone acceptance harness starts with empty
-state, opens every default app, runs Test Status checks, exercises a native shell
-and verifies Settings recovery. Linux release jobs run it with networking disabled.
+The embedded baseline contains the complete default desktop and its bundled
+system applications, including Terminal, Settings, Process Manager, Timeline,
+Hive Manager and About. First boot requires no Hub connection, account or
+downloaded extension. The standalone acceptance harness starts with empty state,
+opens the current default applications, proves that the removed Test Status app
+does not return, exercises a native shell and verifies Settings recovery. Linux
+release jobs run it with networking disabled.
 
 ```sh
 ./dist/bee

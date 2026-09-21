@@ -1,6 +1,32 @@
 # Global Bee build — September 21, 2026
 
-## Current install: governed authoring reference
+## Current install: governed component substrate
+
+Source `38784b7`, executable SHA-256
+`7f1b59d5171cadb9d8903e7824df2bf7f211a8f9bc7f09258172ae29177cf6fd`,
+is installed globally with its matching license, Go module, provenance and
+runtime-patch sidecars. It pins runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`.
+
+The release retains the established Hub, Governance, Hive, Resources and Apps
+owners and documents ordinary Wippy components as the extension substrate.
+Strict lint, repository and secret checks, the 163-document corpus, the admitted
+docs-agent source/packed probe, a clean standalone build, embedded application
+checks, the five-profile Agent selector and loopback-only offline cold boot,
+restart and retained-client reconnect pass. Warm attachment measured 0.210
+seconds. README links and local SVG, PNG and GIF assets also passed their checks.
+
+The six-file installer proved rollback before replacement and preserved every
+Bee state class. Backup:
+`/home/wolfy-j/wippy/bee-evidence/0921/global-before-substrate-38784b7`;
+receipt:
+`/home/wolfy-j/wippy/bee-evidence/0921/global-substrate-38784b7-install.json`.
+The first real launch restored a dead Muse window without a recorded provider
+conversation and correctly refused fabricated recovery. Closing it through the
+desktop cleared that checkpoint; the next launch opened and detached normally.
+No database was edited or reset.
+
+## Previous install: governed authoring reference
 
 Source `9e28a8b`, executable SHA-256
 `e7b8e8a576495b4c0565633a86d6c4ba68f6d5c72cd85a8b4e5cac3c51d93b94`,

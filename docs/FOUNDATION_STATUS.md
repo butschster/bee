@@ -1,6 +1,35 @@
 # Foundation status
 
-## Current global install: governed authoring reference (September 21, 2026)
+## Current global install: governed component substrate (September 21, 2026)
+
+Bee source `38784b7` is installed globally as executable SHA-256
+`7f1b59d5171c`, pinned to runtime `b476104e63` and native Bee
+`v0.0.0-20260921050738-b2060715b014`. The source keeps Hub, Governance, Hive,
+Resources and Apps as separate owners while documenting the normal Wippy
+component substrate accurately: admitted components may define services,
+functions, storage and migrations, drivers, traits, agents, mesh protocols and
+optional UI. Public enrollment, managed headless launch and destination Hub
+transfer/install remain explicit unfinished boundaries.
+
+The release passed strict lint over 498 production entries with the one known
+desktop-lifecycle warning, repository and secret checks, the 163-document
+offline corpus, the admitted docs-agent source/packed probe, a clean standalone
+build, embedded application checks, all five default Agent profiles and
+loopback-only offline cold boot, restart and retained-client reconnect. Warm
+attachment measured 0.210 seconds. The README and local artwork also passed link,
+SVG, raster-dimension and desktop-recording checks.
+
+The six-file installer proved rollback before replacement and preserved
+databases, profiles, conversations, workspaces, displays, credentials and
+migration ledgers. Backup:
+`bee-evidence/0921/global-before-substrate-38784b7`; receipt:
+`bee-evidence/0921/global-substrate-38784b7-install.json`. A real launch first
+restored a dead Muse window whose provider conversation had never been recorded;
+Bee refused to invent recovery. Closing that window through the desktop removed
+the stale checkpoint, and the next global launch opened and detached normally.
+No database was edited or reset.
+
+## Previous global install: governed authoring reference (September 21, 2026)
 
 Bee source `9e28a8b` is installed globally as executable SHA-256
 `e7b8e8a57649`, pinned to runtime `b476104e63` and native Bee
@@ -27,10 +56,10 @@ owner cleanly and preserved all Bee state. Backup:
 `bee-evidence/0921/global-before-guide-9e28a8b`; receipt:
 `bee-evidence/0921/global-guide-9e28a8b-install.json`.
 
-## Previous global install: Muse driver integration (September 21, 2026)
+## Earlier global install: Muse driver integration (September 21, 2026)
 
-The current globally installed source composes managed Muse 1.3.0 through the shared
-driver, credential and native-placement boundaries. Its window and batch
+This source composed managed Muse 1.3.0 through the shared driver, credential
+and native-placement boundaries. Its window and batch
 profiles use a retained Bee-owned private `HOME` and deliberately leave
 `XDG_CONFIG_HOME` absent. The host admits the user's Muse auth/settings and
 snapshots the settings source separately; each attempt receives a fresh
