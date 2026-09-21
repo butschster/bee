@@ -8090,3 +8090,21 @@ freezes its optional bytes and digest into the existing activation intent and
 approval evidence. Renewal-runtime strict lint passes with the existing
 desktop-lifecycle warning, all 1,185 unit cases pass, and `git diff --check`
 passes. Commit `0e8f527` is on `main`; the global executable remains unchanged.
+
+## 2026-09-20 — governed admission frozen into activation approval
+
+The destination now canonical-decodes and semantically remeasures the optional
+application-admission projection before it becomes durable evidence. Its
+workspace, source and artifact identities must match the accepted plan, and its
+overlay owner must match the activation owner. Migration 8 adds one nullable,
+paired bytes/digest field to the existing immutable activation intent; legacy
+intents and profiles without applications remain `NULL` without rewriting.
+
+The existing authorization digest, effect key and approval proposal bind the
+optional admission digest. Ordinary checks, migration-progress checks, apply
+remeasurement and cold recovery all reject admission drift. No new store,
+approval, service or lifecycle was added. Strict lint passes with the existing
+desktop-lifecycle warning, the governance workspace migration acceptance passes
+both boots with its eight-row ledger, and all 1,189 unit cases pass. Commit
+`8722f7d` is on `main`; materialization and catalog consumption remain the next
+milestones, so the global executable remains unchanged.
