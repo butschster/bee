@@ -1,130 +1,85 @@
 # Configurable managed MCP
 
-The protected launch policy may supply `gateway_surface` alongside
-`gateway_tools`. The latter is the independent tool ceiling for the launch.
-The carrier passes the measured configuration to gateway admission; changing
-the configuration changes the launch policy digest. Admission freezes the surface declaration with
-the binding. Referenced native policies currently resolve at each call; this
-does not freeze their compiled definitions across a host policy update. Component metadata alone grants neither invocation nor scope.
+A protected managed-launch policy may declare `gateway_surface` alongside
+`gateway_tools`. The tool list is an independent ceiling: selecting a trait
+never exposes a tool outside it. Admission measures the configuration and binds
+it to the managed attempt. Component metadata describes a capability; it does
+not authorize invocation or scope.
+
+## Surface declaration
 
 `gateway_surface` contains:
 
-- `tools`: component tool descriptions (`name`, `operation`, `description`,
-  `policies`, `schema`, `annotations`). Built-in tools are included automatically;
-  duplicate names and the reserved `session`/`call_tool` names are refused.
-- `traits`: `{id, title, prompt, tools}` declarations; multiple may be active.
-- `base_tools`: always selected within the launch's tool ceiling.
-- `active_traits`: initially selected trait IDs.
-- `fixed_context`: host-selected native context data.
-- `dynamic_keys`: context keys this binding may set itself.
+- `tools`: component tool descriptions with name, operation, description,
+  policies, schema and annotations;
+- `traits`: `{id, title, prompt, tools}` declarations; several may be active;
+- `base_tools`: tools selected for every session within the tool ceiling;
+- `active_traits`: initial trait IDs;
+- `fixed_context`: host-selected context data; and
+- `dynamic_keys`: context keys the binding may set.
 
-The endpoint must independently have invocation permission for each admitted
-operation. Tools run as the binding's subject with the named host-approved
-policies. Tools retain their own strict boundary decoders and domain checks.
-The endpoint's context/actor/scope construction rights are not given to tools.
+Built-in tools are included automatically. Duplicate names and the reserved
+`session` and `call_tool` names are refused. Every selected operation still
+needs its own endpoint invocation permission and domain authorization. Tools
+run as the binding's subject with the named host-approved policies; tool code
+does not receive endpoint context, actor or scope construction rights.
 
-`session` with `{operation: "read"}` returns the revision, admitted traits,
-active traits, dynamic context, allowed context keys and current tool schemas.
-`{operation: "select", expected_revision, active_traits, context}` replaces
-the selection atomically. A stale revision is refused. Fixed context cannot
-be overwritten; unknown dynamic keys are refused. Context is ordinary native
-`ctx` data and does not select security actors or permissions. Native
-`with_context` overlays these values on the endpoint's inherited context; it
-does not clear ambient keys. Host endpoint composition therefore also controls
-what inherited context tools can see. Native Terminal retains OS-user authority;
-MCP scopes do not sandbox its filesystem.
+## Session and context
 
-For each tool invocation the gateway supplies native context key
-`bee.gateway.binding` with `binding_id`, `thread_id`, `action_id`, `attempt_id`
-and, when present, the `policy_ref`, `workspace_id`, and originating
-`origin_view: {view_id, instance_id}` selected by the host launch. A child
-started through `thread_launch` inherits that origin view. Host configuration and agent-selected context
-cannot declare or replace this reserved key. Those bounded identifiers are
-separate from the configurable context quota. `thread_ref`, `policy_ref` and
-`workspace_id` are attribution the tool's owning operation may read; they are
-not authorization, and the destination owner still checks membership. Custom tools can use this record
-to attribute results without accepting thread/attempt IDs from tool arguments.
-It grants no authority: the executor's actor and scope, endpoint invocation
-permission and destination owner checks still apply. Tools exposed through
-other call paths must authorize those callers too; a context value alone does
-not authenticate a direct function caller.
+`session` with `{operation = "read"}` returns the current revision, admitted
+and active traits, dynamic context, allowed dynamic keys and tool schemas.
+`{operation = "select", expected_revision, active_traits, context}` replaces
+selection atomically. A stale revision, an unknown trait/key or an attempt to
+overwrite fixed context is refused.
 
-The built-in `overlay` tool calls the public `bee.governance:overlay_call`
-facade. Its read-only `guide` operation returns this destination's application
-authoring contract and one minimal example, generated from the rule tables
-preflight enforces; it names no overlay and grants nothing. Its
-create/list/read/put/remove/freeze operations take `overlay_id` and reject
-`workspace_id`; replies use `overlay_id`. They accept up to 65,536
-bytes of inline text or
-87,384 bytes of canonical padded base64 (at most 65,536 decoded bytes) per
-file. The HTTP MCP endpoint caps each complete JSON request body at 524,288
-bytes, leaving room for JSON escaping and the bounded request envelope.
-Governance continues to enforce its own larger file limit and validates that
-base64 is canonical; the MCP limits are transport bounds for one tool call.
+Context is ordinary native `ctx` data. It does not choose security actors or
+permissions. Native `with_context` overlays it on inherited context, so host
+endpoint composition also controls ambient context visible to a tool. Native
+Terminal retains operating-system-user authority; MCP scope is not a filesystem
+sandbox.
 
-The built-in `components` tool is the managed-agent read-only view of the Hub
-and effective registry. Its `operation` is one of `catalog`, `details`,
-`inspect`, `state`, `files`, `read_file`, `installed` or `plan`; package requests are
-passed as the nested `request` object and remain subject to the Hub facade's
-exact component, version, resource and path decoders. The MCP boundary rejects
-`apply`, `status`, `install`, `update`, `uninstall` and unknown fields before
-calling the Hub facade. `plan` resolves a digest-bound dependency closure at
-review time, requirements, migrations and capability definitions, and may populate the native verified
-artifact cache; it does not publish registry state. Reads may inspect installed
-state or verified package contents; they do not apply packages, publish registry entries,
-activate overlays or grant package permissions. The private `bee.hub:call`
-facade still serves separately authorized Hub management callers, but that
-surface is not part of the managed-agent `components` tool.
+Every tool call receives the reserved `bee.gateway.binding` context key with
+`binding_id`, `thread_id`, `action_id`, `attempt_id` and, when host-selected,
+`policy_ref`, `workspace_id` and `origin_view`. A thread-launched child inherits
+its origin view. Agents cannot add or replace this key. These IDs support
+audit and destination attribution; they are not authority, and each owner still
+checks membership and permission.
 
-The built-in `thread_launch` tool starts one host-allow-listed managed launch
-in the caller's own workspace and thread, and returns the child's thread,
-action and attempt so the parent reaches it through the same `thread_read`,
-`thread_wait` and `thread_message`. Its arguments are one definition reference,
-one brief and one retry key. A successful value also returns the admitted
-definition reference and title plus the bounded brief, alongside the child
-identities. The definition must appear in the calling
-attempt's own launch policy `agent_launch` list; a definition the policy does
-not name is refused with `LAUNCH_NOT_PERMITTED`, and a definition that would
-open a different thread is refused with `LAUNCH_THREAD_UNSUPPORTED` rather than
-started and orphaned. The child receives exactly its own launch policy's
-gateway tools, never the parent's. Every acquisition underneath keys on the
-launching agent's own actor and workspace, and the tool mints no grant,
-credential, trait or overlay authority.
+A client that caches discovery can call the stable `call_tool` tool with
+`{name, arguments}`. It takes the same active-tool and authorization path as a
+direct call. The gateway does not rewrite a running harness's system prompt.
 
-Two built-in tools carry application delivery. `delivery` requests delivery of
-a frozen artifact (publication prepare, destination stage and the destination's
-preflight verdict, with each diagnostic's remedy) and reads a staged version's
-review, selection and activation status; it names the human steps it cannot
-take. `publish` publishes only the exact locally reviewed and applied version
-and is gated by a host-requested access trait. Neither reaches an overlay
-write, which the activation owner alone holds. Both public delivery requests
-name the destination `workspace_id`, the source author's `source_overlay_id`,
-and the version. The destination workspace is the runtime target; the source
-overlay ID is the authoring identity. The private delivery service may translate
-that source identity to its internal `source_workspace` field.
+## Built-in tools
 
-Clients that cache MCP discovery can use the stable `call_tool` tool with
-`{name, arguments}` after selecting traits. It uses the same active-tool check
-and invocation path as a direct call. Selecting a trait does not grant a tool
-outside the independent ceiling. Use `session` read to get current schemas and
-trait instructions; the gateway does not rewrite a running harness's system
-prompt. Credential rotation retains binding-owned selection, while revocation
-invalidates access to both selection and tools.
+`overlay` reaches the public `bee.governance:overlay_call` facade. `guide`
+returns the destination's authoring contract and minimal example without naming
+or granting an overlay. `create`, `list`, `read`, `put`, `remove` and `freeze`
+operate only on the caller's overlay identity. They use `overlay_id`; a
+caller-supplied `workspace_id` is refused. Inline file text is bounded to
+65,536 bytes, canonical padded base64 to 87,384 bytes (65,536 decoded), and a
+complete MCP JSON request to 524,288 bytes.
 
-The 1010-case Lua suite, 17-case managed-carrier suite, HTTP fixture lint,
-production lint, pack and bundle checks pass. The real HTTP probe demonstrates two active traits,
-native fixed/dynamic context, denied host-key replacement and foreign traits,
-stale revision refusal, separate binding state, denied gateway database/scope
-access from a tool, credential rotation preserving selection and context, and
-credential revocation. Storage acceptance proves state
-across reopen. Two concurrent HTTP selection requests prove one committed
-winner and one stale-revision conflict. The real managed-carrier MCP child also
-activates two traits, dispatches a newly selected tool, and rejects fixed-context
-overwrite. A same-binding HTTP test also proves that a host policy replacement
-affects subsequent tool calls after native policy publication converges. The performance dashboard remains the next milestone.
+`components` is the managed-agent read-only Hub view. It permits `catalog`,
+`details`, `inspect`, `state`, `files`, `read_file`, `installed` and `plan`.
+The nested request retains Hub's exact component, version, resource and path
+decoders. It cannot apply a package, change registry state, activate an overlay
+or grant package permissions.
 
-For example, a protected launch policy can keep thread reads available and let
-its agent activate waiting when coordinating work:
+`thread_launch` starts a definition from the caller's launch-policy allow-list
+in the caller's workspace and thread. It accepts a definition reference, brief
+and retry key, and returns the child thread, action and attempt identity plus
+the admitted title. The child gets its own launch policy and tool scope. A
+launch that would create a different thread is refused rather than orphaned.
+
+`delivery` requests delivery of a frozen artifact and reads a staged version's
+review, selection and activation state. `publish` publishes only the exact
+locally reviewed and applied version, and can require an approved trait. Neither
+tool writes an overlay or makes an approval decision.
+
+## Trait configuration
+
+For example, a host may make coordination waiting selectable while keeping
+thread reads always available:
 
 ```yaml
 gateway_tools: [thread_read, thread_wait]
@@ -141,50 +96,32 @@ gateway_surface:
   dynamic_keys: [experiment]
 ```
 
-The client reads `session`, then selects `research:coordination` with that
-revision and `{experiment: "baseline"}` as context. It can call `thread_wait`
-directly or through `call_tool`. An unlisted trait, an unadmitted tool or a
-caller-provided `project` value is refused. This configuration belongs to the
-host's protected launch policy; passing it as ordinary tool arguments cannot
-admit it.
+The client reads the session, selects the trait with the returned revision and
+sets `{experiment: "baseline"}`. An unlisted trait/tool or a caller-provided
+`project` value is refused. Only the protected launch policy can admit this
+surface.
 
 ## Agent-requested access
 
-A protected surface can declare `access: {workspace_id, policy, traits}`. These
-trait IDs are requestable, initially unavailable capabilities. They cannot also
-be initially active, in base tools, or exposed through a freely selectable trait.
-The declaration selects the approval workspace and approver policy; an agent
-cannot supply either, executable targets, tool scopes, or fixed app context.
+A host can declare `access: {workspace_id, policy, traits}` for traits that are
+initially unavailable. Such traits cannot also be active, base tools or freely
+selectable traits. The host fixes the approval workspace, approver policy,
+executable targets, tool scopes and fixed application context.
 
-The built-in `session` tool accepts `request_access` with `idempotency_key`,
-`traits` and a bounded `reason`. It creates an ordinary durable approval request
-bound to the agent's gateway binding, action, attempt, thread, configuration
-digest and fixed context. The client Approvals inbox uses its existing owner
-feed and decision operation. The agent polls `access_status` with the returned
-`approval_id`; an approved decision is consumed under a stable effect key before
-the gateway records and activates the traits for this binding. No other binding
-changes, even when two agents share the same subject identity.
+An agent sends `session` `request_access` with an idempotency key, requested
+traits and a bounded reason. The gateway creates a durable request bound to its
+binding, action, attempt, thread, configuration digest and fixed context.
+Approvals presents it through the ordinary Inbox; the agent polls
+`access_status`. Once an approver decides, the gateway consumes the exact
+effect and records the new selection atomically with its surface revision.
 
-The approval owner remains the decision authority. A gateway receipt records
-only the applied effect, atomically with its surface revision. Replaying a status
-read does not duplicate the grant or reactivate a later-deselected trait. If the
-owner restarts before consumption, the gateway verifies the exact proposal and
-configuration before revalidation. A crash after consumption but before applying
-can replay that same effect. Request expiry limits consumption; a completed grant
-lasts for its binding, whose revocation/credential lifecycle still governs every
-MCP call. Receipt capacity is bounded and exhaustion refuses new grants.
+The approval owner remains the decision authority. Replays do not duplicate a
+grant or reactivate a later-deselected trait. Restart recovery verifies the
+same proposal and configuration before applying an already consumed effect.
+A grant lasts only for its binding and is still subject to expiry, credential
+rotation and revocation. An agent cannot approve itself, publish arbitrary
+registry state or rely on an application ID in context as target authorization.
 
-An application target must be host-fixed in context and enforced by its tool's
-own decoder and native policy. Merely including an app identifier in context is
-not a replacement for target authorization. This integration does not grant
-arbitrary registry publication or permission for an agent to approve itself.
-Production and HTTP-fixture lint pass, as do 1015 Lua cases. The real HTTP
-fixture in two native runtimes proves pending inbox visibility, request replay,
-explicit approval, recovery of an already-consumed effect before gateway apply,
-unchanged revision on grant replay, preserved deselection, fixed-context refusal,
-and denial for another binding or a denied request. Store reopen/rollback checks
-cover durable effect receipts. The explicit live Agy gate also passes: Gemini requests the trait itself, the
-fixture operator approves the exact inbox request, and Gemini uses its grant
-to commit the verified thread message. This is not yet a full provider/client
-restart proof or the default-profile setup UI. Client-wide automatic notifications and
-discovery across approximately 100 Bees remain separate work.
+For listener, credential and hook behavior, see [Gateway](GATEWAY.md) and
+[Gateway hooks](GATEWAY_HOOKS.md). For the application-authoring path, see
+[distributed overlay delivery](DISTRIBUTED_APP_DELIVERY.md).

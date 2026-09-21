@@ -875,9 +875,9 @@
       "topic": "ui"
     },
     {
-      "bytes": 20725,
+      "bytes": 4158,
       "id": "docs/distributed_app_delivery",
-      "sha256": "1e226efdc6bc94d776991fbf4de215e3888e082c82f02d4ec11f382a0adb3a7f",
+      "sha256": "ef61b42a42e61078d2c3bcfd0c95cb63dc65c73f2a9d053ce0d87a5657bc69cc",
       "source": "docs/DISTRIBUTED_APP_DELIVERY.md",
       "title": "Distributed overlay delivery",
       "topic": "application"
@@ -899,9 +899,9 @@
       "topic": "gateway"
     },
     {
-      "bytes": 12100,
+      "bytes": 6297,
       "id": "docs/mcp_configuration",
-      "sha256": "43154599d2ef1f0f2d85b2ccfeed22206cd87cd9fc223f1974363c487ab180f8",
+      "sha256": "55e8661a7437ba6a6ac676b5dea5ce1c3040651d67ca3ab79b7ce5612c2a38e7",
       "source": "docs/MCP_CONFIGURATION.md",
       "title": "Configurable managed MCP",
       "topic": "gateway"
@@ -1150,7 +1150,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding repository process and design pages. Component: one README per src/ package. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 1264589,
+    "bytes": 1242219,
     "documents": 143
   }
 }

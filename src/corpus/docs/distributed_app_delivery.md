@@ -1,319 +1,81 @@
 # Distributed overlay delivery
 
-Status: immutable candidate identity, generic Hive transfer, verified replica
-reading, destination plan storage, the activation ledger, private-overlay
-resolution and the destination-owner state machine are implemented in source.
-The Overlays application presents destination-local review, selection,
-activation and status; decisions remain in the existing Approvals owner. The
-real two-runtime gate transfers two distinct versions of a private application
-that is unavailable on Hub, then exercises destination review, update, recovery
-and rollback. Modules reaches the publication facade without receiving registry,
-overlay or Sync authority. Ordinary Bees can now consume a strict persisted Hive
-profile; public invitation/profile creation, multi-project joined identities and
-destination migration execution remain unfinished.
+Bee distributes immutable application artifacts. Distribution makes an exact
+version available on another Bee; it does not install it, select it, activate
+it, or grant authority there. Governance owns authoring and activation, Hive
+owns authenticated transfer, and Approvals owns the human decision.
 
-Publishing replicates content. It never installs, activates, or grants authority
-on another Bee. The sender freezes its overlay and prepares one
-source-owned immutable component version locally. Preparation stores exact bytes
-without appending the Sync feed. The same local Overlays flow must stage,
-review, select, approve and apply those bytes before publication may append their
-descriptor to the feed. That version contains no destination node, workspace,
-plan, approval or host policy. A destination receives the bytes through the
-existing authenticated Hive mesh, measures them again, and constructs its own
-candidate and preflight against its current registry and policy.
+## Delivery model
 
-## Version behavior
+An author creates a declarative application in an overlay, freezes it and has
+its exact content reviewed and applied locally. Publication then appends a
+source-qualified immutable descriptor to the delivery feed. The descriptor and
+artifact contain no destination workspace, approval, host policy, registry
+writer, filesystem root, process, mount or credential.
 
-Generic Hive sync discovers immutable **available versions**. It does not make a
-replica into an authority and it does not select a version for an application.
-The source owns version descriptors and content digests. Each destination owns its
-follow configuration, replica cache, selected version, review/approval record and
-activation. Publishing v2 can therefore make v2 available on another Bee while
-its selected and running v1 continue unchanged, including after restart. Updating
-is an explicit destination action, the same distinction Hub makes between an
-available release and an applied update.
+A destination stores the received artifact under its source, feed and version
+identity. It verifies every bounded chunk, total length and final digest before
+marking that replica `available`. A source withdrawal stops future delivery; it
+does not remove a version a destination already holds or uses.
 
-The shared receiver stores every source-qualified immutable version under
-`(source owner, feed, version key)`, with a separate durable source cursor. It
-must never feed remote data back through `bee.sync:store` as a local append: that
-would change ownership and create replication loops. A source withdrawal stops
-future distribution; it does not uninstall or deselect a version that a destination
-already selected.
+Each destination independently:
 
-The delivery flow is deliberately small:
+1. stages an available replica by its complete source/feed/version identity;
+2. resolves and preflights it against its own registry and host policy;
+3. reviews the exact candidate and its changes;
+4. selects and prepares the version;
+5. obtains a local approval; and
+6. applies the approved intent through its owner-local overlay generation.
 
-1. Freeze an overlay and prepare a destination-independent component version locally.
-2. Stage, review, select, approve and apply that exact local version, then publish it.
-3. Transfer bounded chunks. Interrupted transfers remain `receiving`; only a
-   complete length- and digest-verified replica becomes `available`.
-4. Ask the destination governance owner to read that local replica by its complete
-   source/feed/key/descriptor identity. It verifies the canonical application
-   envelope, resolves the destination candidate locally, runs local preflight and
-   stores those exact bytes as a `staged` plan with a durable receipt.
-5. Present destination-local review and use the existing Approvals owner for a decision.
-6. Persist desired definitions and reconcile the destination-owned overlay only after
-   its approval and exact runtime preconditions hold.
+Receipt of a later version never changes the selected or active version. A
+destination can stage the same source version independently from other
+destinations. Its plan, selection, approval, activation receipt and overlay do
+not leave that destination.
 
-No source approval, credential, filesystem root, process, mount, registry writer,
-or overlay handle crosses this boundary. Duplicate delivery reuses its receipt.
-The same immutable source version can be staged independently by many destinations;
-their plans, selections, approvals and overlays never cross that boundary.
+## Review and activation
 
-Overlay activation uses the existing owner-local, generation-fenced overlay API.
-Immediately before apply, governance re-resolves and re-preflights the selected
-candidate in the destination context, then applies the exact reviewed definitions
-through its owned overlay generation. After an exact observed match, governance
-re-resolves once more and records uncertainty with a named composed-base
-diagnostic when the base moved across the apply instead of claiming applied.
-An overlay-generation conflict retires that attempt and requires another
-preflight; overlay activation never writes registry history.
+Overlays shows the destination-local plan. It displays the measured artifact,
+preflight report and report digest, diagnostics and remedies, pending migrations,
+and entries added, changed or removed against the captured composed base. It
+also shows selection, approval and activation state. A malformed report,
+blocked preflight or stale plan cannot be selected or prepared.
 
-Durable registry publication is a separate adapter. Its atomic composed-base CAS
-remains unavailable and must not be approximated with a Lua pre-read. That missing
-durable-publication guard does not block the overlay path.
+The activation owner re-resolves and re-preflights immediately before applying.
+It applies only the exact reviewed definitions through a generation-fenced
+overlay API and records the observed outcome. A generation conflict or a base
+that changes during the operation leaves an explicit uncertain or refused
+result; the owner does not infer success or write registry history. Restart
+recovery restores only the previously authorized desired intent.
 
-Implemented transport and artifact slices:
+Durable registry publication is a different operation. Overlay activation does
+not become a registry-history write, and a registry publication guard must not
+be simulated with a Lua pre-read.
 
-1. `bee.sync` stores source-qualified immutable versions with resumable bounded
-   chunks. Finishing one blob does not advance source discovery; a catch-up owner
-   commits its cursor separately after handling every descriptor in the range,
-   using an expected-cursor compare-and-set. The native supervisor admits the
-   receive operation through its generic policy route.
-2. `bee.governance:artifact` produces and verifies the canonical bounded bytes for
-   exact resolved registry definitions. The replica layer treats those bytes as an
-   opaque immutable version and never selects or executes them.
-3. `bee.governance:delivery` wraps the source identity, component version and exact
-   artifact in `bee.governance-application-version@2`. Its sync descriptor derives
-   the source-qualified component/version identity and uses the exact envelope
-   length and digest. It carries no destination candidate or preflight report.
-4. `bee.sync:replicas.read` returns a descriptor and content only from an available
-   local replica after rechecking both descriptor records, every chunk, total
-   length and the final content digest.
-5. `bee.governance:destination.stage_replica` accepts only the complete local
-   replica identity and an idempotency key. It derives the plan request internally
-   and requires the candidate destination to equal the opened local plan owner.
+## Agent path
 
-The native two-runtime supervisor acceptance carries two exact versions of a
-private migration-free application as
-`bee.governance-application-version@2` envelopes through the generic receiver.
-The destination service stages, reviews and selects v1, then receives and stages
-v2 without changing the v1 selection. It obtains a local approval through the
-Approvals owner, applies v1 to the destination overlay and, after destination
-restart, reconstructs that overlay from the authorized desired intent while v2
-is still staged. The test then explicitly updates to v2 and rolls back to v1.
-Its source helper builds exact private definitions without Hub and hands those
-bytes to the production publisher. The test
-does not drive the terminal Modules UI. Destination staging, resolution,
-approval, activation and recovery all use the production services.
+A managed agent uses the bounded `overlay` MCP tool to read the authoring guide
+and create, list, read, put, remove and freeze its own overlay. The agent does
+not receive direct overlay-store access. `workspace_id` is not an authoring
+alias; public authoring calls use `overlay_id`.
 
-`make agent-app-hive-check` composes that boundary with the retained output of
-the real managed-agent authoring gate. It recreates the single updated Agent
-App artifact through `artifact.create`, requires equality with the authoring
-digest, seeds the bytes only on the source, and proves absence at the
-destination before publication. The destination stages through the public
-facade and approves through the local Approvals owner. After both headless
-coordinators stop, an ordinary destination desktop opens the application from
-Start, records an acknowledged checkpoint, and cold-restores it with the source
-offline and the same logical identity. This is an exact-artifact composition
-proof; publication is performed by the fixture source runtime rather than the
-original authoring process.
+The `delivery` tool can request delivery of a frozen artifact and read a
+staged version's review, selection and activation status. The `publish` tool
+can publish only an exact locally reviewed and applied version, and a host may
+place it behind an approved access trait. Neither tool can approve, activate or
+write an overlay. People review in Overlays and decide in Approvals; the
+activation owner performs the apply.
 
-`make agent-app-hive-e2e-check` proves the continuous form. It first runs a
-real managed Agy on a source Bee whose Hive identity is already `node-1`. The
-source reviews, approves, applies, opens, checkpoints and cold-restores the
-single authored version. The Hive gate then resumes that exact project and
-state: production Governance recovery restores the authorized overlay, and the
-production publication facade verifies and publishes it without receiving
-overlay-write authority. No artifact bytes are injected into a replacement
-source. A separate destination proves prior absence, receives the immutable
-artifact through Hive, performs destination-local review, approval and apply,
-opens it from Start, checkpoints it, and cold-restores the same logical app
-identity with the source offline. The gate binds the source and destination to
-their retained workspace IDs and requires the published, received and applied
-artifact digest to remain identical. It also hashes every file in the retained
-source composition before and after the bridge and refuses any post-approval
-rewrite.
+Delivery requests retain `workspace_id` for the destination runtime target and
+`source_overlay_id` for the authoring identity. Internal services may use other
+storage fields, but those are not public authoring vocabulary.
 
-The destination now has a durable internal plan store. Available versions retain
-their exact candidate, artifact and preflight bytes; local review, explicit
-selection and approval binding advance through CAS revisions and bounded retry
-receipts. Selection remains separate from receipt of a replicated version.
+## Limits
 
-## What a reviewer sees
+Destination migration execution requires a captured immutable registry view and
+is not supplied by ordinary overlay activation. Public Hive enrollment and
+discovery, remote workspace composition, destination Hub package transfer and
+installation, and managed headless launch remain separate boundaries.
 
-Overlays reads a staged plan and shows, in a review pane beside the
-available and staged lists, what a person is being asked to approve:
-
-1. The verdict. The application decodes the plan's own preflight report from the
-   exact bytes the plan stores and checks them against the plan's preflight
-   digest through `bee.governance:preflight.decode_report`. A report that fails
-   that check is shown as unreadable with the reason, never as ready.
-2. Every diagnostic by its code and the entry it concerns, with its message and
-   remedy, and every pending migration by its target.
-3. The entry set the plan changes against the composed base: added, changed and
-   removed, each with id, kind and digest, beside the artifact and plan digests.
-   The destination supplies this through the read-only `changes` operation; it
-   decodes the reviewed candidate from its own measured bytes and compares it to
-   the composed base its resolver captures now, and names both base digests so a
-   base that moved since staging is visible.
-4. The approval state the owner holds: unbound, proposed with its proposal
-   digest, consumed with the digest the activation owner consumed, and after
-   apply the activation phase, outcome and the activation owner's receipt,
-   including an uncertain outcome with the composed-base diagnostic the ledger
-   records.
-5. Refusals. Accept, Select and Prepare are unavailable while the verdict is not
-   ready or the report fails its digest check, and the reason is the status line.
-   The application never acts on a plan whose report it could not decode.
-
-The application gains no authority: it decodes and displays what the plan store,
-the approvals owner and the activation ledger already hold, through the
-destination facade it already calls. Overlays remain the activation owner's.
-
-The public facade authenticates the caller's exact delivery operation and then
-enters the private destination execution scope to reach the destination store,
-the same shape the authoring facade uses. An ordinary application is denied the
-governance database directly, so without that scope hop Overlays could not
-read its own destination. The facade also presents an owner fault as the
-application boundary names it, so a refusal arrives with its code and reason.
-
-`make delivery-review-check` stages one version whose candidate introduces a
-reference to an entry nothing supplies and one the destination preflight
-accepts, then drives the Overlays window: the refused version shows blocked
-with `DANGLING_REFERENCE` on its own entry and refuses selection with that
-reason, and the accepted version shows ready with its entry changes, is reviewed,
-selected and prepared in Overlays, approved in Approvals, and read back with
-its activation outcome and receipt.
-
-The owner-local overlay materializer is now implemented and tested. It accepts
-only exact artifact entries, replaces one logical overlay, relies on one native
-overlay generation compare-and-set, and creates no durable registry version. A
-generation conflict returns to the destination owner so it can rebuild context
-and rerun preflight before another attempt.
-It is still internal and receives its owner identity from the destination
-service rather than the replica.
-
-Migration 5 adds an internal destination activation ledger. Immutable intent
-facts bind the selected source plan, host-selected overlay owner, exact local
-resolution, artifact and preflight measurements. Mutable approval/consumption
-progress is separate. A destination slot records the authorized desired intent
-separately from the last observed applied intent, so restart recovery cannot
-follow a newer staged or selected version. An uncertain apply can later be
-settled only from observed evidence.
-
-`bee.governance:activation_measure` is the destination-local measurement seam
-for the Hub resolver. It accepts a selected, accepted local plan plus a
-host-produced resolved candidate and current context. It remeasures the exact
-reviewed artifact, requires every candidate entry digest to match those bytes,
-runs a fresh local preflight, rejects pending migrations and dependency
-directives, and produces the immutable resolution/report blobs stored by the
-ledger. The activation approval proposal binds the resulting authorization
-digest and its consumption bridge verifies the exact consumer, proposal and
-effect receipt while preserving structured revalidation details.
-
-`bee.governance:activation_owner` now joins those internal pieces without
-gaining transport or decision authority. Preparation reads the current accepted
-selection, invokes a host-supplied resolver, measures the destination facts,
-persists an immutable intent, and requests the exact local approval. Each resume
-step crosses one durable phase. It rechecks the current selection immediately
-before recording `consuming`, reconciles the same approval effect after a crash,
-sets the desired pointer only with a verified consumption receipt, and performs
-one host-supplied owner-overlay apply. Recovery reads only that desired intent;
-a later replicated, staged or selected version cannot replace it. Exact overlay
-observation settles an uncertain apply. A settled desired version is remeasured
-and restored when its process-local overlay is absent after restart; each later
-drift observation has its own revision-fenced receipt. The destination service
-supplies its host configuration and real approval executor. The bundled App
-Delivery application calls that service for staged plan listing, local review,
-selection, activation and status/recovery presentation. The existing Approvals
-application remains the decision surface; Overlays does not publish or send
-candidates.
-
-`bee.governance:hub_resolver` now implements destination Hub resolution over
-the runtime registry preview. It applies the preview delta to the captured
-state, walks the selected package closure, keeps unchanged definitions from
-every selected module and produces an overlay with no dependency directives.
-Package ownership and immutable module digests come from registry-owned preview
-metadata. Destination policy and migration ledgers come only from the host.
-Focused acceptance proves exact artifact equality, unchanged-entry retention,
-dependency-directive removal, registry ownership and unchanged host policy.
-The two-runtime test constructs its transmitted private artifacts directly and
-then exercises the production publisher, generic distributor, private-overlay
-resolver and destination owner service.
-Modules separately proves its production Governance binding from source and a
-source-free pack. An unprofiled component is refused instead of publishing its
-Hub dependency overlay.
-
-`make app-journey-check` carries one `bee.application` definition the whole way
-on a disposable database environment: a harness acting as the agent authors it
-through the authoring surface, the frozen artifact is published, staged and
-preflighted, the owner accepts and decides it, the activation owner consumes
-that one decision and applies the overlay, a second consume is refused, and the
-same effective catalog the application broker reads then admits the definition.
-Boot recovery re-establishes the overlay on each later boot, so the desktop
-opens the application from its own start menu and restores its checkpointed
-state after a full host restart. Nothing outside the destination owner holds
-overlay write authority, and the acceptance asserts that.
-
-`make agent-app-check` is the same chain with a real managed coding agent in
-the authoring seat, and it is opt-in because it consumes provider inference. A
-managed Agy attempt is launched through the production launch definition,
-admission, carrier, placement and gateway with a brief and the launch policy's
-host instructions. It reads the application contract through one admitted
-read-only tool and authors the definition into its own caller-owned overlay
-through the scoped MCP `overlay` tool, then freezes it. Its binding admits
-four tools and no publication, approval or overlay operation. The host lints the
-frozen source, and a refusal from typed lint or from the destination preflight
-returns to the agent as a record on its bound thread, which the next attempt
-reads before repairing; the acceptance is bounded to three rounds. The person
-then reads the verdict and the entry changes in Overlays, accepts, selects
-and prepares there, approves in Approvals and steps, and the activation owner's
-receipt names the overlay it applied. The agent-authored window then opens from
-the start menu and comes back with its state after a full host restart.
-
-An authoring agent now has an honest path from its frozen artifact to the
-person's decision, through the MCP surface it already holds rather than a
-contract written into its brief. The built-in `overlay` tool carries a
-read-only `guide` operation stating this destination's application contract and
-one minimal example (generated from the rule tables preflight enforces, and
-itself authored through the real chain by `make app-journey-check`, which
-requires a ready preflight). The built-in `delivery` tool requests delivery of
-a frozen artifact: it publishes the frozen artifact as immutable content, stages
-that exact version at this destination and returns the destination's own
-preflight verdict with each diagnostic's code, target, message and remedy; it
-reads a staged version's review, selection and activation status by identity.
-The built-in `publish` tool publishes only the exact locally reviewed and
-applied version, which publication itself refuses otherwise; it is gated behind
-a host-requested access trait. Review, selection, preparation, approval, apply
-and opening remain human acts or the activation owner's, and the delivery
-facade's own policy and the two gateway tool policies grant no overlay write,
-which `make app-journey-check` asserts.
-
-The public authoring call is `bee.governance:overlay_call`. Its requests and
-replies use `overlay_id`; `guide` carries no overlay identity, and
-`workspace_id` is rejected as an authoring alias. The public `delivery` and
-`publish` tools retain the destination `workspace_id` because it identifies the
-runtime target, and use `source_overlay_id` for the frozen source overlay. The
-private delivery and destination services may retain `source_workspace` and
-other workspace fields for storage and routing; those fields are not the public
-authoring vocabulary.
-
-The runtime also defines the canonical receive surface
-`stream.pipe(peer, limit)`. Its Stream handle stays in the receiving actor's
-resource table and its opaque offer is routing metadata, not authority. The
-protected mesh implementation is currently a proven local runtime candidate,
-not the default runtime service. Once that runtime work lands, `bee.sync` may
-use it for bulk bytes while retaining the same immutable descriptors, durable
-replica receipts and Governance boundary.
-
-The remaining destination work is:
-
-1. Add destination migration orchestration after the runtime can invoke a
-   captured function against an ephemeral immutable registry view. Ordinary
-   overlays cannot provide this safely: they publish globally, trigger normal
-   lifecycle handling, reject overlapping IDs and reject cross-owner imports.
-
-Acceptance must prove that source v2 leaves a destination's selected and active
-v1 unchanged across restart; duplicate/lost transfers do not duplicate versions;
-equal identities with different content conflict; revoked sources stop new data
-without deleting verified bytes; and collection retains any selected, pending or
-resumable version.
+For the surrounding contracts, see [application contracts](APPLICATION_CONTRACTS.md),
+[approvals](APPROVALS.md), [sync and inbox](SYNC_AND_INBOX.md),
+[Hub](HUB.md) and [MCP configuration](MCP_CONFIGURATION.md).
