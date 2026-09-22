@@ -164,7 +164,11 @@
       "module": "bee/resources",
       "root": "bee.resources",
       "namespaces": [
-        "bee.resources"
+        "bee.resources",
+        "bee.resources.binding",
+        "bee.resources.migrations",
+        "bee.resources.persist",
+        "bee.resources.registry"
       ]
     },
     {
