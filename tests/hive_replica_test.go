@@ -239,7 +239,7 @@ func testHiveSupervisorReplica(t *testing.T, agent *hiveAgentArtifactScenario) {
 	}
 	moduleNames := []string{
 		"application", "approvals", "credentials", "docs", "driver", "driver-agy",
-		"driver-claude", "driver-codex", "driver-grok", "driver-muse", "hive",
+		"driver-claude", "driver-codex", "driver-grok", "driver-muse", "hive", "node",
 		"persist", "placement", "resources", "sync", "threads",
 	}
 	type stagedNode struct{ project, state string }

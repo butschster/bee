@@ -250,8 +250,15 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 	if err := os.CopyFS(hostDir, os.DirFS(filepath.Join(repository, "src", "hive", "host"))); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.CopyFS(filepath.Join(source, "node"), os.DirFS(filepath.Join(repository, "src/node"))); err != nil {
-		t.Fatal(err)
+	for _, name := range []string{"application", "node"} {
+		if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", "bee-"+name), os.DirFS(filepath.Join(repository, "modules", "bee-"+name))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, directory := range []string{"application_arguments", "appearance"} {
+		if err := os.RemoveAll(filepath.Join(source, directory)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := os.CopyFS(filepath.Join(source, "approvals", "host"), os.DirFS(filepath.Join(repository, "src/approvals/host"))); err != nil {
 		t.Fatal(err)
@@ -306,7 +313,7 @@ func runHiveSupervisors(t *testing.T, feeds bool) {
 		}
 		moduleNames := []string{"hive", "persist", "sync", "threads"}
 		if feeds {
-			moduleNames = append(moduleNames, "approvals")
+			moduleNames = append(moduleNames, "application", "approvals", "node")
 		}
 		for _, name := range moduleNames {
 			if err := os.CopyFS(filepath.Join(folder, "modules", "bee-"+name), os.DirFS(filepath.Join(root, "modules", "bee-"+name))); err != nil {
