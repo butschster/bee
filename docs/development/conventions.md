@@ -31,7 +31,7 @@ upstream licenses.
 | `modules/placement/src` | Shared placement contract, launch values, transition rules and binding resolution |
 | `modules/sync/src` | Owner-local projection, event and receipt ledger |
 | `modules/approvals/src` | Durable approval owner, inbox feed and outbox worker |
-| `src/placement/native` | Native launch attempts, executor boundary, evidence and cleanup state |
+| `modules/placement-native/src` | Native launch attempts, executor boundary, evidence and cleanup state |
 | `modules/node/src` | Authorized native-node descriptions and metadata |
 
 Registry IDs are public identities independent of file paths. `main.lua` is an

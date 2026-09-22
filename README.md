@@ -195,6 +195,7 @@ host launch facts and operating-system I/O events.
 | [`modules/hub`](modules/hub) | Package inspection, planning, apply, migration, and receipts |
 | [`modules/threads/src`](modules/threads/src) | Durable records, subscriptions, and delivery |
 | [`modules/docs/src`](modules/docs/src) | Offline documentation protocol and read-only corpus facade |
+| [`modules/placement-native/src`](modules/placement-native/src) | Native launch attempts, receipts, materialization, supervision, and cleanup |
 | [`modules/sync/src`](modules/sync/src) | Owner-local synchronized projections and immutable replica storage |
 | [`modules/node/src`](modules/node/src) | Authorized native-node descriptions and appearance defaults |
 | [`native`](native) | Generic application launch facts and OS I/O events |
