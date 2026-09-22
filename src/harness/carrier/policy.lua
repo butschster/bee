@@ -184,6 +184,19 @@ function M.decode(ref: string, entry: {[string]: unknown}, resolver: Environment
     if not encoded then return nil, ref .. ": " .. tostring(encode_error) end
     local digest, hash_error = hash.sha256(encoded)
     if hash_error or not digest then return nil, ref .. ": digest failed" end
+    -- The surface states what this policy admits, and the host owns that
+    -- statement. A saved profile replaces the tool list with the narrower set
+    -- it offers the child, so the surface is measured here, against the
+    -- policy's own tools, before any preference narrows them: a profile that
+    -- leaves out a tool chooses what to offer, it does not unsay what the
+    -- host declared.
+    local admitted_tools: {string} = {}
+    if data.gateway_tools ~= nil then
+        local admitted, admitted_error = bounds.ids(data.gateway_tools, true)
+        if not admitted then return nil, ref .. ": gateway_tools: " .. tostring(admitted_error) end
+        table.sort(admitted)
+        admitted_tools = admitted
+    end
     -- Credentials bind the host policy; the launch separately measures the
     -- preferences and resulting configuration under that policy.
     if selected then
@@ -281,7 +294,7 @@ function M.decode(ref: string, entry: {[string]: unknown}, resolver: Environment
     if data.gateway_surface ~= nil then
         gateway_surface = bounds.object(data.gateway_surface)
         if not gateway_surface then return nil, ref .. ": gateway_surface must be an object" end
-        local configured, _, surface_error = surface.prepare(gateway_surface, mcp.TOOLS, gateway_tools)
+        local configured, _, surface_error = surface.prepare(gateway_surface, mcp.TOOLS, admitted_tools)
         if not configured then return nil, ref .. ": gateway_surface: " .. tostring(surface_error) end
         local encoded_surface, encode_error = json.encode(gateway_surface)
         if not encoded_surface or encode_error then return nil, ref .. ": cannot copy gateway_surface" end
