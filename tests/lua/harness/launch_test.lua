@@ -680,8 +680,8 @@ local function define_tests()
             local binding = assert(registry.get("bee.driver.claude:binding"))
             local original = binding.data
             binding.data = {contracts = {{contract = "bee.driver:driver", methods = {
-                prepare = "bee.driver.claude:prepare", dispatch = "bee.driver.claude:dispatch",
-                normalize = "bee.driver.claude:normalize", configure = "bee.harness.catalog:configuration_probe",
+                prepare = "bee.driver.claude.binding:prepare", dispatch = "bee.driver.claude.binding:dispatch",
+                normalize = "bee.driver.claude.binding:normalize", configure = "bee.harness.catalog:configuration_probe",
             }}}}
             local ok, failure = pcall(function()
                 apply(binding)
