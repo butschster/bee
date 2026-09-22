@@ -835,17 +835,17 @@
       "topic": "terminal"
     },
     {
-      "bytes": 3070,
+      "bytes": 3063,
       "id": "docs/readme",
-      "sha256": "f9dbab6911751b9a39c2ef527b043d23c65ba4de84950dae4b65db3e61e76739",
+      "sha256": "a1804052426f0b9792c8b196d279c24e089188ee81381eafc9053095ca127b70",
       "source": "docs/README.md",
       "title": "Documentation map",
       "topic": "platform"
     },
     {
-      "bytes": 5238,
+      "bytes": 5311,
       "id": "docs/agent_guide",
-      "sha256": "66a8d44bf5fe99c9d53a14386dc3b4e8c9d28b30b808feb516eb7fcceb3478ed",
+      "sha256": "f7b4d9473bb7cacdb3bc100548e9c1c73101451b9bc1ff58974e341647ca76a3",
       "source": "docs/development/agent-guide.md",
       "title": "Working on Bee",
       "topic": "platform"
@@ -1003,10 +1003,10 @@
       "topic": "component"
     },
     {
-      "bytes": 15048,
-      "id": "component/governance",
-      "sha256": "4bd458ad5976cfecd07fcee60dbe8c658a6ac4e9af2e0916bfde51785a6ce8a8",
-      "source": "src/governance/README.md",
+      "bytes": 15082,
+      "id": "component/gov",
+      "sha256": "4e70a67f98d38de040ed567efab215e4c44bdb2a511b0263c1b8de3efd97ff82",
+      "source": "src/gov/README.md",
       "title": "Overlay authoring and preflight",
       "topic": "component"
     },
@@ -1149,16 +1149,16 @@
     {
       "bytes": 23170,
       "id": "toolkit",
-      "sha256": "7ab244cb9287c036bb6c7d2f577c6cdac4157d59d6a7c7b3a45d5ea417dd5b55",
-      "source": "generated: src/ui, src/apps, src/governance/guide.lua",
+      "sha256": "0e5cd8d5683226e170ebdbfef3d7114d42963a17719e7336158ecc550be41b9d",
+      "source": "generated: src/ui, src/apps, src/gov/traits/guide.lua",
       "title": "Bee terminal toolkit",
       "topic": "terminal"
     }
   ],
   "schema": "bee.docs-corpus@1",
-  "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding repository process and design pages. Component: one README per Bee package under src/ or modules/. Terminal toolkit: one generated page composed from src/ui, src/apps and src/governance/guide.lua and digest-checked with the rest.",
+  "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding repository process and design pages. Component: one README per Bee package under src/ or modules/. Terminal toolkit: one generated page composed from src/ui, src/apps and src/gov/traits/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 1224087,
+    "bytes": 1224187,
     "documents": 144
   }
 }

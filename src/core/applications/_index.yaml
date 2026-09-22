@@ -53,7 +53,7 @@ entries:
   modules: [registry]
   imports:
     contract: bee.protocol:application
-    activation_profiles: bee.governance:activation_profile_decoder
+    activation_profiles: bee.governance.binding:profiles
     governed_admission: bee.governance:governed_application_admission
 - name: interactions
   kind: library.lua

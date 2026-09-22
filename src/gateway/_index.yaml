@@ -79,7 +79,7 @@ entries:
     message: bee.threads.records:message
     arguments: bee.application:arguments
     workspace_protocol: bee.governance:workspace_protocol
-    delivery_protocol: bee.governance:delivery_protocol
+    delivery_protocol: bee.governance.binding:delivery_protocol
     docs_protocol: bee:docs_protocol
 - name: context
   kind: library.lua
