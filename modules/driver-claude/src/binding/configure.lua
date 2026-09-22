@@ -33,6 +33,16 @@ local function handle(value: unknown): {[string]: unknown}
         delivery.arguments[#delivery.arguments + 1] = "--append-system-prompt"
         delivery.arguments[#delivery.arguments + 1] = request.instructions
     end
+    -- The child's cross-session inbox is placed by Bee, not left to whatever
+    -- runtime directory the child happens to inherit: the gateway writes to
+    -- this exact path later, and an address the harness chose for itself
+    -- would be unpredictable to it.
+    if request.attempt_id then
+        local socket, socket_error = configure_protocol.inbox_socket(request.attempt_id)
+        if not socket then return {ok = false, error = tostring(socket_error)} end
+        delivery.arguments[#delivery.arguments + 1] = "--messaging-socket-path"
+        delivery.arguments[#delivery.arguments + 1] = socket
+    end
     return {ok = true, delivery = delivery}
 end
 return {handle = handle}

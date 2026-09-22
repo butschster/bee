@@ -109,6 +109,16 @@ local function run(request: machine.Request, mode: Mode, controller: string?, af
         if hooks_error then error("hooks: " .. tostring(hooks_error)) end
     end
     drain_hooks()
+    -- The inbox runs on the same tick as the hook intake, and for the same
+    -- reason: it is bounded work against the gateway store, not a wait. A
+    -- failure here never ends an attempt - the obligation stays in the thread
+    -- and the next tick tries again - so it is not raised like a hook fault.
+    local function drain_inbox()
+        if session.settled then return end
+        local _, _inbox_error = machine.drain_inbox(io, session.checkpoint.gateway_binding, session.epoch,
+            session.plan.policy, session.plan.request.attempt_id)
+    end
+    drain_inbox()
     local drain_timer = time.after("1ms")
     local draining = false
     local drain_elapsed = false
@@ -163,7 +173,7 @@ local function run(request: machine.Request, mode: Mode, controller: string?, af
         if hooking then cases[#cases + 1] = hooks_ticker:channel():case_receive() end
         local selected = channel.select(cases)
         if not selected.ok then break end
-        if hooking and selected.channel == hooks_ticker:channel() then drain_hooks() end
+        if selected.channel == hooks_ticker:channel() then drain_hooks(); drain_inbox() end
         if selected.channel == outputs then
             local message = selected.value
             local data = message:payload():data() :: placement_protocol.Output

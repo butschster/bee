@@ -224,3 +224,106 @@ entries:
     - bee.gateway.security:store_policy
     - bee.gateway.security:database_ref_policy
     - bee.gateway.security:supervisor_policy
+- name: inbox_subject
+  kind: library.lua
+  source: file://inbox_subject.lua
+  modules:
+  - funcs
+  - security
+  imports:
+    gateway: bee.gateway.binding:gateway
+    context: bee.gateway:context
+- name: inbox_enqueue
+  kind: function.lua
+  source: file://inbox_enqueue_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway.binding:gateway
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+- name: inbox_fill
+  kind: function.lua
+  source: file://inbox_fill_method.lua
+  method: handle
+  modules:
+  - security
+  - uuid
+  - funcs
+  imports:
+    gateway: bee.gateway.binding:gateway
+    inbox_subject: bee.gateway.binding:inbox_subject
+    bounds: bee.threads.records:bounds
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+    - bee.gateway.security:execute_policy
+    - bee.gateway.security:inbox_subject_policy
+- name: inbox_claim
+  kind: function.lua
+  source: file://inbox_claim_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway.binding:gateway
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+- name: inbox_dispatched
+  kind: function.lua
+  source: file://inbox_dispatched_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway.binding:gateway
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+- name: inbox_settle
+  kind: function.lua
+  source: file://inbox_settle_method.lua
+  method: handle
+  modules:
+  - security
+  imports:
+    gateway: bee.gateway.binding:gateway
+    inbox_subject: bee.gateway.binding:inbox_subject
+    bounds: bee.threads.records:bounds
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+    - bee.gateway.security:execute_policy
+    - bee.gateway.security:inbox_subject_policy
+- name: inbox_reject
+  kind: function.lua
+  source: file://inbox_reject_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway.binding:gateway
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy
+- name: inbox_queue
+  kind: function.lua
+  source: file://inbox_queue_method.lua
+  method: handle
+  modules:
+  - security
+  imports:
+    bounds: bee.threads.records:bounds
+    gateway: bee.gateway.binding:gateway
+  security:
+    policies:
+    - bee.gateway.security:address_call_policy
+    - bee.gateway.security:store_policy
+    - bee.gateway.security:database_ref_policy

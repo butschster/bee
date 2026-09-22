@@ -131,6 +131,10 @@ reader does not substitute a current registry digest. Carrier lifecycle support
 is part of the threads migration ledger, including the carrier schema change;
 applied migration text and checksums remain immutable.
 
+A window carrier also drains the gateway's inbox queue for its child. The
+queue, its table and its operations belong to the gateway; see
+[gateway](gateway.md), "Harness inbox queue".
+
 ## Placement, configuration and stdin
 
 A launch request names the owner/incarnation, action and attempt, exact driver

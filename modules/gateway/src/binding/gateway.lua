@@ -47,6 +47,10 @@ M.TOKEN_BYTES = 32
 M.MAX_RETAINED_HOOKS = 256
 M.MAX_RETAINED_HOOK_BYTES = 524288
 M.MAX_HOOK_CLAIM = 32
+M.MAX_INBOX_CLAIM = 32
+M.MAX_QUEUED_INBOX = 64
+M.MAX_INBOX_BODY = 32768
+M.MAX_RETAINED_INBOX = 256
 M.DEFAULT_MATERIALIZATION_MS = 60000
 M.MAX_MATERIALIZATION_MS = 600000
 M.MAX_TOOLS = 16
@@ -1293,5 +1297,224 @@ function M.hook_reject(value: unknown): Reply
     db:release()
     if commit_error then return fail("STORAGE", "commit hook rejection") end
     return succeed({binding_id = binding.binding_id, rejected = result and (integer(result.rows_affected) or 0) or 0})
+end
+-- The inbox: thread messages travelling down to a managed child, the mirror
+-- of the hook intake. The carrier enqueues a claimed obligation, claims the
+-- row under its epoch, marks it dispatched before any byte reaches the child,
+-- and settles it with the harness's own acceptance. No child ever writes a
+-- row, and no row here settles a turn.
+local function inbox_prune(db: sql.DB, binding_id: string): string?
+    local rows, err = db:query("SELECT message_id FROM bee_gateway_inbox WHERE binding_id = ? AND status IN ('accepted', 'refused', 'rejected') ORDER BY sequence DESC", {binding_id})
+    if err or not rows then return "read retained inbox rows" end
+    local kept = 0
+    for _, row in ipairs(rows) do
+        kept = kept + 1
+        if kept > M.MAX_RETAINED_INBOX then
+            local _, delete_error = db:execute("DELETE FROM bee_gateway_inbox WHERE message_id = ?", {tostring((row :: Row).message_id)})
+            if delete_error then return "prune retained inbox rows" end
+        end
+    end
+    return nil
+end
+-- inbox_enqueue: one claimed obligation becomes one queued row. Enqueue is
+-- not delivery. Repeating it for the same delivery returns the original row;
+-- repeating it with a different body is a conflict, never a second row.
+function M.inbox_enqueue(value: unknown): Reply
+    local object, binding, db, carrier_epoch, refusal = intake_request(value, {"delivery_id", "thread_message_id", "record_id", "record_sequence", "body", "client_message_id"})
+    if not object or not binding or not db or not carrier_epoch then return refusal :: Reply end
+    local delivery_id = bounds.id(object.delivery_id)
+    local thread_message_id = bounds.id(object.thread_message_id)
+    local record_id = bounds.id(object.record_id)
+    if not delivery_id or not thread_message_id or not record_id then db:release(); return fail("INVALID", "delivery_id, thread_message_id and record_id are identifiers") end
+    local record_sequence = integer(object.record_sequence)
+    if not record_sequence or record_sequence < 1 then db:release(); return fail("INVALID", "record_sequence must be a positive integer") end
+    local body, body_error = canonical.encode(object.body)
+    if not body then db:release(); return fail("INVALID", "body: " .. tostring(body_error)) end
+    if #body > M.MAX_INBOX_BODY then db:release(); return fail("INVALID", "body exceeds " .. tostring(M.MAX_INBOX_BODY) .. " bytes") end
+    local digest, digest_error = hash.sha256(body)
+    if digest_error or not digest then db:release(); return fail("INVALID", "digest failed") end
+    local client_message_id: string? = nil
+    if object.client_message_id ~= nil then
+        client_message_id = bounds.line(object.client_message_id, 120)
+        if not client_message_id or client_message_id == "" then db:release(); return fail("INVALID", "client_message_id must be a short line") end
+    end
+    local tx, begin_error = db:begin()
+    if not tx then db:release(); return fail("STORAGE", "begin inbox enqueue") end
+    local current_binding, binding_failure = intake_binding(tx, binding.binding_id)
+    if not current_binding then tx:rollback(); db:release(); return binding_failure :: Reply end
+    if current_binding.sealed then tx:rollback(); db:release(); return fail("SEALED", "intake is sealed") end
+    local epoch_refusal = intake_epoch(tx, current_binding.attempt_id, carrier_epoch)
+    if epoch_refusal then tx:rollback(); db:release(); return epoch_refusal end
+    local existing, existing_error = tx:query("SELECT message_id, digest FROM bee_gateway_inbox WHERE binding_id = ? AND delivery_id = ?", {current_binding.binding_id, delivery_id})
+    if existing_error then tx:rollback(); db:release(); return fail("STORAGE", "read inbox row") end
+    if existing and #existing == 1 then
+        local row = existing[1] :: Row
+        tx:rollback(); db:release()
+        if tostring(row.digest) ~= digest then return fail("CONFLICT", "delivery already enqueued with a different body") end
+        return succeed({binding_id = binding.binding_id, message_id = tostring(row.message_id), replayed = true})
+    end
+    local open_rows, open_error = tx:query("SELECT COUNT(*) AS open_rows FROM bee_gateway_inbox WHERE binding_id = ? AND status IN ('queued', 'claimed', 'dispatched')", {current_binding.binding_id})
+    if open_error or not open_rows or #open_rows ~= 1 then tx:rollback(); db:release(); return fail("STORAGE", "count inbox rows") end
+    if (integer((open_rows[1] :: Row).open_rows) or 0) >= M.MAX_QUEUED_INBOX then tx:rollback(); db:release(); return fail("EXHAUSTED", "inbox holds " .. tostring(M.MAX_QUEUED_INBOX) .. " undelivered rows") end
+    local head, head_error = tx:query("SELECT COALESCE(MAX(sequence), 0) AS head FROM bee_gateway_inbox WHERE binding_id = ?", {current_binding.binding_id})
+    if head_error or not head or #head ~= 1 then tx:rollback(); db:release(); return fail("STORAGE", "read inbox head") end
+    local sequence = (integer((head[1] :: Row).head) or 0) + 1
+    local message_id, id_error = uuid.v7()
+    if id_error or not message_id then tx:rollback(); db:release(); return fail("INTERNAL", "mint inbox id") end
+    local at = stamp(now_ms())
+    local _, insert_error = tx:execute("INSERT INTO bee_gateway_inbox (message_id, binding_id, attempt_id, action_id, carrier_epoch, delivery_id, thread_message_id, record_id, record_sequence, body_json, digest, status, claimed_epoch, client_message_id, sequence, created_at, updated_at) " ..
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', 0, ?, ?, ?, ?)",
+        {message_id, current_binding.binding_id, current_binding.attempt_id, current_binding.action_id, carrier_epoch, delivery_id, thread_message_id, record_id, record_sequence, body, digest, client_message_id, sequence, at, at})
+    if insert_error then tx:rollback(); db:release(); return fail("STORAGE", "insert inbox row") end
+    local _, commit_error = tx:commit()
+    db:release()
+    if commit_error then return fail("STORAGE", "commit inbox enqueue") end
+    return succeed({binding_id = binding.binding_id, message_id = message_id, sequence = sequence, replayed = false})
+end
+-- inbox_claim: the carrier takes its binding's queued rows under its epoch,
+-- in sequence order. Rows a lower epoch claimed are taken over; a higher
+-- epoch is never touched. A dispatched row is redelivered only when the
+-- harness deduplicates it (client_message_id present) -- otherwise a second
+-- dispatch would put the same text in the model's context twice, so the row
+-- stays dispatched and its thread claim reconciles instead.
+function M.inbox_claim(value: unknown): Reply
+    local object, binding, db, carrier_epoch, refusal = intake_request(value, {"limit"})
+    if not object or not binding or not db or not carrier_epoch then return refusal :: Reply end
+    local limit = M.MAX_INBOX_CLAIM
+    if object.limit ~= nil then
+        local declared = bounds.integer(object.limit)
+        if not declared or declared < 1 or declared > M.MAX_INBOX_CLAIM then db:release(); return fail("INVALID", "limit must be between 1 and " .. tostring(M.MAX_INBOX_CLAIM)) end
+        limit = declared
+    end
+    local tx, begin_error = db:begin()
+    if not tx then db:release(); return fail("STORAGE", "begin inbox claim") end
+    local current_binding, binding_failure = intake_binding(tx, binding.binding_id)
+    if not current_binding then tx:rollback(); db:release(); return binding_failure :: Reply end
+    local generation, generation_failure = intake_generation(tx)
+    if not generation then tx:rollback(); db:release(); return generation_failure :: Reply end
+    local epoch_refusal = intake_epoch(tx, current_binding.attempt_id, carrier_epoch)
+    if epoch_refusal then tx:rollback(); db:release(); return epoch_refusal end
+    local at = stamp(now_ms())
+    local ok, reason = M.valid(current_binding, generation)
+    if not ok then
+        local _, reject_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'rejected', rejected_reason = ?, updated_at = ? WHERE binding_id = ? AND status = 'queued' AND claimed_epoch = 0", {reason, at, current_binding.binding_id})
+        if reject_error then tx:rollback(); db:release(); return fail("STORAGE", "reject unclaimed inbox rows") end
+    end
+    local rows, err = tx:query("SELECT message_id FROM bee_gateway_inbox WHERE binding_id = ? AND claimed_epoch <= ? AND (status = 'queued' OR status = 'claimed' OR (status = 'dispatched' AND client_message_id IS NOT NULL)) ORDER BY sequence LIMIT ?", {current_binding.binding_id, carrier_epoch, limit})
+    if err or not rows then tx:rollback(); db:release(); return fail("STORAGE", "read queued inbox rows") end
+    local claimed: {Object} = {}
+    for _, row in ipairs(rows) do
+        local message_id = tostring((row :: Row).message_id)
+        local result, claim_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'claimed', claimed_epoch = ?, claimed_at = ?, updated_at = ? WHERE message_id = ? AND claimed_epoch <= ?", {carrier_epoch, at, at, message_id, carrier_epoch})
+        if claim_error then tx:rollback(); db:release(); return fail("STORAGE", "claim inbox row") end
+        if result and (integer(result.rows_affected) or 0) == 1 then
+            local detail, detail_error = tx:query("SELECT message_id, delivery_id, thread_message_id, record_id, record_sequence, body_json, digest, client_message_id, sequence, created_at FROM bee_gateway_inbox WHERE message_id = ?", {message_id})
+            if detail_error or not detail or #detail ~= 1 then tx:rollback(); db:release(); return fail("STORAGE", "read claimed inbox row") end
+            local item = detail[1] :: Row
+            local body: unknown = json.decode(tostring(item.body_json))
+            claimed[#claimed + 1] = {message_id = message_id, delivery_id = tostring(item.delivery_id), thread_message_id = tostring(item.thread_message_id),
+                record_id = tostring(item.record_id), record_sequence = integer(item.record_sequence) or 0, body = body, digest = tostring(item.digest),
+                client_message_id = item.client_message_id ~= nil and tostring(item.client_message_id) or nil,
+                sequence = integer(item.sequence) or 0, created_at = tostring(item.created_at)}
+        end
+    end
+    local _, commit_error = tx:commit()
+    db:release()
+    if commit_error then return fail("STORAGE", "commit inbox claim") end
+    return succeed({binding_id = binding.binding_id, carrier_epoch = carrier_epoch, messages = claimed})
+end
+-- inbox_dispatched: the durable dispatch intent. It commits before the
+-- adapter writes a byte, so a replacement carrier can tell "never sent" from
+-- "may have been sent" without believing a lost carrier's word.
+function M.inbox_dispatched(value: unknown): Reply
+    local object, binding, db, carrier_epoch, refusal = intake_request(value, {"message_id"})
+    if not object or not binding or not db or not carrier_epoch then return refusal :: Reply end
+    local message_id = bounds.id(object.message_id)
+    if not message_id then db:release(); return fail("INVALID", "message_id is not an identifier") end
+    local tx, begin_error = db:begin()
+    if not tx then db:release(); return fail("STORAGE", "begin inbox dispatch") end
+    local epoch_refusal = intake_epoch(tx, binding.attempt_id, carrier_epoch)
+    if epoch_refusal then tx:rollback(); db:release(); return epoch_refusal end
+    local at = stamp(now_ms())
+    local result, update_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'dispatched', dispatched_at = ?, updated_at = ? WHERE message_id = ? AND binding_id = ? AND status = 'claimed' AND claimed_epoch = ?", {at, at, message_id, binding.binding_id, carrier_epoch})
+    if update_error then tx:rollback(); db:release(); return fail("STORAGE", "mark inbox row dispatched") end
+    if not result or (integer(result.rows_affected) or 0) ~= 1 then tx:rollback(); db:release(); return fail("CONFLICT", "no row of this epoch is claimed under that id") end
+    local _, commit_error = tx:commit()
+    db:release()
+    if commit_error then return fail("STORAGE", "commit inbox dispatch") end
+    return succeed({binding_id = binding.binding_id, message_id = message_id, dispatched_at = at})
+end
+-- inbox_settle: the harness answered. An acceptance is the only thing that
+-- lets the carrier acknowledge the thread delivery; a refusal returns the
+-- obligation to the thread and settles nothing.
+function M.inbox_settle(value: unknown): Reply
+    local object, binding, db, carrier_epoch, refusal = intake_request(value, {"message_id", "outcome", "reason"})
+    if not object or not binding or not db or not carrier_epoch then return refusal :: Reply end
+    local message_id = bounds.id(object.message_id)
+    if not message_id then db:release(); return fail("INVALID", "message_id is not an identifier") end
+    local outcome = bounds.line(object.outcome, 16)
+    if outcome ~= "accepted" and outcome ~= "refused" then db:release(); return fail("INVALID", "outcome must be accepted or refused") end
+    local reason: string? = nil
+    if outcome == "refused" then
+        reason = bounds.line(object.reason, 120)
+        if not reason or reason == "" then db:release(); return fail("INVALID", "a refusal carries its reason") end
+    elseif object.reason ~= nil then
+        db:release(); return fail("INVALID", "an acceptance carries no reason")
+    end
+    local tx, begin_error = db:begin()
+    if not tx then db:release(); return fail("STORAGE", "begin inbox settlement") end
+    local epoch_refusal = intake_epoch(tx, binding.attempt_id, carrier_epoch)
+    if epoch_refusal then tx:rollback(); db:release(); return epoch_refusal end
+    local at = stamp(now_ms())
+    local result, update_error
+    if outcome == "accepted" then
+        result, update_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'accepted', accepted_at = ?, updated_at = ? WHERE message_id = ? AND binding_id = ? AND status = 'dispatched' AND claimed_epoch = ?", {at, at, message_id, binding.binding_id, carrier_epoch})
+    else
+        result, update_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'refused', refused_reason = ?, updated_at = ? WHERE message_id = ? AND binding_id = ? AND status IN ('claimed', 'dispatched') AND claimed_epoch = ?", {reason, at, message_id, binding.binding_id, carrier_epoch})
+    end
+    if update_error then tx:rollback(); db:release(); return fail("STORAGE", "settle inbox row") end
+    if not result or (integer(result.rows_affected) or 0) ~= 1 then tx:rollback(); db:release(); return fail("CONFLICT", "no row of this epoch is settleable under that id") end
+    local _, commit_error = tx:commit()
+    if commit_error then db:release(); return fail("STORAGE", "commit inbox settlement") end
+    local prune_error = inbox_prune(db, binding.binding_id)
+    db:release()
+    if prune_error then return fail("STORAGE", prune_error) end
+    return succeed({binding_id = binding.binding_id, message_id = message_id, status = outcome})
+end
+-- inbox_reject: nothing will carry these rows. Only rows no carrier claimed
+-- are proved never to have reached the child; claimed and dispatched rows
+-- stay for reconciliation rather than being falsely called rejected.
+function M.inbox_reject(value: unknown): Reply
+    local object, binding, db, carrier_epoch, refusal = intake_request(value, {"reason"})
+    if not object or not binding or not db or not carrier_epoch then return refusal :: Reply end
+    local reason = bounds.line(object.reason, 120)
+    if not reason or reason == "" then db:release(); return fail("INVALID", "reason is required") end
+    local tx, begin_error = db:begin()
+    if not tx then db:release(); return fail("STORAGE", "begin inbox rejection") end
+    local epoch_refusal = intake_epoch(tx, binding.attempt_id, carrier_epoch)
+    if epoch_refusal then tx:rollback(); db:release(); return epoch_refusal end
+    local result, reject_error = tx:execute("UPDATE bee_gateway_inbox SET status = 'rejected', rejected_reason = ?, updated_at = ? WHERE binding_id = ? AND status = 'queued' AND claimed_epoch = 0", {reason, stamp(now_ms()), binding.binding_id})
+    if reject_error then tx:rollback(); db:release(); return fail("STORAGE", "reject queued inbox rows") end
+    local _, commit_error = tx:commit()
+    db:release()
+    if commit_error then return fail("STORAGE", "commit inbox rejection") end
+    return succeed({binding_id = binding.binding_id, rejected = result and (integer(result.rows_affected) or 0) or 0})
+end
+-- inbox_queue: the binding's rows, for the carrier that will drain them and
+-- for proofs. It reads; it claims nothing.
+function M.inbox_queue(binding: Binding): Reply
+    local db, open_failure = open()
+    if not db then return open_failure :: Reply end
+    local rows, err = db:query("SELECT message_id, delivery_id, status, claimed_epoch, client_message_id, sequence, created_at, updated_at FROM bee_gateway_inbox WHERE binding_id = ? ORDER BY sequence", {binding.binding_id})
+    db:release()
+    if err or not rows then return fail("STORAGE", "read inbox queue") end
+    local listed: {Object} = {}
+    for _, row in ipairs(rows) do
+        local item = row :: Row
+        listed[#listed + 1] = {message_id = tostring(item.message_id), delivery_id = tostring(item.delivery_id), status = tostring(item.status),
+            claimed_epoch = integer(item.claimed_epoch) or 0, client_message_id = item.client_message_id ~= nil and tostring(item.client_message_id) or nil,
+            sequence = integer(item.sequence) or 0, created_at = tostring(item.created_at), updated_at = tostring(item.updated_at)}
+    end
+    return succeed({binding_id = binding.binding_id, messages = listed})
 end
 return M

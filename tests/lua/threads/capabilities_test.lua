@@ -60,7 +60,7 @@ local function define_tests()
             test.is_false(described.delivery.cross_node_send)
             test.is_false(described.delivery.telemetry_subscribe)
             test.eq(described.delivery.outstanding_pages_per_subscription, 1)
-            same(described.delivery.channels, {"wait", "push", "mcp", "native"})
+            same(described.delivery.channels, {"wait", "push", "queue", "mcp", "native"})
             local kinds = described.record_kinds
             kinds[1] = "changed"
             test.eq(bounds.KINDS[1], "observation")

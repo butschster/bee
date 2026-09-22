@@ -18,6 +18,8 @@ local classify = require("classify")
 local policy = require("policy")
 local provenance = require("provenance")
 local checkpoint = require("checkpoint")
+local peerinbox = require("peerinbox")
+local logger = require("logger")
 local continuation = require("continuation")
 local settle = require("settle")
 local stream_json = require("stream_json")
@@ -533,6 +535,85 @@ function M.drain_hooks(io: IO, session: Session): (integer, string?)
         drained = drained + #event_ids
     end
     return drained, nil
+end
+-- drain_inbox: the thread's messages travelling down to this child.
+--
+-- The gateway fills the queue as the child's own subject, because obligations
+-- are claimed self-service and nothing here may claim on its behalf. The
+-- carrier then claims rows under its epoch, records dispatch intent before a
+-- byte leaves, hands the body to the harness and settles on the harness's own
+-- answer. A row left dispatched is never redelivered here: reconciliation
+-- decides that, because a second delivery would put the same text in the
+-- model's context twice. Nothing in this path settles a turn or extends an
+-- attempt.
+local inbox_log = logger:named("bee.harness.inbox")
+function M.drain_inbox(io: IO, binding_id: string?, epoch: integer, launch_policy: policy.Policy, attempt_id: string): (integer, string?)
+    if not binding_id then return 0, nil end
+    -- The host opts a launch into downward delivery explicitly. Without it
+    -- the child keeps thread_wait and no carrier touches the queue.
+    if not launch_policy.gateway_inbox then return 0, nil end
+    -- The child writes its inbox key into the configuration directory the
+    -- host projected, or into its inherited default when the host projected
+    -- none; the adapter resolves the default itself.
+    local config_dir = launch_policy.environment["CLAUDE_CONFIG_DIR"] or ""
+    local socket, socket_error = configuration.inbox_socket(attempt_id)
+    if not socket then
+        inbox_log:error("inbox address unavailable", {attempt_id = attempt_id, detail = tostring(socket_error)})
+        return 0, "inbox address: " .. tostring(socket_error)
+    end
+    inbox_log:info("inbox drain", {binding_id = binding_id, epoch = epoch, socket = socket})
+    local fill_raw, fill_call_error = io.call(M.GATEWAY .. ":inbox_fill", {binding_id = binding_id, carrier_epoch = epoch, limit = 8})
+    local filled, fill_error = reply_of(fill_raw, fill_call_error)
+    if not filled then return 0, "inbox fill: " .. tostring(fill_error) end
+    if not filled.ok then
+        local fault = filled.error or {code = "UNAVAILABLE", message = "inbox fill failed"}
+        inbox_log:error("inbox fill refused", {binding_id = binding_id, code = fault.code, message = fault.message})
+        if fault.code == "DENIED" or fault.code == "CONFLICT" then return 0, nil end
+        return 0, "inbox fill: " .. fault.code .. ": " .. fault.message
+    end
+    local claim_raw, claim_call_error = io.call(M.GATEWAY .. ":inbox_claim", {binding_id = binding_id, carrier_epoch = epoch, limit = 8})
+    local claimed, claim_error = reply_of(claim_raw, claim_call_error)
+    if not claimed then return 0, "inbox claim: " .. tostring(claim_error) end
+    if not claimed.ok then
+        local fault = claimed.error or {code = "UNAVAILABLE", message = "inbox claim failed"}
+        inbox_log:error("inbox claim refused", {binding_id = binding_id, code = fault.code, message = fault.message})
+        if fault.code == "DENIED" or fault.code == "CONFLICT" then return 0, nil end
+        return 0, "inbox claim: " .. fault.code .. ": " .. fault.message
+    end
+    local value = bounds.object(claimed.value) or {}
+    local messages = value.messages
+    if type(messages) ~= "table" then return 0, nil end
+    local delivered = 0
+    for _, entry in ipairs(messages :: {{[string]: unknown}}) do
+        local message_id = bounds.id(entry.message_id)
+        local body = bounds.object(entry.body) or {}
+        local text = body.text
+        if message_id and type(text) == "string" and text ~= "" then
+            -- Dispatch intent is durable before the adapter writes, so a
+            -- replacement carrier can tell "never sent" from "may have been".
+            local intent_raw, intent_call_error = io.call(M.GATEWAY .. ":inbox_dispatched", {binding_id = binding_id, carrier_epoch = epoch, message_id = message_id})
+            local intent, intent_error = reply_of(intent_raw, intent_call_error)
+            if intent and intent.ok then
+                step(io, "inbox_dispatched")
+                local answer = peerinbox.deliver({socket = socket, config_dir = config_dir, text = text :: string,
+                    message_id = message_id, timeout_ms = 2000})
+                local outcome = bounds.object(answer) or {}
+                inbox_log:info("inbox delivery", {message_id = message_id, status = tostring(outcome.status), accepted = outcome.accepted == true})
+                -- Only the harness's own acceptance settles the delivery; an
+                -- uncertain answer leaves the row dispatched for reconciliation.
+                if outcome.accepted == true then
+                    local _, settle_error = io.call(M.GATEWAY .. ":inbox_settle", {binding_id = binding_id, carrier_epoch = epoch,
+                        message_id = message_id, outcome = "accepted"})
+                    if not settle_error then delivered = delivered + 1; step(io, "inbox_accepted") end
+                elseif outcome.status == "refused" or outcome.status == "held" then
+                    io.call(M.GATEWAY .. ":inbox_settle", {binding_id = binding_id, carrier_epoch = epoch,
+                        message_id = message_id, outcome = "refused", reason = bounds.line(outcome.detail, 120) or tostring(outcome.status)})
+                    step(io, "inbox_refused")
+                end
+            end
+        end
+    end
+    return delivered, nil
 end
 -- Preparation is shared by structured and native-window execution. It admits
 -- the action, prepares and claims its attempt, admits the gateway, and records
