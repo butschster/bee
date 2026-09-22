@@ -286,7 +286,7 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 		{name: "node", path: "src/node"},
 		{name: "sync", path: "src/sync"},
 		{name: "persist", path: "modules/bee-persist/src"},
-		{name: "approvals", path: "src/approvals"},
+		{name: "approvals", path: "modules/bee-approvals/src"},
 	} {
 		if dependency.name == "sync" {
 			if err := os.RemoveAll(filepath.Join(source, dependency.name)); err != nil {
@@ -297,17 +297,20 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 			t.Fatal(err)
 		}
 	}
-	approvalManifest := filepath.Join(source, "approvals/_index.yaml")
+	if err := os.CopyFS(filepath.Join(source, "approvals", "host"), os.DirFS(filepath.Join(repository, "src/approvals/host"))); err != nil {
+		t.Fatal(err)
+	}
+	approvalManifest := filepath.Join(source, "approvals/service/_index.yaml")
 	approvals, err := os.ReadFile(approvalManifest)
 	if err != nil {
 		t.Fatal(err)
 	}
 	approvalText := string(approvals)
-	workerStart, workerEnd := strings.Index(approvalText, "- name: worker_service\n"), strings.Index(approvalText, "- name: contract\n")
-	if workerStart < 0 || workerEnd < workerStart {
+	workerStart := strings.Index(approvalText, "- name: worker_service\n")
+	if workerStart < 0 {
 		t.Fatal("locate optional approval projection worker")
 	}
-	approvalText = approvalText[:workerStart] + approvalText[workerEnd:]
+	approvalText = approvalText[:workerStart]
 	if err := os.WriteFile(approvalManifest, []byte(approvalText), 0600); err != nil {
 		t.Fatal(err)
 	}

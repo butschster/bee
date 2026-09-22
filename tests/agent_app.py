@@ -92,7 +92,7 @@ def configure_continuous_source(project, workspace_id):
                   "kinds": ["process.lua"], "databases": [], "grants": [],
                   "modules": ["tty", "process", "channel", "json"]}}]}
     governance_path.write_text(yaml.safe_dump(governance, sort_keys=False))
-    approvals_path = project / "src/approvals/_index.yaml"
+    approvals_path = project / "src/approvals/host/_index.yaml"
     approvals = yaml.safe_load(approvals_path.read_text())
     policies = next(item for item in approvals["entries"] if item["name"] == "approver_policies")
     policies["policies"] = [{"name": "local-agent-app-delivery",

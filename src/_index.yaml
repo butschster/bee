@@ -35,6 +35,15 @@ entries:
     value: bee.credentials:db
   - name: target_sources
     value: bee:credential_sources
+- name: dependency_approvals
+  kind: ns.dependency
+  component: bee/approvals
+  version: 0.1.0-dev
+  parameters:
+  - name: target_db
+    value: bee.approvals:db
+  - name: target_policies
+    value: bee:approver_policies
 - name: workers
   kind: process.host
   host:

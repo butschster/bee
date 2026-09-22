@@ -15,7 +15,12 @@
       "module": "bee/approvals",
       "root": "bee.approvals",
       "namespaces": [
-        "bee.approvals"
+        "bee.approvals",
+        "bee.approvals.binding",
+        "bee.approvals.migrations",
+        "bee.approvals.persist",
+        "bee.approvals.registry",
+        "bee.approvals.service"
       ]
     },
     {

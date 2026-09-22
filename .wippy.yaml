@@ -9,6 +9,7 @@ workspace:
   replacements:
     bee/persist: ./modules/bee-persist
     bee/threads: ./modules/bee-threads
+    bee/approvals: ./modules/bee-approvals
     bee/resources: ./modules/bee-resources
     bee/placement: ./modules/bee-placement
     bee/credentials: ./modules/bee-credentials

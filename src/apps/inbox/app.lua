@@ -62,7 +62,7 @@ local function main(value: unknown)
                 {operation_ref = target}, request :: {[string]: unknown}, {timeout = "5s"})
             if not answer.ok then
                 -- Transport failure cannot say whether an owner mutation committed.
-                if target == "bee.approvals:decide" or target == "bee.approvals:withdraw" then
+                if target == "bee.approvals.binding:decide" or target == "bee.approvals.binding:withdraw" then
                     return nil, "owner outcome unknown"
                 end
                 return {ok = false, error = answer.error, value = nil, replayed = false}, nil
