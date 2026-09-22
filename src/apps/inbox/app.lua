@@ -58,7 +58,7 @@ local function main(value: unknown)
         function(source: FeedSource, target: string, request: unknown): (unknown, string?)
             if source.local_owner then return funcs.new():call(target, request) end
             if type(request) ~= "table" then return nil, "invalid owner request" end
-            local answer = mesh:call({node_id = source.node_id, service_id = "bee.approvals"},
+            local answer = mesh:call({node_id = source.node_id, service_id = "bee.approvals.binding"},
                 {operation_ref = target}, request :: {[string]: unknown}, {timeout = "5s"})
             if not answer.ok then
                 -- Transport failure cannot say whether an owner mutation committed.

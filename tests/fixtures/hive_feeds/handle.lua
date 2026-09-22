@@ -53,7 +53,7 @@ local function handle(raw: unknown): string
     local mesh, err = client.open()
     if not mesh then error(tostring(err)) end
     if command == "feed-approval" or command == "feed-approval-empty" then
-        local owner: types.OwnerRef = {node_id = remote, service_id = "bee.approvals"}
+        local owner: types.OwnerRef = {node_id = remote, service_id = "bee.approvals.binding"}
         local snapshot = mesh:call(owner, {operation_ref = "bee.approvals.binding:feed_snapshot"}, {workspace_id = "feed-workspace"}, {timeout = "5s"})
         if not snapshot.ok then error("approval snapshot transport refused") end
         local domain = object(snapshot.value)
