@@ -28,8 +28,7 @@ local activation_profiles = require("activation_profiles")
 local M = {}
 M.BACKEND = "bee.governance.binding:destination_backend_call"
 M.EXECUTE = "bee.governance.delivery.execute"
-M.SCOPE = "bee:destination_execution_scope"
-local CONFIG = "bee.governance:activation_profiles"
+M.SCOPE = "bee.governance.security:destination_execution_scope"
 local ACTOR = "bee.governance.activation"
 type Object = {[string]: unknown}
 type Set = {[string]: boolean}
@@ -62,7 +61,7 @@ end
 local function load(): (Configuration?, string?)
     local node_id, node_error = system.node.id()
     if not node_id or node_error then return nil, "native node identity is unavailable" end
-    local entry, entry_error = registry.get(CONFIG)
+    local entry, entry_error = resources.activation_profiles()
     if not entry then return nil, tostring(entry_error or "activation profiles are unavailable") end
     local data = bounds.object(entry.data)
     if not data then return nil, "activation profiles are malformed" end
@@ -91,8 +90,11 @@ local function migration_binding(profile_value: Profile, target: string): (Datab
 end
 
 local function approval_executor(): (unknown?, string?)
-    local request, request_error = security.policy("bee:approval_request_policy")
-    local consume, consume_error = security.policy("bee:approval_consume_policy")
+    local request_id, request_ref_error = resources.approval_request_policy()
+    local consume_id, consume_ref_error = resources.approval_consume_policy()
+    if not request_id or not consume_id then return nil, tostring(request_ref_error or consume_ref_error or "approval policies are unavailable") end
+    local request, request_error = security.policy(request_id)
+    local consume, consume_error = security.policy(consume_id)
     if not request or not consume then return nil, tostring(request_error or consume_error or "load approval policies") end
     return funcs.new():with_actor(security.new_actor(ACTOR)):with_scope(security.new_scope({request, consume})), nil
 end

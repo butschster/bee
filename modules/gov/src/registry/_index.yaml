@@ -33,3 +33,15 @@ entries:
   source: file://staging_resources.lua
   modules: [registry]
   imports: {bounds: bee.threads.records:bounds}
+- name: publication_profiles_ref
+  kind: registry.entry
+  meta: {type: bee.resource_ref, comment: Host-selected publication profiles; absent link fails closed}
+- name: activation_profiles_ref
+  kind: registry.entry
+  meta: {type: bee.resource_ref, comment: Host-selected activation profiles; absent link fails closed}
+- name: approval_request_policy_ref
+  kind: registry.entry
+  meta: {type: bee.resource_ref, comment: Host-selected approval request policy; absent link fails closed}
+- name: approval_consume_policy_ref
+  kind: registry.entry
+  meta: {type: bee.resource_ref, comment: Host-selected approval consume policy; absent link fails closed}

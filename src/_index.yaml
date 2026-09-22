@@ -29,6 +29,21 @@ entries:
   parameters:
   - name: process_host
     value: bee:workers
+- name: dependency_governance
+  kind: ns.dependency
+  component: bee/governance
+  version: 0.1.0-dev
+  parameters:
+  - name: target_db
+    value: bee.governance:db
+  - name: target_publication_profiles
+    value: bee.governance:publication_profiles
+  - name: target_activation_profiles
+    value: bee.governance:activation_profiles
+  - name: target_approval_request_policy
+    value: bee:approval_request_policy
+  - name: target_approval_consume_policy
+    value: bee:approval_consume_policy
 - name: dependency_hive
   kind: ns.dependency
   component: bee/hive
@@ -86,6 +101,15 @@ entries:
     workers: 4
   lifecycle:
     auto_start: true
+- name: governance_recovery_service
+  kind: process.service
+  process: bee.governance.service:recovery
+  host: bee:workers
+  lifecycle:
+    auto_start: true
+    security:
+      actor: {id: bee.governance.activation}
+      policies: [bee.governance.security:destination_service_policy]
 - name: sync_exports
   kind: registry.entry
   meta:

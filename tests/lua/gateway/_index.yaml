@@ -84,10 +84,10 @@ entries:
   policy:
     actions: [registry.get]
     resources:
-    - bee.governance:authoring_trait
-    - bee.governance:application_delivery_trait
-    - bee.governance:application_publish_trait
-    - bee.governance:overlay_call
+    - bee.governance.traits:authoring_trait
+    - bee.governance.traits:application_delivery_trait
+    - bee.governance.traits:application_publish_trait
+    - bee.governance.binding:overlay_call
     effect: allow
 - name: context_test
   kind: function.lua

@@ -44,7 +44,7 @@ local TOOLS: {Tool} = {
             brief = {type = "string", minLength = 1, maxLength = 16384},
             idempotency_key = {type = "string", minLength = 1, maxLength = 64},
         }}},
-    {name = "overlay", description = "Learn this destination's governed overlay contract (read-only guide), or create, inspect, edit or freeze a caller-owned overlay", operation = "bee.governance:overlay_call",
+    {name = "overlay", description = "Learn this destination's governed overlay contract (read-only guide), or create, inspect, edit or freeze a caller-owned overlay", operation = "bee.governance.binding:overlay_call",
         policies = {"bee:gateway_tool_overlay_policy"}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
             operation = {type = "string", enum = {"guide", "create", "list", "read", "put", "remove", "freeze"}},
@@ -73,7 +73,7 @@ local TOOLS: {Tool} = {
             operation = {type = "string", enum = {"catalog", "details", "inspect", "state", "files", "read_file", "installed", "plan"}},
             request = {type = "object"},
         }}},
-    {name = "delivery", description = "Request delivery of your frozen component pack to this destination: publish the frozen artifact, stage it and read the destination's preflight verdict; or read a staged version's review, selection and activation status. It names the human steps it cannot take: review in Overlays, approval in Approvals and apply by the activation owner.", operation = "bee.governance:delivery_call",
+    {name = "delivery", description = "Request delivery of your frozen component pack to this destination: publish the frozen artifact, stage it and read the destination's preflight verdict; or read a staged version's review, selection and activation status. It names the human steps it cannot take: review in Overlays, approval in Approvals and apply by the activation owner.", operation = "bee.governance.binding:delivery_call",
         policies = {"bee:gateway_tool_delivery_policy"}, annotations = READ_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation", "workspace_id", "source_overlay_id", "version"}, properties = {
             operation = {type = "string", enum = {"request", "status"}},
@@ -84,7 +84,7 @@ local TOOLS: {Tool} = {
             source_node = {type = "string", minLength = 1, maxLength = 160},
             intent_id = {type = "string", minLength = 1, maxLength = 160},
         }}},
-    {name = "publish", description = "Publish the exact application version a person has already reviewed, selected, approved and had applied at this destination. Use delivery request first and wait for the person; publication refuses any version that is not locally reviewed and applied.", operation = "bee.governance:delivery_call",
+    {name = "publish", description = "Publish the exact application version a person has already reviewed, selected, approved and had applied at this destination. Use delivery request first and wait for the person; publication refuses any version that is not locally reviewed and applied.", operation = "bee.governance.binding:delivery_call",
         policies = {"bee:gateway_tool_publish_policy"}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"workspace_id", "source_overlay_id", "version"}, properties = {
             workspace_id = {type = "string", minLength = 1, maxLength = 160},

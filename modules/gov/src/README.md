@@ -27,7 +27,7 @@ file, 16 MiB total). It is not a filesystem server or an authorization boundary;
 returned Lua values must be remeasured before execution, not treated as immutable
 merely because the helper calls them snapshots.
 
-The source now includes the `bee.governance:overlay_call` function and
+The source now includes the `bee.governance.binding:overlay_call` function and
 `bee.governance:overlay_contract` binding through `overlay_local`, with the
 `authoring_trait` agent description. This is private authoring, not activation.
 The managed Agent gateway admits `bee.governance.overlay.read` (list/read) and
@@ -174,7 +174,7 @@ bytes exactly.
 
 The destination facade is split the way the authoring facade is: the public
 `destination_call` authenticates the caller's exact delivery operation and then
-enters `bee:destination_execution_scope` to call the private
+enters `bee.governance.security:destination_execution_scope` to call the private
 `destination_backend_call`, which proves it is in that scope before opening any
 store. The caller's own actor stays the recorded one. The facade returns an
 owner fault as the application boundary names it, so a refusal carries its code

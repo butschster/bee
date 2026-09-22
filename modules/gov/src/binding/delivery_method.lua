@@ -6,7 +6,7 @@
 -- other owners' and the person's.
 local funcs = require("funcs")
 local security = require("security")
-local registry = require("registry")
+local resources = require("resources")
 local bounds = require("bounds")
 local json = require("json")
 local preflight = require("preflight")
@@ -18,9 +18,8 @@ local M = {}
 type Result = transaction.Result
 type Object = {[string]: unknown}
 
-local PROFILES = "bee.governance:publication_profiles"
-local PUBLICATION = "bee.governance:publication_call"
-local DESTINATION = "bee.governance:destination_call"
+local PUBLICATION = "bee.governance.binding:publication_call"
+local DESTINATION = "bee.governance.binding:destination_call"
 
 -- One delivery action per operation, checked against the caller's own actor
 -- before any owner facade runs.
@@ -47,7 +46,7 @@ end
 -- The host profile names the component and source workspace for one
 -- destination workspace; the agent names only the workspace it authored in.
 local function profile_for(workspace_id: string, source_workspace: string): (Object?, string?)
-    local entry, entry_error = registry.get(PROFILES)
+    local entry, entry_error = resources.publication_profiles()
     if not entry then return nil, tostring(entry_error or "publication profiles are unavailable") end
     local data = object(entry.data)
     local rows = data and data.profiles

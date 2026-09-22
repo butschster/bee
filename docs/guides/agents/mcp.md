@@ -51,7 +51,7 @@ direct call. The gateway does not rewrite a running harness's system prompt.
 
 ## Built-in tools
 
-`overlay` reaches the public `bee.governance:overlay_call` facade. `guide`
+`overlay` reaches the public `bee.governance.binding:overlay_call` facade. `guide`
 returns the destination's authoring contract and minimal example without naming
 or granting an overlay. `create`, `list`, `read`, `put`, `remove` and `freeze`
 operate only on the caller's overlay identity. They use `overlay_id`; a

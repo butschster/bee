@@ -148,13 +148,13 @@ entries:
   meta:
     comment: A bound MCP subject may author only through the overlay facade; the store enforces actor ownership and this grants no publication or activation authority
   policy:
-    expression: '(action == "funcs.call" && resource == "bee.governance:overlay_call") || ((action == "bee.governance.overlay.read" || action == "bee.governance.overlay.write") && resource != "")'
+    expression: '(action == "funcs.call" && resource == "bee.governance.binding:overlay_call") || ((action == "bee.governance.overlay.read" || action == "bee.governance.overlay.write") && resource != "")'
     actions:
     - funcs.call
     - bee.governance.overlay.read
     - bee.governance.overlay.write
     resources:
-    - bee.governance:overlay_call
+    - bee.governance.binding:overlay_call
     - '*'
     effect: allow
 
@@ -180,18 +180,18 @@ entries:
   meta:
     comment: A bound MCP subject may request delivery of its frozen artifact (publication prepare + destination stage/preflight) and read delivery status; the facade and the owner services enforce workspace, profile and destination authority
   policy:
-    expression: '(action == "funcs.call" && resource == "bee.governance:delivery_call") || ((action == "bee.governance.delivery.manage" || action == "bee.governance.delivery.read") && resource != "")'
+    expression: '(action == "funcs.call" && resource == "bee.governance.binding:delivery_call") || ((action == "bee.governance.delivery.manage" || action == "bee.governance.delivery.read") && resource != "")'
     actions: [funcs.call, bee.governance.delivery.manage, bee.governance.delivery.read]
-    resources: [bee.governance:delivery_call, '*']
+    resources: [bee.governance.binding:delivery_call, '*']
     effect: allow
 - name: gateway_tool_publish_policy
   kind: security.policy.expr
   meta:
     comment: A bound MCP subject may publish only the exact locally reviewed and applied version; publication refuses anything else, and this grants no review, selection, approval or overlay authority
   policy:
-    expression: '(action == "funcs.call" && resource == "bee.governance:delivery_call") || (action == "bee.governance.delivery.publish" && resource != "")'
+    expression: '(action == "funcs.call" && resource == "bee.governance.binding:delivery_call") || (action == "bee.governance.delivery.publish" && resource != "")'
     actions: [funcs.call, bee.governance.delivery.publish]
-    resources: [bee.governance:delivery_call, '*']
+    resources: [bee.governance.binding:delivery_call, '*']
     effect: allow
 - name: gateway_tool_application_open_policy
   kind: security.policy

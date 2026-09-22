@@ -560,8 +560,7 @@ function M.new(config: Config): unknown
                 if existing then created, create_error = changes:update(root_entry)
                 else created, create_error = changes:create(root_entry) end
                 if not created then return nil, tostring(create_error or "stage Hub dependency root") end
-                local planner = changes :: any
-                local plan, plan_error = planner:plan()
+                local plan, plan_error = changes:plan()
                 if not plan then return nil, tostring(plan_error or "plan Hub dependency root") end
                 return plan :: Object, nil
             end}

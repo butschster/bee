@@ -415,7 +415,7 @@ local function main()
         return "the destination refused your frozen overlay before delivery: " .. tostring(refusal.code)
             .. ": " .. tostring(refusal.message) .. " Remedy: " .. tostring(value.remedy)
     end
-    local file = call("bee.governance:overlay_call", {operation = "read", overlay_id = source_workspace,
+    local file = call("bee.governance.binding:overlay_call", {operation = "read", overlay_id = source_workspace,
         path = "entries.json", snapshot_digest = snapshot_digest})
     if file.overlay_id ~= source_workspace then error("overlay read returned another overlay") end
     report.workspace_revision = bounds.count(file.revision) or 0

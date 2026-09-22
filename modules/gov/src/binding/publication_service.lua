@@ -1,7 +1,6 @@
 -- MIT. Host-selected overlay publication. Callers name a configured
 -- application and version; the host profile chooses the source workspace and
 -- overlay. Remote identities and destination policy never enter publication.
-local registry = require("registry")
 local security = require("security")
 local system = require("system")
 local base64 = require("base64")
@@ -18,7 +17,6 @@ local materializer = require("materializer")
 local application_admission = require("application_admission")
 
 local M = {}
-local CONFIG = "bee.governance:publication_profiles"
 local MAX_PROFILES = 64
 type Object = {[string]: unknown}
 type Profile = {workspace_id: string, source_workspace: string, component: string, overlay_owner: string}
@@ -34,7 +32,7 @@ end
 -- application is refused here, at the step where that truth is decided, with a
 -- named code and the remedy the author needs. The remedy is carried in the
 -- failure value under the field name the destination's own diagnostics use
--- (src/gov/preflight.lua), so one reader handles both.
+-- (modules/gov/src/preflight.lua), so one reader handles both.
 local MISSING_ARTIFACT_REMEDY = "freeze an overlay that holds entries.json, a JSON list of complete "
     .. "registry entries; read the overlay tool's guide operation for this destination's contract "
     .. "and one minimal example"
@@ -91,7 +89,7 @@ function M.configuration(raw: unknown): (Configuration?, string?)
 end
 
 local function load(): (Configuration?, string?)
-    local entry, entry_error = registry.get(CONFIG)
+    local entry, entry_error = resources.publication_profiles()
     if not entry then return nil, tostring(entry_error or "publication profiles are unavailable") end
     return M.configuration(entry.data)
 end
