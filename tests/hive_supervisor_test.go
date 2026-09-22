@@ -83,7 +83,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 		t.Fatal(err)
 	}
 	for _, name := range []string{"hive", "persist", "sync", "threads"} {
-		if err := os.CopyFS(filepath.Join(root, "modules", "bee-"+name), os.DirFS(filepath.Join(repository, "modules", "bee-"+name))); err != nil {
+		if err := os.CopyFS(filepath.Join(root, "modules", name), os.DirFS(filepath.Join(repository, "modules", name))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -92,7 +92,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 		t.Fatal(err)
 	}
 	for _, dependency := range []struct{ directory, source, manifest string }{
-		{"application_arguments", "modules/bee-application/src/arguments.lua", "version: '1.0'\nnamespace: bee.application\nentries:\n- name: arguments\n  kind: library.lua\n  source: file://source.lua\n"},
+		{"application_arguments", "modules/application/src/arguments.lua", "version: '1.0'\nnamespace: bee.application\nentries:\n- name: arguments\n  kind: library.lua\n  source: file://source.lua\n"},
 		{"application_protocol", "src/core/protocol/application.lua", "version: '1.0'\nnamespace: bee.protocol\nentries:\n- name: application\n  kind: library.lua\n  source: file://source.lua\n  imports:\n    arguments: bee.application:arguments\n"},
 		{"retained_protocol", "src/core/launch/retained_protocol.lua", "version: '1.0'\nnamespace: bee.launch\nentries:\n- name: retained_protocol\n  kind: library.lua\n  source: file://source.lua\n  imports:\n    contract: bee.protocol:application\n"},
 	} {
@@ -143,7 +143,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 	if err := os.WriteFile(filepath.Join(clipboardDir, "_index.yaml"), []byte("version: '1.0'\nnamespace: bee.client\nentries:\n- name: clipboard\n  kind: library.lua\n  source: file://clipboard.lua\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	appearance, err := os.ReadFile(filepath.Join(repository, "modules/bee-application/src/appearance.lua"))
+	appearance, err := os.ReadFile(filepath.Join(repository, "modules/application/src/appearance.lua"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 		t.Fatal(err)
 	}
 	for _, name := range []string{"application", "node"} {
-		if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", "bee-"+name), os.DirFS(filepath.Join(repository, "modules", "bee-"+name))); err != nil {
+		if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", name), os.DirFS(filepath.Join(repository, "modules", name))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -263,7 +263,7 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 	if err := os.CopyFS(filepath.Join(source, "approvals", "host"), os.DirFS(filepath.Join(repository, "src/approvals/host"))); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", "bee-approvals"), os.DirFS(filepath.Join(repository, "modules", "bee-approvals"))); err != nil {
+	if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", "approvals"), os.DirFS(filepath.Join(repository, "modules", "approvals"))); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.CopyFS(filepath.Join(source, "feed_fixture"), os.DirFS(filepath.Join(repository, "tests/fixtures/hive_feeds"))); err != nil {
@@ -316,7 +316,7 @@ func runHiveSupervisors(t *testing.T, feeds bool) {
 			moduleNames = append(moduleNames, "application", "approvals", "node")
 		}
 		for _, name := range moduleNames {
-			if err := os.CopyFS(filepath.Join(folder, "modules", "bee-"+name), os.DirFS(filepath.Join(root, "modules", "bee-"+name))); err != nil {
+			if err := os.CopyFS(filepath.Join(folder, "modules", name), os.DirFS(filepath.Join(root, "modules", name))); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -344,7 +344,7 @@ func runHiveSupervisors(t *testing.T, feeds bool) {
 		}
 		replacements := map[string]string{}
 		for _, name := range moduleNames {
-			replacements["bee/"+name] = "./modules/bee-" + name
+			replacements["bee/"+name] = "./modules/" + name
 		}
 		config["workspace"] = map[string]any{"replacements": replacements}
 		data, err := json.Marshal(config)

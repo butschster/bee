@@ -10,7 +10,7 @@ from workspace import ROOT, RUNTIME, database_environment
 def main():
     with tempfile.TemporaryDirectory(prefix="bee-sync-module-") as directory:
         folder = Path(directory)
-        for module in ("bee-application", "bee-node", "bee-persist", "bee-sync", "bee-threads"):
+        for module in ("application", "node", "persist", "sync", "threads"):
             shutil.copytree(ROOT / "modules" / module, folder / "modules" / module)
         shutil.copytree(ROOT / "tests/fixtures/sync_module", folder / "src/probe")
         (folder / "src" / "_index.yaml").write_text("""version: '1.0'
@@ -74,11 +74,11 @@ shutdown:
   timeout: 2s
 workspace:
   replacements:
-    bee/persist: ./modules/bee-persist
-    bee/application: ./modules/bee-application
-    bee/node: ./modules/bee-node
-    bee/sync: ./modules/bee-sync
-    bee/threads: ./modules/bee-threads
+    bee/persist: ./modules/persist
+    bee/application: ./modules/application
+    bee/node: ./modules/node
+    bee/sync: ./modules/sync
+    bee/threads: ./modules/threads
 """)
         environment = database_environment(folder)
         subprocess.run([str(RUNTIME), "lint", "--set", "lua.type_system.enabled=true", "--set", "lua.type_system.strict=true"], cwd=folder, check=True, timeout=60, env=environment)

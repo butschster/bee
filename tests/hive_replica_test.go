@@ -280,7 +280,7 @@ func testHiveSupervisorReplica(t *testing.T, agent *hiveAgentArtifactScenario) {
 			t.Fatal(err)
 		}
 		for _, name := range moduleNames {
-			module := "bee-" + name
+			module := name
 			if err := os.CopyFS(filepath.Join(project, "modules", module), os.DirFS(filepath.Join(repository, "modules", module))); err != nil {
 				t.Fatal(err)
 			}
@@ -357,7 +357,7 @@ func testHiveSupervisorReplica(t *testing.T, agent *hiveAgentArtifactScenario) {
 		}
 		replacements := map[string]string{}
 		for _, name := range moduleNames {
-			replacements["bee/"+name] = "./modules/bee-" + name
+			replacements["bee/"+name] = "./modules/" + name
 		}
 		config["workspace"] = map[string]any{"replacements": replacements}
 		data, err := json.Marshal(config)

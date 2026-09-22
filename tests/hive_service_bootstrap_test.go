@@ -146,7 +146,7 @@ func TestHiveSupervisorServiceBootstrap(t *testing.T) {
 		}
 		moduleNames := []string{"hive", "persist", "sync", "threads"}
 		for _, name := range moduleNames {
-			if err := os.CopyFS(filepath.Join(folder, "modules", "bee-"+name), os.DirFS(filepath.Join(root, "modules", "bee-"+name))); err != nil {
+			if err := os.CopyFS(filepath.Join(folder, "modules", name), os.DirFS(filepath.Join(root, "modules", name))); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -212,7 +212,7 @@ func TestHiveSupervisorServiceBootstrap(t *testing.T) {
 		replacements := map[string]string{}
 		for _, name := range moduleNames {
 			lock += "- name: bee/" + name + "\n  version: 0.1.0-dev\n"
-			replacements["bee/"+name] = "./modules/bee-" + name
+			replacements["bee/"+name] = "./modules/" + name
 		}
 		if err := os.WriteFile(filepath.Join(folder, "wippy.lock"), []byte(lock), 0600); err != nil {
 			t.Fatal(err)

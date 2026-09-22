@@ -257,11 +257,11 @@ def prepare_fixture(folder):
     # copied into this disposable source tree; none of these files enter src/.
     shutil.copytree(ROOT / "tests/fixtures/hub_manage", folder / "src")
     shutil.copytree(ROOT / "src/hub", folder / "src/hub")
-    shutil.copy2(ROOT / "modules/bee-threads/src/records/bounds.lua", folder / "src/records/bounds.lua")
+    shutil.copy2(ROOT / "modules/threads/src/records/bounds.lua", folder / "src/records/bounds.lua")
     for name in ("bounds.lua", "canonical.lua"):
-        shutil.copy2(ROOT / "modules/bee-sync/src" / name, folder / "src/sync" / name)
+        shutil.copy2(ROOT / "modules/sync/src" / name, folder / "src/sync" / name)
     (folder / "src/persist").mkdir()
-    shutil.copy2(ROOT / "modules/bee-persist/src/transaction.lua", folder / "src/persist/transaction.lua")
+    shutil.copy2(ROOT / "modules/persist/src/transaction.lua", folder / "src/persist/transaction.lua")
     (folder / "src/persist/_index.yaml").write_text(
         "version: '1.0'\nnamespace: bee.persist\nentries:\n"
         "- name: transaction\n  kind: library.lua\n  source: file://transaction.lua\n  modules: [sql, time]\n"
