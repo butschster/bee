@@ -49,7 +49,11 @@
       "module": "bee/credentials",
       "root": "bee.credentials",
       "namespaces": [
-        "bee.credentials"
+        "bee.credentials",
+        "bee.credentials.binding",
+        "bee.credentials.migrations",
+        "bee.credentials.persist",
+        "bee.credentials.registry"
       ]
     },
     {

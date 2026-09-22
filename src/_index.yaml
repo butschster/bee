@@ -26,6 +26,15 @@ entries:
   kind: ns.dependency
   component: bee/placement
   version: 0.1.0-dev
+- name: dependency_credentials
+  kind: ns.dependency
+  component: bee/credentials
+  version: 0.1.0-dev
+  parameters:
+  - name: target_db
+    value: bee.credentials:db
+  - name: target_sources
+    value: bee:credential_sources
 - name: workers
   kind: process.host
   host:

@@ -10,6 +10,8 @@ modules:
     version: 0.1.0-dev
   - name: bee/placement
     version: 0.1.0-dev
+  - name: bee/credentials
+    version: 0.1.0-dev
   - name: bee/driver
     version: 0.1.0-dev
   - name: bee/driver-agy
