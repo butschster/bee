@@ -1,10 +1,6 @@
 version: '1.0'
 namespace: bee.governance.binding
 entries:
-- name: delivery_protocol
-  kind: library.lua
-  source: file://delivery_protocol.lua
-  imports: {bounds: bee.threads.records:bounds}
 - name: approval
   kind: library.lua
   source: file://approval.lua
@@ -62,14 +58,6 @@ entries:
     preflight: bee.governance:preflight
     artifact: bee.governance:artifact
     application_admission: bee.governance:governed_application_admission
-- name: profiles
-  kind: library.lua
-  source: file://activation_profiles.lua
-  modules: [hash]
-  imports:
-    bounds: bee.threads.records:bounds
-    canonical: bee.sync:canonical
-    application_admission: bee.governance:governed_application_admission
 - name: migration_effect
   kind: library.lua
   source: file://migration_effect.lua
@@ -101,7 +89,7 @@ entries:
     materializer: bee.governance.registry:materializer
     migration_effect: bee.governance.binding:migration_effect
     migration_runner: bee.hub:migration_runner
-    activation_profiles: bee.governance.binding:profiles
+    activation_profiles: bee.governance:activation_profile_decoder
     preflight: bee.governance:preflight
 - name: destination_backend_call
   kind: function.lua
