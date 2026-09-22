@@ -28,6 +28,22 @@ type Delivery = {arguments: {string}, files: {Configuration}}
 type Request = {instructions: string?, instruction_builder: InstructionBuilder?, provider_ref: string?, provider: Object?, gateway: GatewayInput?, home_directory: string?, attempt_id: string?, fixture: boolean}
 
 -- Profile guidance is separate from a turn brief and grants no authority.
+-- The cross-session inbox address of one attempt.
+--
+-- Both ends must agree on it without talking: the driver passes it to the
+-- child at launch, and the gateway writes to it later, so it is derived from
+-- the attempt alone. It lives in a short private directory because the
+-- harness refuses a Unix path over 103 bytes, and a workspace-relative path
+-- under a long state directory would exceed that. The child creates the
+-- directory and the socket itself; Bee only names them.
+M.INBOX_DIRECTORY = "/tmp/bee-inbox"
+function M.inbox_socket(attempt_id: string): (string?, string?)
+    local identity = bounds.id(attempt_id)
+    if not identity then return nil, "attempt_id is not an identifier" end
+    local digest, digest_error = hash.sha256(identity)
+    if digest_error or not digest then return nil, "inbox address digest failed" end
+    return M.INBOX_DIRECTORY .. "/" .. digest:sub(1, 16) .. ".sock", nil
+end
 function M.instructions(value: unknown): (string?, string?)
     if value == nil then return nil, nil end
     local text = bounds.text(value, M.MAX_INSTRUCTIONS_BYTES)

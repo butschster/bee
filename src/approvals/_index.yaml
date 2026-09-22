@@ -39,7 +39,10 @@ entries:
   meta:
     type: bee.approval_policies
     comment: Host-owned approver policies; an empty list admits no request
-  policies: []
+  policies:
+  - name: app-open-runtime
+    approvers: [{definition_id: bee.inbox:app}]
+    max_ttl_ms: 3600000
 - name: environment
   kind: env.storage.os
   lifecycle:

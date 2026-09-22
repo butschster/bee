@@ -21,7 +21,7 @@ local M = {}
 type Result = transaction.Result
 type Claimed = {delivery_id: string, message_id: string, record_id: string, sequence: integer, mark_record_id: string}
 M.CLAIM_TTL_SECONDS = 300
-M.CHANNELS = {"wait", "push", "mcp", "native"}
+M.CHANNELS = {"wait", "push", "queue", "mcp", "native"}
 local function failure(code: string, message: string): Result
     return transaction.failure(code, message)
 end
@@ -132,7 +132,7 @@ function M.claim(db: sql.DB, actor: string, request: unknown): Result
     local channel = "wait"
     if object.channel ~= nil then
         local declared = bounds.member(object.channel, M.CHANNELS)
-        if not declared then return failure("INVALID_ARGUMENT", "channel must be wait, push, mcp or native") end
+        if not declared then return failure("INVALID_ARGUMENT", "channel must be wait, push, queue, mcp or native") end
         channel = declared
     end
     local turn_id: string? = nil

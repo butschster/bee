@@ -49,6 +49,12 @@ entries:
   - definition_id: bee.harness.window:app
     scope_management: true
     close_grace_ms: 60000
+    # An agent may open a colleague's window into the thread it is bound to
+    # itself: the broker admits application runtime provenance only when the
+    # opened application may observe and post in that same thread, and the
+    # opener is its own initiating owner. Without this the window can only be
+    # opened from the desktop, into a thread of its own.
+    thread_access: observe_post
     policies:
     - bee:carrier_policy
     - bee:carrier_environment_policy

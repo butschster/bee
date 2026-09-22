@@ -129,6 +129,26 @@ entries:
       bee.threads.service:get, bee.threads.service:create, bee.resources:grant, bee.credentials:issue_projection, bee.threads.carrier:checkpoint,
       bee.resources:associate, bee.credentials:define]
     effect: allow
+- name: agent_launch_execution_environment_policy
+  kind: security.policy
+  groups: [agent_launch_execution_scope]
+  meta:
+    comment: thread_launch decodes the caller's own launch policy and then the child's, and both name the declared
+      nonsecret executable and configuration-directory variables their harness needs. This is the same read
+      bee:carrier_environment_policy grants the carrier, on the same exact resources; it mints no grant, credential
+      or overlay authority and reads no secret
+  policy:
+    actions:
+    - env.get
+    resources:
+    - bee.driver.claude:executable
+    - bee.driver.codex:executable
+    - bee.driver.agy:executable
+    - bee.driver.grok:executable
+    - bee.driver.muse:executable
+    - bee.driver.claude:config_home
+    - bee.driver.codex:config_home
+    effect: allow
 - name: agent_launch_execution_action_policy
   kind: security.policy.expr
   groups: [agent_launch_execution_scope]

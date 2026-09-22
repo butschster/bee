@@ -676,9 +676,20 @@ local function main(value: unknown, constructors: {[string]: Open})
     local done = terminal:done()
     local closing = false
     local pending = delivery.advance(driver, now_ms())
+    -- Downward delivery runs on its own tick: this loop otherwise sleeps
+    -- until the person types or a hook comes due, and a queued message would
+    -- wait with it. The tick costs one bounded gateway call.
+    local inbox_ticker = plan.policy.gateway_inbox and time.ticker("1000ms") or nil
+    local function drain_inbox()
+        if not inbox_ticker then return end
+        local _, _inbox_error = machine.drain_inbox(io(), prepared.gateway_binding, prepared.epoch,
+            plan.policy, admitted.attempt_id)
+    end
+    drain_inbox()
     while true do
         local cases = {input:case_receive(), lifecycle:case_receive(), closes:case_receive(), done:case_receive(), checkpoint_results:case_receive()}
         if pending then cases[#cases + 1] = pending.response:case_receive() end
+        if inbox_ticker then cases[#cases + 1] = inbox_ticker:channel():case_receive() end
         local timer: time.Timer? = nil
         if (state.hooks_enabled and not hooks.finished(state)) or pending or checkpoint_id then
             local due = checkpoint_deadline
@@ -691,6 +702,7 @@ local function main(value: unknown, constructors: {[string]: Open})
         end
         local selected = channel.select(cases)
         if timer then timer:stop() end
+        if inbox_ticker and selected.channel == inbox_ticker:channel() then drain_inbox() end
         if checkpoint_id and now_ms() >= checkpoint_deadline then
             checkpoint_id = nil
             checkpoint_error = "application checkpoint acknowledgement timed out"
@@ -746,6 +758,7 @@ local function main(value: unknown, constructors: {[string]: Open})
             pending = delivery.advance(driver, now_ms())
         end
     end
+    if inbox_ticker then inbox_ticker:stop() end
     terminal:close()
     terminal:done():receive()
     delivery.shutdown(driver, now_ms(), closing)

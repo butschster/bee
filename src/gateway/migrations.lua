@@ -204,6 +204,39 @@ ALTER TABLE bee_gateway_bindings ADD COLUMN workspace_id TEXT;
 local ORIGIN_VIEW_SQL = [[
 ALTER TABLE bee_gateway_bindings ADD COLUMN origin_view_json TEXT;
 ]]
+-- Migration 13: the inbox. A thread message bound for a managed child is
+-- enqueued here by its carrier, claimed under that carrier's epoch, marked
+-- dispatched before any byte reaches the child, and settled by the harness's
+-- own acceptance. The unique delivery index makes a repeated enqueue of one
+-- delivery idempotent; no row is ever created by the child.
+local INBOX_SQL = [[
+CREATE TABLE bee_gateway_inbox (
+    message_id TEXT PRIMARY KEY,
+    binding_id TEXT NOT NULL REFERENCES bee_gateway_bindings(binding_id),
+    attempt_id TEXT NOT NULL,
+    action_id TEXT NOT NULL,
+    carrier_epoch INTEGER NOT NULL,
+    delivery_id TEXT NOT NULL,
+    thread_message_id TEXT NOT NULL,
+    record_id TEXT NOT NULL,
+    record_sequence INTEGER NOT NULL,
+    body_json TEXT NOT NULL CHECK(length(CAST(body_json AS BLOB)) BETWEEN 1 AND 32768),
+    digest TEXT NOT NULL CHECK(length(digest) = 64),
+    status TEXT NOT NULL CHECK (status IN ('queued', 'claimed', 'dispatched', 'accepted', 'refused', 'rejected')),
+    claimed_epoch INTEGER NOT NULL DEFAULT 0,
+    claimed_at TEXT,
+    dispatched_at TEXT,
+    accepted_at TEXT,
+    client_message_id TEXT,
+    refused_reason TEXT,
+    rejected_reason TEXT,
+    sequence INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX bee_gateway_inbox_delivery ON bee_gateway_inbox(binding_id, delivery_id);
+CREATE INDEX bee_gateway_inbox_status ON bee_gateway_inbox(binding_id, status, sequence);
+]]
 function M.all(): {Migration}
     return {{id = 1, name = "gateway", sql = GATEWAY_SQL, rebuild = false}, {id = 2, name = "drain_deadline", sql = DRAIN_SQL, rebuild = false},
         {id = 3, name = "credentials", sql = CREDENTIALS_SQL, rebuild = true}, {id = 4, name = "materialization", sql = MATERIALIZATION_SQL, rebuild = false},
@@ -213,6 +246,7 @@ function M.all(): {Migration}
         {id = 9, name = "binding_surface", sql = SURFACE_SQL, rebuild = false},
         {id = 10, name = "access_grants", sql = ACCESS_SQL, rebuild = false},
         {id = 11, name = "binding_policy", sql = POLICY_SQL, rebuild = false},
-        {id = 12, name = "binding_origin_view", sql = ORIGIN_VIEW_SQL, rebuild = false}}
+        {id = 12, name = "binding_origin_view", sql = ORIGIN_VIEW_SQL, rebuild = false},
+        {id = 13, name = "inbox", sql = INBOX_SQL, rebuild = false}}
 end
 return M

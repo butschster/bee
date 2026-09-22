@@ -70,6 +70,14 @@ entries:
     actions: [registry.apply, process.terminate]
     resources: '*'
     effect: allow
+- name: peerinbox_test
+  kind: function.lua
+  source: file://peerinbox_test.lua
+  method: run
+  meta: {type: test, suite: bee}
+  modules: [peerinbox]
+  imports:
+    test: wippy.test:test
 - name: classify_test
   kind: function.lua
   source: file://classify_test.lua

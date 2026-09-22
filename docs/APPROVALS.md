@@ -77,6 +77,13 @@ may post to a thread, send a process message or invoke an admitted contract.
 Arbitrary executable callbacks, code strings and recipient addresses from an
 untrusted requester are not activation authority.
 
+A decision recorded where nobody is told of it is not delivered. Where a
+request is bound to a thread, the terminal outcome is also addressed to the
+requester as a `notification` message, which is the only commit that creates a
+recipient obligation for the delivery layer to carry; the notice is a side
+effect of the decision and its failure never unmakes one. See
+`docs/THREAD_DELIVERY.md`, "Approval notices".
+
 Adapters use stable event/operation IDs and durable acknowledgements. Delivery
 is at least once; receiving owners deduplicate effects where their operation
 supports it. A send success is only queue acceptance. A lost execution result is

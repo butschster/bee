@@ -10,7 +10,10 @@ local driver_types = require("driver_types")
 local preferences = require("preferences")
 local M = {}
 M.MAX_RESOURCES = 16
-M.MAX_PROJECTIONS = 8
+-- The gateway admits up to MAX_TOOLS (16) tools on a binding, so the
+-- placement projection that carries them must not be the narrower of the two:
+-- a policy the gateway would accept has to reach the child.
+M.MAX_PROJECTIONS = 16
 M.MAX_ENVIRONMENT = 64
 M.MAX_ARGV = 128
 M.MAX_ARGUMENT_BYTES = 16384

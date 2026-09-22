@@ -103,6 +103,21 @@ entries:
     - bee.threads.service:read_after
     - bee.threads.delivery:watch
     effect: allow
+- name: gateway_inbox_subject_policy
+  kind: security.policy
+  meta:
+    comment: The scope the gateway runs the inbox's own thread operations under, as the bound subject. Obligations are
+      claimed self-service, so filling a child's inbox and settling it use the child's actor exactly as thread_read
+      does; membership is still checked by the thread owner and this grants no record write
+  policy:
+    actions:
+    - funcs.call
+    resources:
+    - bee.threads.delivery:claim
+    - bee.threads.delivery:ack
+    - bee.threads.delivery:release
+    - bee.threads.service:read_after
+    effect: allow
 - name: gateway_address_policy
   kind: security.policy
   policy:

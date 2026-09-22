@@ -295,6 +295,77 @@ entries:
     gateway: bee.gateway:gateway
   security:
     policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
+- name: inbox_subject
+  kind: library.lua
+  source: file://inbox_subject.lua
+  modules: [funcs, security]
+  imports:
+    gateway: bee.gateway:gateway
+    context: bee.gateway:context
+- name: inbox_enqueue
+  kind: function.lua
+  source: file://inbox_enqueue_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway:gateway
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
+- name: inbox_fill
+  kind: function.lua
+  source: file://inbox_fill_method.lua
+  method: handle
+  modules: [security, uuid, funcs]
+  imports:
+    gateway: bee.gateway:gateway
+    inbox_subject: bee.gateway:inbox_subject
+    bounds: bee.threads.records:bounds
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy, bee:gateway_execute_policy, bee:gateway_inbox_subject_policy]
+- name: inbox_claim
+  kind: function.lua
+  source: file://inbox_claim_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway:gateway
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
+- name: inbox_dispatched
+  kind: function.lua
+  source: file://inbox_dispatched_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway:gateway
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
+- name: inbox_settle
+  kind: function.lua
+  source: file://inbox_settle_method.lua
+  method: handle
+  modules: [security]
+  imports:
+    gateway: bee.gateway:gateway
+    inbox_subject: bee.gateway:inbox_subject
+    bounds: bee.threads.records:bounds
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy, bee:gateway_execute_policy, bee:gateway_inbox_subject_policy]
+- name: inbox_reject
+  kind: function.lua
+  source: file://inbox_reject_method.lua
+  method: handle
+  imports:
+    gateway: bee.gateway:gateway
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
+- name: inbox_queue
+  kind: function.lua
+  source: file://inbox_queue_method.lua
+  method: handle
+  modules: [security]
+  imports:
+    bounds: bee.threads.records:bounds
+    gateway: bee.gateway:gateway
+  security:
+    policies: [bee:gateway_address_call_policy, bee:gateway_store_policy]
 - name: mcp_http
   kind: function.lua
   source: file://mcp_method.lua

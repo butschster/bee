@@ -436,6 +436,26 @@ function M.commit_keyed(tx: sql.Transaction, head: reader.Head, kind: record_typ
     if not committed then return refused or failure("INTERNAL", "commit failed") end
     return transaction.success(committed, false)
 end
+-- Commits one addressed message for an authority that projects into the
+-- thread without being a member of it, under its own producer scope and
+-- key. Delivery follows the obligation and nothing else, so the obligation
+-- rows are written here: an authority notice that owes no answer still has
+-- to reach its recipient. A replay commits nothing and owes nothing again.
+function M.project_message(tx: sql.Transaction, head: reader.Head, producer_id: string, decoded: record_types.Message, context: Context, scope: string, key: string): Result
+    if #decoded.recipient_ids > 0 then
+        local total, count_err = reader.count(tx, "SELECT COUNT(*) AS count FROM bee_thread_obligations WHERE thread_id = ?", {head.thread_id}, "obligations")
+        if not total then return storage(count_err or "count obligations") end
+        if total + #decoded.recipient_ids > bounds.MAX_THREAD_OBLIGATIONS then return failure("LIMIT_EXCEEDED", "thread obligation limit reached") end
+    end
+    local result = M.commit_keyed(tx, head, "message", producer_id, "bee", decoded, context, scope, key)
+    if not result.ok or result.replayed then return result end
+    local committed = result.value :: types.Committed
+    for _, recipient in ipairs(decoded.recipient_ids) do
+        local insert_err = transaction.insert_obligation(tx, head.thread_id, decoded.message_id, recipient, committed.record_id, decoded.message_kind, committed.sequence)
+        if insert_err then return storage(insert_err) end
+    end
+    return result
+end
 local function submit_observation(tx: sql.Transaction, head: reader.Head, caller: reader.Member, source: record_types.Source, body: unknown, context: Context): Result
     if not access.submits(caller.role) then return failure("DENIED", "observers do not submit observations") end
     if not access.may_observe(head.thread_id) then return failure("DENIED", "caller is not an authorized producer") end
