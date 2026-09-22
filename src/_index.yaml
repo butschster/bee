@@ -22,6 +22,10 @@ entries:
     value: bee.resources:db
   - name: target_roots
     value: bee:resource_roots
+- name: dependency_placement
+  kind: ns.dependency
+  component: bee/placement
+  version: 0.1.0-dev
 - name: workers
   kind: process.host
   host:

@@ -156,7 +156,7 @@ entries:
   meta: {type: test_support}
   modules: [registry]
   imports:
-    resolver: bee.placement:resolver
+    resolver: bee.placement.registry:resolver
 - name: fixture_policy
   kind: registry.entry
   meta:

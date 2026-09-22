@@ -150,7 +150,8 @@
       "module": "bee/placement",
       "root": "bee.placement",
       "namespaces": [
-        "bee.placement"
+        "bee.placement",
+        "bee.placement.registry"
       ]
     },
     {
