@@ -145,6 +145,14 @@ waits per thread and 1,024 per node; a missing waiter falls back to bounded
 polling. `watch` has the same wakeup path but is read-only and never claims an
 obligation, so a viewer cannot alter delivery state.
 
+An authority may project into a thread without being a member of it. The
+approval ingress commits its notices as `message` records under its own
+producer scope and event id, so they create obligations exactly as a member's
+message does and a repeated projection replays the record rather than owing the
+delivery twice. That ingress accepts only a `notification` that names at least
+one recipient, is sent under the calling actor and answers nothing: an ingress
+holding no membership must never place a request nobody could be held to.
+
 ## Subscriptions and sessions
 
 A subscription is a durable consumer cursor over the immutable record stream.
