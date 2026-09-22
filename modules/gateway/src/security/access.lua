@@ -4,20 +4,36 @@
 local funcs = require("funcs")
 local security = require("security")
 local hash = require("hash")
+local registry = require("registry")
 local bounds = require("bounds")
 local canonical = require("canonical")
 local surface = require("surface")
 local M = {}
+M.ACCESS_CALL_POLICY = "bee.gateway.security:access_call_policy"
+M.REQUEST_POLICY_REF = "bee.gateway.registry:approval_request_policy_ref"
+M.CONSUME_POLICY_REF = "bee.gateway.registry:approval_consume_policy_ref"
 type Object = {[string]: unknown}
 type Binding = {binding_id: string, subject: string, action_id: string, attempt_id: string, thread_id: string}
 type Reply = {ok: boolean, value: unknown, error: {code: string, message: string}?}
 type Grant = {approval_id: string, proposal_digest: string, traits: {string}}
 local function fail(code: string, message: string): Reply return {ok = false, error = {code = code, message = message}} end
+local function linked_policy(reference: string, description: string): (string?, string?)
+    local entry, entry_error = registry.get(reference)
+    if entry_error or not entry then return nil, description .. " policy reference is unavailable" end
+    local data = bounds.object(entry.data)
+    local target = data and bounds.id(data.resource_ref)
+    if not target then return nil, description .. " policy is not linked" end
+    return target, nil
+end
 local function invoke(binding: Binding, operation: string, value: Object): Reply
     local actor, actor_error = security.new_actor(binding.subject)
     if not actor then return fail("DENIED", tostring(actor_error)) end
     local policies: {security.Policy} = {}
-    for _, id in ipairs({"bee:gateway_access_call_policy", "bee:approval_request_policy", "bee:approval_consume_policy"}) do
+    local request, request_error = linked_policy(M.REQUEST_POLICY_REF, "approval request")
+    if not request then return fail("UNAVAILABLE", request_error or "approval request policy") end
+    local consume, consume_error = linked_policy(M.CONSUME_POLICY_REF, "approval consume")
+    if not consume then return fail("UNAVAILABLE", consume_error or "approval consume policy") end
+    for _, id in ipairs({M.ACCESS_CALL_POLICY, request, consume}) do
         local policy, policy_error = security.policy(id)
         if not policy then return fail("UNAVAILABLE", tostring(policy_error)) end
         policies[#policies + 1] = policy

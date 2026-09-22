@@ -6,6 +6,10 @@ never exposes a tool outside it. Admission measures the configuration and binds
 it to the managed attempt. Component metadata describes a capability; it does
 not authorize invocation or scope.
 
+The MCP route handler is `bee.gateway.api:mcp_http` from the `bee/gateway`
+component. The host owns the listener, router, route, and selected tool
+policies; configuring the route or a tool does not grant caller authority.
+
 ## Surface declaration
 
 `gateway_surface` contains:

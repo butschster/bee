@@ -238,7 +238,7 @@ def write_inputs(project, **values):
 
 def admit_docs_tool(project):
     """Tool metadata grants nothing: the host admits this exact operation."""
-    index = project / "src/gateway/_index.yaml"
+    index = project / "modules/gateway/src/api/_index.yaml"
     document = yaml.safe_load(index.read_text())
     endpoint = next(entry for entry in document["entries"] if entry["name"] == "mcp_http")
     endpoint["security"]["policies"].append("bee.agent_app_probe:docs_policy")

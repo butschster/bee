@@ -8,6 +8,7 @@ local http = require("http")
 local json = require("json")
 local funcs = require("funcs")
 local security = require("security")
+local registry = require("registry")
 local gateway = require("gateway")
 local mcp = require("mcp")
 local catalog = require("catalog")
@@ -15,11 +16,22 @@ local context = require("context")
 local bounds = require("bounds")
 type Object = {[string]: unknown}
 type RuntimeGrant = {access_approval_id: string, access_proposal_digest: string, surface_revision: integer, surface_digest: string}
+local function selected_policy(reference: string): (string?, string?)
+    if not mcp.is_tool_policy_reference(reference) then return reference, nil end
+    local entry, entry_error = registry.get(reference)
+    if entry_error or not entry then return nil, "built-in tool policy reference is unavailable" end
+    local data = bounds.object(entry.data)
+    local selected = data and bounds.id(data.resource_ref)
+    if not selected then return nil, "built-in tool policy is not linked by the host" end
+    return selected, nil
+end
 local function scope_for(names: {string}): (security.Scope?, string?)
     local policies: {security.Policy} = {}
     for index, name in ipairs(names) do
-        local policy, err = security.policy(name)
-        if err or not policy then return nil, "policy " .. name .. " unavailable" end
+        local selected, selected_error = selected_policy(name)
+        if not selected then return nil, selected_error or "tool policy is unavailable" end
+        local policy, err = security.policy(selected)
+        if err or not policy then return nil, "policy " .. selected .. " unavailable" end
         policies[index] = policy
     end
     return security.new_scope(policies), nil

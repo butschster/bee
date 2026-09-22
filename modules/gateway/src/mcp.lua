@@ -20,15 +20,33 @@ type Call = {id: unknown, method: string, params: Object, notification: boolean}
 type Tool = {name: string, description: string, operation: string, policies: {string}, schema: Object, annotations: Object}
 local READ_ANNOTATIONS: Object = {readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false}
 local WRITE_ANNOTATIONS: Object = {readOnlyHint = false, destructiveHint = false, idempotentHint = true, openWorldHint = false}
+-- The component owns these links; the host fills each one through a typed
+-- requirement. A built-in description never hard-codes a host policy ID.
+type ToolPolicyRefs = {read: string, message: string, launch: string, overlay: string, docs: string, components: string, delivery: string, publish: string, application_open: string}
+local TOOL_POLICY_REFS: ToolPolicyRefs = {
+    read = "bee.gateway.registry:tool_read_policy_ref",
+    message = "bee.gateway.registry:tool_message_policy_ref",
+    launch = "bee.gateway.registry:tool_launch_policy_ref",
+    overlay = "bee.gateway.registry:tool_overlay_policy_ref",
+    docs = "bee.gateway.registry:tool_docs_policy_ref",
+    components = "bee.gateway.registry:tool_components_policy_ref",
+    delivery = "bee.gateway.registry:tool_delivery_policy_ref",
+    publish = "bee.gateway.registry:tool_publish_policy_ref",
+    application_open = "bee.gateway.registry:tool_application_open_policy_ref",
+}
+local BUILTIN_POLICY_REFS: {[string]: boolean} = {}
+for _, reference in pairs(TOOL_POLICY_REFS) do BUILTIN_POLICY_REFS[reference] = true end
+M.TOOL_POLICY_REFS = TOOL_POLICY_REFS
+function M.is_tool_policy_reference(value: string): boolean return BUILTIN_POLICY_REFS[value] == true end
 local TOOLS: {Tool} = {
     {name = "thread_read", description = "Read committed records of the bound thread after a cursor", operation = "bee.threads.service:read_after",
-        policies = {"bee:gateway_tool_read_policy"},
+        policies = {TOOL_POLICY_REFS.read},
         schema = {type = "object", additionalProperties = false, properties = {cursor = {type = "integer", minimum = 0}, limit = {type = "integer", minimum = 1, maximum = 64}}}, annotations = READ_ANNOTATIONS},
     {name = "thread_wait", description = "Wait, read-only and bounded, for the bound thread to move past a cursor; claims nothing", operation = "bee.threads.delivery:watch",
-        policies = {"bee:gateway_tool_read_policy"},
+        policies = {TOOL_POLICY_REFS.read},
         schema = {type = "object", additionalProperties = false, properties = {after_sequence = {type = "integer", minimum = 0}, wait_ms = {type = "integer", minimum = 0}}}, annotations = READ_ANNOTATIONS},
     {name = "thread_message", description = "Append one message to the bound thread as the authenticated subject", operation = "bee.threads.service:record",
-        policies = {"bee:gateway_tool_message_policy"}, annotations = WRITE_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.message}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"idempotency_key", "message_id", "message_kind", "recipient_ids", "content"}, properties = {
             idempotency_key = {type = "string", minLength = 1, maxLength = 160}, message_id = {type = "string", minLength = 1, maxLength = 160},
             message_kind = {type = "string", enum = {"request", "progress", "reply", "notification"}},
@@ -38,14 +56,14 @@ local TOOLS: {Tool} = {
             outcome = {type = "string", enum = {"succeeded", "failed", "cancelled", "uncertain"}},
         }}},
     {name = "thread_launch", description = "Start one host-allow-listed managed agent in your own workspace and thread. Returns the admitted definition and title, submitted brief, and child thread, action and attempt IDs for thread_read, thread_message and thread_wait.", operation = "bee.harness.launch:agent_launch_call",
-        policies = {"bee:gateway_tool_launch_policy"}, annotations = WRITE_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.launch}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"definition_ref", "brief", "idempotency_key"}, properties = {
             definition_ref = {type = "string", minLength = 1, maxLength = 160},
             brief = {type = "string", minLength = 1, maxLength = 16384},
             idempotency_key = {type = "string", minLength = 1, maxLength = 64},
         }}},
     {name = "overlay", description = "Learn this destination's governed overlay contract (read-only guide), or create, inspect, edit or freeze a caller-owned overlay", operation = "bee.governance.binding:overlay_call",
-        policies = {"bee:gateway_tool_overlay_policy"}, annotations = WRITE_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.overlay}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
             operation = {type = "string", enum = {"guide", "create", "list", "read", "put", "remove", "freeze"}},
             overlay_id = {type = "string", minLength = 1, maxLength = 160},
@@ -57,7 +75,7 @@ local TOOLS: {Tool} = {
             snapshot_digest = {type = "string", pattern = "^[0-9a-f]{64}$"},
         }}},
     {name = "docs", description = "Read the platform documentation that ships inside Bee, offline: list the corpus by topic, search it for a phrase, or read one bounded window of one document by stable id. Use it to look up how the runtime modules an application author calls work (process, channel, tty, registry, sql, fs, http, events), Bee's own contracts (application, threads, hive and cross-node subscriptions, placement, gateway, storage, UI) and the terminal toolkit for drawing, layout, styles and input.", operation = "bee.docs.binding:call",
-        policies = {"bee:gateway_tool_docs_policy"}, annotations = READ_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.docs}, annotations = READ_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
             operation = {type = "string", enum = {"list", "search", "read"}},
             topic = {type = "string", pattern = "^[a-z0-9_-]+$", maxLength = 64},
@@ -68,13 +86,13 @@ local TOOLS: {Tool} = {
             limit = {type = "integer", minimum = 1, maximum = 16384},
         }}},
     {name = "components", description = "Inspect installed registry components, explore Hub packages and review a resolved installation plan without applying it. Catalog and details discover packages; installed reads effective component state; inspect and state show exact package entries, resources and requirements; files and read_file inspect packaged documentation and examples; plan resolves the exact dependency closure, migrations and capabilities. This tool cannot apply, install, update, uninstall or write the registry.", operation = "bee.hub.binding:call",
-        policies = {"bee:gateway_tool_components_policy"}, annotations = READ_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.components}, annotations = READ_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation"}, properties = {
             operation = {type = "string", enum = {"catalog", "details", "inspect", "state", "files", "read_file", "installed", "plan"}},
             request = {type = "object"},
         }}},
     {name = "delivery", description = "Request delivery of your frozen component pack to this destination: publish the frozen artifact, stage it and read the destination's preflight verdict; or read a staged version's review, selection and activation status. It names the human steps it cannot take: review in Overlays, approval in Approvals and apply by the activation owner.", operation = "bee.governance.binding:delivery_call",
-        policies = {"bee:gateway_tool_delivery_policy"}, annotations = READ_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.delivery}, annotations = READ_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"operation", "workspace_id", "source_overlay_id", "version"}, properties = {
             operation = {type = "string", enum = {"request", "status"}},
             workspace_id = {type = "string", minLength = 1, maxLength = 160},
@@ -85,14 +103,14 @@ local TOOLS: {Tool} = {
             intent_id = {type = "string", minLength = 1, maxLength = 160},
         }}},
     {name = "publish", description = "Publish the exact application version a person has already reviewed, selected, approved and had applied at this destination. Use delivery request first and wait for the person; publication refuses any version that is not locally reviewed and applied.", operation = "bee.governance.binding:delivery_call",
-        policies = {"bee:gateway_tool_publish_policy"}, annotations = WRITE_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.publish}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"workspace_id", "source_overlay_id", "version"}, properties = {
             workspace_id = {type = "string", minLength = 1, maxLength = 160},
             source_overlay_id = {type = "string", minLength = 1, maxLength = 160},
             version = {type = "string", minLength = 1, maxLength = 160},
         }}},
     {name = "application_open", description = "Open one application already applied and admitted in this agent's bound workspace through the existing workspace host. Arguments are literal launch strings. Pending retries coalesce; completed retries use the broker's bounded replay cache.", operation = "bee.applications:open_call",
-        policies = {"bee:gateway_tool_application_open_policy"}, annotations = WRITE_ANNOTATIONS,
+        policies = {TOOL_POLICY_REFS.application_open}, annotations = WRITE_ANNOTATIONS,
         schema = {type = "object", additionalProperties = false, required = {"definition_id", "arguments", "idempotency_key"}, properties = {
             definition_id = {type = "string", minLength = 1, maxLength = 160},
             arguments = {type = "array", maxItems = 16, items = {type = "string", maxLength = 1024}},

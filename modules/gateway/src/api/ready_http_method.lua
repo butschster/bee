@@ -1,6 +1,6 @@
 -- MIT. GET /ready?nonce=…: the listener answers with the generation the
 -- store and the supervisor hold and a proof over the nonce under the
--- listener secret, so bee.gateway:ready can tell this gateway's answer
+-- listener secret, so bee.gateway.binding:ready can tell this gateway's answer
 -- from any other process on the port. It carries no binding.
 local http = require("http")
 local gateway = require("gateway")

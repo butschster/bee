@@ -190,6 +190,7 @@ host launch facts and operating-system I/O events.
 | [`src/core`](src/core) | Workspace, application, desktop, client, and storage lifecycle |
 | [`src/apps`](src/apps) | Bundled standalone application processes |
 | [`modules/application/src`](modules/application/src) | Public application SDK and shared presentation values |
+| [`modules/gateway/src`](modules/gateway/src) | Managed-agent gateway bindings, hooks, and MCP adapters |
 | [`modules/gov`](modules/gov) | Overlay authoring, review, activation, and recovery |
 | [`modules/hub`](modules/hub) | Package inspection, planning, apply, migration, and receipts |
 | [`modules/threads/src`](modules/threads/src) | Durable records, subscriptions, and delivery |

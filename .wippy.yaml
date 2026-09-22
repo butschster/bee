@@ -11,6 +11,7 @@ workspace:
     bee/sync: ./modules/sync
     bee/hub: ./modules/hub
     bee/governance: ./modules/gov
+    bee/gateway: ./modules/gateway
     bee/threads: ./modules/threads
     bee/docs: ./modules/docs
     bee/hive: ./modules/hive

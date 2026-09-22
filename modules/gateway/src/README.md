@@ -1,11 +1,11 @@
 # bee.gateway
 
-The authenticated thread port a managed harness child reaches over HTTP on a
-host-selected interface. This package holds the authority (bindings, opaque tokens stored only as
-hashes, the listener epoch, drain, readiness) and the HTTP handlers; the
-listener itself (`http.service`, router, endpoints) belongs to the host
-composition. The activation binds native loopback port zero and reads the
-assigned address through supervisor state. Agent
+`bee/gateway` owns the authenticated thread port a managed harness child
+reaches over HTTP. It owns bindings, opaque tokens stored only as hashes, the
+listener epoch, drain, readiness, and HTTP handlers. The listener itself
+(`http.service`, router, and endpoints) belongs to the host composition. The
+activation binds native loopback port zero and reads the assigned address
+through supervisor state. Agent
 profiles declare `thread_read`, `thread_wait`, `thread_message`, the
 caller-owned Governance `overlay` tool, and `thread_launch`, which starts one
 host-allow-listed managed launch in the caller's own workspace and returns the
@@ -40,3 +40,28 @@ interface and execution identity. MCP and hook requests must name that exact
 interface and port in Host. This does not grant network access, enroll another
 node, implement managed Docker execution or establish provider conversation
 recovery.
+
+## Host composition
+
+A host composes `bee/gateway` and selects its database, listener, endpoint
+configuration, and harness executable storage. It may also select the approval
+request and consume policies and the policies for each built-in MCP tool. An
+absent approval link fails closed. The selected endpoint describes a destination;
+it does not grant network authority.
+
+The host creates the HTTP service, router, and endpoint routes that call the
+component's API functions. It also selects the policies that permit callers to
+use those functions and the policies a bound tool receives. Requirements and
+registry metadata describe those links; they never grant authority by
+themselves.
+
+## Namespaces
+
+`bee.gateway` keeps the component's shared resources and values, including the
+stable database, listener, address, and hook-executable entries. The callable
+lifecycle and hook operations are in `bee.gateway.binding`; the HTTP handlers
+are in `bee.gateway.api`; and endpoint lookup is
+`bee.gateway.registry:address`. `bee.gateway.migrations`,
+`bee.gateway.persist`, and `bee.gateway.security` contain the component's
+migration, storage, and policy implementation. There are no root-namespace
+forwarding functions for the lifecycle operations.

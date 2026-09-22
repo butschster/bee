@@ -8,7 +8,7 @@ local M = {}
 M.DESTINATION = "BEE_GATEWAY_TOKEN"
 M.HOOK_DESTINATION = "BEE_GATEWAY_HOOK_TOKEN"
 M.SERVER = "bee"
-M.ENDPOINT = "bee:gateway_endpoint"
+M.ENDPOINT = "bee.gateway.registry:endpoint_ref"
 type Object = {[string]: unknown}
 type Listener = {address: string, native_key: string?}
 M.valid_address = address_value.valid
@@ -16,7 +16,13 @@ M.valid_address = address_value.valid
 -- localhost is an alias only for the default loopback address.
 M.host_matches = address_value.host_matches
 function M.configured(): (string?, string?)
-    local entry, err = registry.get(M.ENDPOINT)
+    local reference, reference_error = registry.get(M.ENDPOINT)
+    if reference_error or not reference then return nil, "gateway endpoint is not linked by the host" end
+    local linked = reference.data
+    if type(linked) ~= "table" then return nil, "gateway endpoint is not linked by the host" end
+    local endpoint = (linked :: Object).resource_ref
+    if type(endpoint) ~= "string" or endpoint == "" then return nil, "gateway endpoint is not linked by the host" end
+    local entry, err = registry.get(endpoint :: string)
     if err or not entry then return nil, "gateway endpoint is not configured by the host" end
     local data = entry.data
     if type(data) ~= "table" then return nil, "gateway endpoint has no data" end
@@ -25,7 +31,7 @@ function M.configured(): (string?, string?)
     return address :: string, nil
 end
 function M.current(): (Listener?, string?)
-    local value, err = funcs.call("bee.gateway:address", {})
+    local value, err = funcs.call("bee.gateway.registry:address", {})
     if err then return nil, tostring(err) end
     if type(value) ~= "table" then return nil, "gateway listener address is unavailable" end
     local data = value :: Object
