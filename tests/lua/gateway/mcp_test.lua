@@ -16,18 +16,19 @@ end
 
 local function define_tests()
     test.describe("Gateway MCP protocol", function()
-        test.it("discovers the production Governance traits and overlay schema", function()
+        test.it("discovers the production traits and overlay schema", function()
             for _, expected in ipairs({
-                {id = "bee.governance:authoring_trait", tool = "bee.governance:overlay_call"},
-                {id = "bee.governance:application_delivery_trait", tool = "bee.governance:delivery_call"},
-                {id = "bee.governance:application_publish_trait", tool = "bee.governance:delivery_call"},
+                {id = "bee.governance:authoring_trait", tools = {"bee.governance:overlay_call"}},
+                {id = "bee.governance:application_delivery_trait", tools = {"bee.governance:delivery_call"}},
+                {id = "bee.governance:application_publish_trait", tools = {"bee.governance:delivery_call"}},
+                {id = "bee.node.traits:metadata_trait", tools = {"bee.node.binding:describe", "bee.node.binding:update_metadata"}},
             }) do
                 local trait = entry(expected.id)
                 test.eq(trait.kind, "registry.entry")
                 test.eq((trait.meta :: Object).type, "agent.trait")
                 local data = trait.data :: Object
-                test.eq(#(data.tools :: {string}), 1)
-                test.eq((data.tools :: {string})[1], expected.tool)
+                test.eq(#(data.tools :: {string}), #expected.tools)
+                for index, tool in ipairs(expected.tools) do test.eq((data.tools :: {string})[index], tool) end
             end
             local overlay = entry("bee.governance:overlay_call")
             local metadata = overlay.meta :: Object

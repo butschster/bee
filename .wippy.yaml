@@ -14,6 +14,7 @@ workspace:
     bee/hive: ./modules/bee-hive
     bee/approvals: ./modules/bee-approvals
     bee/application: ./modules/bee-application
+    bee/node: ./modules/bee-node
     bee/resources: ./modules/bee-resources
     bee/placement: ./modules/bee-placement
     bee/credentials: ./modules/bee-credentials

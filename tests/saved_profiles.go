@@ -186,7 +186,7 @@ func savedProfilesSetup(root, source string) error {
 	if err := savedProfilesWrite(filepath.Join(root, "src", "sync_sender.lua"), savedProfilesSyncSender); err != nil {
 		return err
 	}
-	if err := savedProfilesCopyFile(filepath.Join(root, "src", "node", "README.md"), filepath.Join(source, "src", "node", "README.md")); err != nil {
+	if err := savedProfilesCopyFile(filepath.Join(root, "src", "node", "README.md"), filepath.Join(source, "modules", "bee-node", "src", "README.md")); err != nil {
 		return fmt.Errorf("copy node README: %w", err)
 	}
 	if err := savedProfilesWrite(filepath.Join(root, "src", "node", "_index.yaml"), savedProfilesNodeRootIndex); err != nil {

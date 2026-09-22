@@ -32,7 +32,7 @@ upstream licenses.
 | `modules/bee-sync/src` | Owner-local projection, event and receipt ledger |
 | `modules/bee-approvals/src` | Durable approval owner, inbox feed and outbox worker |
 | `src/placement/native` | Native launch attempts, executor boundary, evidence and cleanup state |
-| `src/node` | Authorized native-node descriptions and metadata |
+| `modules/bee-node/src` | Authorized native-node descriptions and metadata |
 
 Registry IDs are public identities independent of file paths. `main.lua` is an
 actor entry point, `app.lua` a default app entry point and `view.lua` a

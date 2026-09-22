@@ -30,6 +30,10 @@ entries:
   kind: ns.dependency
   component: bee/application
   version: 0.1.0-dev
+- name: dependency_node
+  kind: ns.dependency
+  component: bee/node
+  version: 0.1.0-dev
 - name: dependency_docs
   kind: ns.dependency
   component: bee/docs

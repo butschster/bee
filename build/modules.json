@@ -4,7 +4,13 @@
     {
       "module": "bee/node",
       "root": "bee.node",
-      "namespaces": ["bee.node"]
+      "namespaces": [
+        "bee.node",
+        "bee.node.binding",
+        "bee.node.registry",
+        "bee.node.security",
+        "bee.node.traits"
+      ]
     },
     {
       "module": "bee/sync",
