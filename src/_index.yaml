@@ -9,6 +9,10 @@ entries:
   kind: ns.dependency
   component: bee/persist
   version: 0.1.0-dev
+- name: dependency_threads
+  kind: ns.dependency
+  component: bee/threads
+  version: 0.1.0-dev
 - name: workers
   kind: process.host
   host:

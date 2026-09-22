@@ -8,3 +8,4 @@ shutdown:
 workspace:
   replacements:
     bee/persist: ./modules/bee-persist
+    bee/threads: ./modules/bee-threads
