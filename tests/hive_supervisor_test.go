@@ -82,6 +82,23 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 	if err := os.CopyFS(filepath.Join(sourceSnapshot, "hive"), os.DirFS(filepath.Join(repository, "src/hive"))); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.CopyFS(filepath.Join(sourceSnapshot, "hive_component"), os.DirFS(filepath.Join(repository, "modules/bee-hive/src"))); err != nil {
+		t.Fatal(err)
+	}
+	componentManifest := filepath.Join(sourceSnapshot, "hive_component", "_index.yaml")
+	component, err := os.ReadFile(componentManifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const threadsDependency = "- name: dependency_threads\n  kind: ns.dependency\n  component: bee/threads\n  version: '*'\n"
+	staged := strings.Replace(string(component), threadsDependency, "", 1)
+	if staged == string(component) {
+		t.Fatal("Hive component fixture is missing its threads dependency")
+	}
+	component = []byte(staged)
+	if err := os.WriteFile(componentManifest, component, 0600); err != nil {
+		t.Fatal(err)
+	}
 	if !includeDefaultService {
 		if err := os.RemoveAll(filepath.Join(sourceSnapshot, "hive/host")); err != nil {
 			t.Fatal(err)

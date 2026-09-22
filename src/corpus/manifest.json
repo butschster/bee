@@ -835,9 +835,9 @@
       "topic": "terminal"
     },
     {
-      "bytes": 3260,
+      "bytes": 3272,
       "id": "docs/readme",
-      "sha256": "a672f58e357241c0ef4266bfa791b508fa82e51cdd4274adee5448f78cc6cb33",
+      "sha256": "f2d426d39dd9f00c5816acfbcce36316c03bae359991404c799cb064f1ecf7f1",
       "source": "docs/README.md",
       "title": "Documentation map",
       "topic": "platform"
@@ -995,14 +995,6 @@
       "topic": "component"
     },
     {
-      "bytes": 3889,
-      "id": "component/hive",
-      "sha256": "35ece7e7d76c3b6c85ecacaa5f6e63e012286fd99cbf03568a92360790acbd67",
-      "source": "src/hive/README.md",
-      "title": "bee.hive",
-      "topic": "component"
-    },
-    {
       "bytes": 706,
       "id": "component/hive:host",
       "sha256": "6e88aa0e5211e0a0a3062325c1a224dd95c7910e637c1357415220a9eeb3a0fd",
@@ -1123,6 +1115,14 @@
       "topic": "component"
     },
     {
+      "bytes": 4316,
+      "id": "component/hive",
+      "sha256": "bb8458e4601133e48ecd6c149a78ec53989f44c75c8e654e804ced38015085a5",
+      "source": "modules/bee-hive/src/README.md",
+      "title": "bee.hive",
+      "topic": "component"
+    },
+    {
       "bytes": 830,
       "id": "component/persist",
       "sha256": "5642db79b763a445a62a255fe3702426bb6fd457f24d2f0d0c6b91a89b7f45f1",
@@ -1166,7 +1166,7 @@
   "schema": "bee.docs-corpus@1",
   "selection_rule": "Runtime reference: every published wippy.ai/llm page under lua/**, system/** and http/** (the native modules an application author calls and the component kinds behind them), plus the named concept, guide, internals, tutorial and platform pages this project lists; frontend/**, framework/**, temporal/**, wasm/** and about/** are excluded because they are another product surface, not the terminal application contract. Bee contracts: the docs/ pages that state an implemented callable boundary or the path a frozen artifact travels (application, threads, placement, gateway, carrier, storage, ui, harness, approvals, registry, platform), excluding repository process and design pages. Component: one README per Bee package under src/ or modules/. Terminal toolkit: one generated page composed from modules/bee-application/src, src/apps and src/gov/traits/guide.lua and digest-checked with the rest.",
   "totals": {
-    "bytes": 1226691,
+    "bytes": 1227130,
     "documents": 145
   }
 }
