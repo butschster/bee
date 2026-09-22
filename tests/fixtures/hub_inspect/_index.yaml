@@ -3,7 +3,7 @@ namespace: bee
 entries:
 - name: hub_workers
   kind: process.host
-  host: {workers: 4, max_processes: 16}
+  host: {workers: 2, max_processes: 8}
   lifecycle: {auto_start: true}
 - name: dependency_sync
   kind: ns.dependency
@@ -54,6 +54,3 @@ entries:
   parameters:
   - name: bee.hub:process_host
     value: bee:hub_workers
-- name: fixture_terminal
-  kind: terminal.host
-  lifecycle: {auto_start: true}
