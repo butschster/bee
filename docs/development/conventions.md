@@ -23,7 +23,7 @@ upstream licenses.
 | `src/core/protocol` | Private core message decoders |
 | `src/core/terminal` | Replaceable presenter, input and composition |
 | `src/core/storage` | Workspace database and migration ledger |
-| `src/ui` | Public application helpers, appearance and rendering values |
+| `modules/bee-application/src` | Public application helpers, appearance and rendering values |
 | `src/apps/<name>` | A standalone default application and its view/domain helpers |
 | `modules/bee-threads/src` | Durable records, authority, subscriptions, delivery and carrier store |
 | `modules/bee-resources/src` | Resource associations, scoped grants and owner-local ledger |

@@ -44,7 +44,7 @@ entries:
     test: wippy.test:test
     model: bee.inbox:model
     view: bee.inbox:view
-    appearance: bee.desktop:appearance
+    appearance: bee.application:appearance
 - name: surface_test
   kind: function.lua
   source: file://surface_test.lua
@@ -59,7 +59,7 @@ entries:
     view: bee.inbox:view
     inbox: bee.inbox:client
     caller: bee.application:caller
-    appearance: bee.desktop:appearance
+    appearance: bee.application:appearance
 - name: admission_probe
   kind: process.lua
   source: file://admission_probe.lua

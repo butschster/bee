@@ -13,6 +13,10 @@ entries:
   kind: ns.dependency
   component: bee/threads
   version: 0.1.0-dev
+- name: dependency_application
+  kind: ns.dependency
+  component: bee/application
+  version: 0.1.0-dev
 - name: dependency_resources
   kind: ns.dependency
   component: bee/resources

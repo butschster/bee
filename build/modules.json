@@ -28,7 +28,6 @@
       "root": "bee",
       "namespaces": [
         "bee",
-        "bee.application",
         "bee.applications",
         "bee.client",
         "bee.console",
@@ -48,6 +47,13 @@
         "bee.terminal",
         "bee.timeline",
         "bee.workspace"
+      ]
+    },
+    {
+      "module": "bee/application",
+      "root": "bee.application",
+      "namespaces": [
+        "bee.application"
       ]
     },
     {

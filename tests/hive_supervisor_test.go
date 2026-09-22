@@ -115,7 +115,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 		t.Fatal(err)
 	}
 	for _, dependency := range []struct{ directory, source, manifest string }{
-		{"application_arguments", "src/ui/application/arguments.lua", "version: '1.0'\nnamespace: bee.application\nentries:\n- name: arguments\n  kind: library.lua\n  source: file://source.lua\n"},
+		{"application_arguments", "modules/bee-application/src/arguments.lua", "version: '1.0'\nnamespace: bee.application\nentries:\n- name: arguments\n  kind: library.lua\n  source: file://source.lua\n"},
 		{"application_protocol", "src/core/protocol/application.lua", "version: '1.0'\nnamespace: bee.protocol\nentries:\n- name: application\n  kind: library.lua\n  source: file://source.lua\n  imports:\n    arguments: bee.application:arguments\n"},
 		{"retained_protocol", "src/core/launch/retained_protocol.lua", "version: '1.0'\nnamespace: bee.launch\nentries:\n- name: retained_protocol\n  kind: library.lua\n  source: file://source.lua\n  imports:\n    contract: bee.protocol:application\n"},
 	} {
@@ -166,7 +166,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 	if err := os.WriteFile(filepath.Join(clipboardDir, "_index.yaml"), []byte("version: '1.0'\nnamespace: bee.client\nentries:\n- name: clipboard\n  kind: library.lua\n  source: file://clipboard.lua\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	appearance, err := os.ReadFile(filepath.Join(repository, "src/ui/appearance.lua"))
+	appearance, err := os.ReadFile(filepath.Join(repository, "modules/bee-application/src/appearance.lua"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 	if err := os.WriteFile(filepath.Join(appearanceDir, "appearance.lua"), appearance, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(appearanceDir, "_index.yaml"), []byte("version: '1.0'\nnamespace: bee.desktop\nentries:\n- name: appearance\n  kind: library.lua\n  source: file://appearance.lua\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(appearanceDir, "_index.yaml"), []byte("version: '1.0'\nnamespace: bee.application\nentries:\n- name: appearance\n  kind: library.lua\n  source: file://appearance.lua\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	syncDir := filepath.Join(sourceSnapshot, "sync")

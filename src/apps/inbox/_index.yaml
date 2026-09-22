@@ -8,7 +8,7 @@ entries:
   modules: [tty, process, channel, time, uuid, json, funcs, registry]
   imports:
     client: bee.application:client
-    appearance: bee.desktop:appearance
+    appearance: bee.application:appearance
     model: bee.inbox:model
     view: bee.inbox:view
     inbox: bee.inbox:client
@@ -66,9 +66,9 @@ entries:
   source: file://view.lua
   modules: [tty]
   imports:
-    appearance: bee.desktop:appearance
+    appearance: bee.application:appearance
     model: bee.inbox:model
-    names: bee.desktop:names
+    names: bee.application:names
 - name: workspaces
   kind: registry.entry
   meta:
