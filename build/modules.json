@@ -42,6 +42,7 @@
       "root": "bee",
       "namespaces": [
         "bee",
+        "bee.modules",
         "bee.applications",
         "bee.client",
         "bee.console",
@@ -153,7 +154,11 @@
       "root": "bee.hub",
       "namespaces": [
         "bee.hub",
-        "bee.modules"
+        "bee.hub.binding",
+        "bee.hub.registry",
+        "bee.hub.service",
+        "bee.hub.security",
+        "bee.hub.traits"
       ]
     },
     {

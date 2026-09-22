@@ -171,7 +171,7 @@ local function define_tests()
             test.eq(#(delivery_operation.enum :: {string}), 2)
             local components_tools = mcp.list({"components"}).tools :: {{[string]: unknown}}
             test.eq(#components_tools, 1)
-            test.eq(mcp.tool("components") and mcp.tool("components").operation, "bee.hub:call")
+            test.eq(mcp.tool("components") and mcp.tool("components").operation, "bee.hub.binding:call")
             local components_schema = components_tools[1].inputSchema :: {[string]: unknown}
             local components_operation = (components_schema.properties :: {[string]: unknown}).operation :: {[string]: unknown}
             local read_operations = components_operation.enum :: {string}

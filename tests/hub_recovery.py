@@ -27,7 +27,7 @@ local RECEIPT_PREFIX = "bee.hub.operations:"
 local REQUEST = {action = "install", component = COMPONENT, version = VERSION}
 
 local function call(operation, request, digest)
-    local value, problem = funcs.new():call("bee.hub:call",
+    local value, problem = funcs.new():call("bee.hub.binding:call",
         {operation = operation, request = request, expected_digest = digest})
     assert(not problem, tostring(problem))
     local reply = bounds.object(value)
@@ -166,7 +166,7 @@ entries:
   kind: security.policy
   policy:
     actions: [funcs.call]
-    resources: [bee.hub:call]
+    resources: [bee.hub.binding:call]
     effect: allow
 - name: management_policy
   kind: security.policy

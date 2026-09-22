@@ -8,6 +8,8 @@ modules:
     version: 0.1.0-dev
   - name: bee/threads
     version: 0.1.0-dev
+  - name: bee/hub
+    version: 0.1.0-dev
   - name: bee/docs
     version: 0.1.0-dev
   - name: bee/hive
