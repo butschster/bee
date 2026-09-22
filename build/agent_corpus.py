@@ -9,8 +9,8 @@ author calls, Bee's own contracts from docs/, every component README under src/
 and modules/,
 and one terminal toolkit reference, into an embeddable, read-only filesystem.
 
-Storage shape: `src/corpus/` is declared as one `fs.directory` entry
-(`bee.docs:corpus`) that `wippy.yaml`'s `embed:` list names, so `wippy pack` and
+Storage shape: `src/corpus/` is declared by the host as one `fs.directory` entry
+(`bee:docs_corpus`) that `wippy.yaml`'s `embed:` list names, so `wippy pack` and
 build/bundle.py both freeze it into the pack as an `fs.embed` volume the runtime
 serves read-only (see docs/operations/native.md and tests/bundle_assets.py).
 

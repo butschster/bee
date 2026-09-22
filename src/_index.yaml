@@ -17,6 +17,13 @@ entries:
   kind: ns.dependency
   component: bee/application
   version: 0.1.0-dev
+- name: dependency_docs
+  kind: ns.dependency
+  component: bee/docs
+  version: 0.1.0-dev
+  parameters:
+  - name: target_corpus
+    value: bee:docs_corpus
 - name: dependency_resources
   kind: ns.dependency
   component: bee/resources

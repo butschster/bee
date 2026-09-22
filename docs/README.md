@@ -7,7 +7,7 @@ generator when the corpus is intentionally updated.
 
 | Read for | Source |
 |---|---|
-| Runtime modules and Bee contracts available offline | [Agent documentation corpus](../src/docs/README.md) |
+| Runtime modules and Bee contracts available offline | [Agent documentation corpus](../modules/bee-docs/src/README.md) |
 | Running Bee and local development | [Repository README](../README.md), [agent guide](development/agent-guide.md), [development conventions](development/conventions.md) |
 | Ownership and boundaries | [System map](development/ownership.md), [package boundaries](development/package-boundaries.md) |
 | Contributions and community standards | [Contributing](../CONTRIBUTING.md) |

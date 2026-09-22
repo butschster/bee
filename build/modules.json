@@ -102,6 +102,15 @@
       "namespaces": ["bee.driver.muse"]
     },
     {
+      "module": "bee/docs",
+      "root": "bee.docs",
+      "namespaces": [
+        "bee.docs",
+        "bee.docs.binding",
+        "bee.docs.registry"
+      ]
+    },
+    {
       "module": "bee/gateway",
       "root": "bee.gateway",
       "namespaces": [

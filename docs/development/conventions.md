@@ -26,6 +26,7 @@ upstream licenses.
 | `modules/bee-application/src` | Public application helpers, appearance and rendering values |
 | `src/apps/<name>` | A standalone default application and its view/domain helpers |
 | `modules/bee-threads/src` | Durable records, authority, subscriptions, delivery and carrier store |
+| `modules/bee-docs/src` | Offline documentation protocol, corpus reader and read-only gateway facade |
 | `modules/bee-resources/src` | Resource associations, scoped grants and owner-local ledger |
 | `modules/bee-placement/src` | Shared placement contract, launch values, transition rules and binding resolution |
 | `src/sync` | Owner-local projection, event and receipt ledger |
