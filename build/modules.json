@@ -9,7 +9,15 @@
     {
       "module": "bee/sync",
       "root": "bee.sync",
-      "namespaces": ["bee.sync"]
+      "namespaces": [
+        "bee.sync",
+        "bee.sync.binding",
+        "bee.sync.migrations",
+        "bee.sync.persist",
+        "bee.sync.registry",
+        "bee.sync.security",
+        "bee.sync.service"
+      ]
     },
     {
       "module": "bee/approvals",

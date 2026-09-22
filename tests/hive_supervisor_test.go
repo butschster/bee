@@ -185,7 +185,7 @@ func freezeHiveSupervisorSource(t *testing.T, root string, includeDefaultService
 		t.Fatal(err)
 	}
 	for _, name := range []string{"bounds", "canonical", "version"} {
-		body, err := os.ReadFile(filepath.Join(repository, "src/sync", name+".lua"))
+		body, err := os.ReadFile(filepath.Join(repository, "modules/bee-sync/src", name+".lua"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -282,18 +282,25 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 	if err := os.WriteFile(fixtureManifest, []byte(fixtureText), 0600); err != nil {
 		t.Fatal(err)
 	}
-	for _, dependency := range []struct{ name, path string }{
-		{name: "node", path: "src/node"},
-		{name: "sync", path: "src/sync"},
-	} {
-		if dependency.name == "sync" {
-			if err := os.RemoveAll(filepath.Join(source, dependency.name)); err != nil {
-				t.Fatal(err)
-			}
-		}
-		if err := os.CopyFS(filepath.Join(source, dependency.name), os.DirFS(filepath.Join(repository, dependency.path))); err != nil {
-			t.Fatal(err)
-		}
+	if err := os.RemoveAll(filepath.Join(source, "sync")); err != nil {
+		t.Fatal(err)
+	}
+	hostDir := filepath.Join(source, "hive", "host")
+	if err := os.MkdirAll(hostDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	sender, err := os.ReadFile(filepath.Join(repository, "src", "hive", "host", "replica_sender.lua"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(hostDir, "replica_sender.lua"), sender, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(hostDir, "_index.yaml"), []byte("version: '1.0'\nnamespace: bee.hive.host\nentries:\n- name: replica_sender\n  kind: library.lua\n  source: file://replica_sender.lua\n  modules: [hash, base64]\n  imports:\n    hive: bee.hive:client\n    version: bee.sync:version\n    transaction: bee.persist:transaction\n    bounds: bee.sync:bounds\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.CopyFS(filepath.Join(source, "node"), os.DirFS(filepath.Join(repository, "src/node"))); err != nil {
+		t.Fatal(err)
 	}
 	if err := os.CopyFS(filepath.Join(source, "approvals", "host"), os.DirFS(filepath.Join(repository, "src/approvals/host"))); err != nil {
 		t.Fatal(err)
@@ -303,7 +310,7 @@ func stageHiveFeeds(t *testing.T, source, fixture string) {
 	if err := os.RemoveAll(filepath.Join(source, "canonical")); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"approvals", "persist", "threads"} {
+	for _, name := range []string{"approvals", "persist", "sync", "threads"} {
 		module := "bee-" + name
 		if err := os.CopyFS(filepath.Join(filepath.Dir(source), "modules", module), os.DirFS(filepath.Join(repository, "modules", module))); err != nil {
 			t.Fatal(err)
@@ -360,7 +367,7 @@ func runHiveSupervisors(t *testing.T, feeds bool) {
 				t.Fatal(err)
 			}
 			lock += "modules:\n"
-			for _, name := range []string{"approvals", "persist", "threads"} {
+			for _, name := range []string{"approvals", "persist", "sync", "threads"} {
 				lock += "- name: bee/" + name + "\n  version: 0.1.0-dev\n"
 			}
 		}
@@ -384,7 +391,7 @@ func runHiveSupervisors(t *testing.T, feeds bool) {
 		}
 		if feeds {
 			replacements := map[string]string{}
-			for _, name := range []string{"approvals", "persist", "threads"} {
+			for _, name := range []string{"approvals", "persist", "sync", "threads"} {
 				replacements["bee/"+name] = "./modules/bee-" + name
 			}
 			config["workspace"] = map[string]any{"replacements": replacements}
